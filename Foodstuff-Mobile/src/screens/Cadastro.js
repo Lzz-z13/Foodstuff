@@ -299,6 +299,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 15,
+    margin:11
   },
 
   /* Modal */
