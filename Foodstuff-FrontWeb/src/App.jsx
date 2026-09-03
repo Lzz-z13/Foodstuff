@@ -1,12 +1,18 @@
-import { useState } from 'react'
+import "./style.css";
+import { BrowserRouter, Route, Router, Routes } from "react-router-dom";
+import { useState } from "react";
+import Login from "./pages/login/Login";
 
 function App() {
-
   return (
-      <>
-        <h1 className="text-3xl text-blue-500 text-center">hello WORLD</h1>
-      </>
-  )      
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Login />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
 }
 
-export default App
+export default App;
