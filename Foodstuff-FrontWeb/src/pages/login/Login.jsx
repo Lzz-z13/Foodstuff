@@ -1,4 +1,7 @@
+import { useState } from "react";
+
 import "../../style.css";
+
 import iconeLogin from "../../../assets/loginImages/login_image.png";
 import iconeTalher from "../../../assets/loginImages/talher_image.png";
 import cadeado from "../../../assets/loginImages/cadeado.png";
@@ -7,96 +10,157 @@ import olhinho from "../../../assets/loginImages/olhinho.png";
 import olho_cerrado from "../../../assets/loginImages/olho_cerrado.png";
 
 export default function Login() {
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+
   const handleSubmit = (e) => {
     e.preventDefault();
   };
 
   return (
-    <div className="min-h-dvh bg-gray-100 flex flex-col items-center justify-center p-3">
-      <div className="mb-5 flex items-center gap-2 bg-[#ff523b] text-white px-6 py-2.5 rounded-2xl font-bold text-xl shadow-sm">
-        <img className="w-6 h-6 invert" fill="none" src={iconeTalher}></img>
+    <main className="min-h-dvh w-full bg-gray-100 flex flex-col items-center justify-center px-4 py-6 sm:px-6">
+
+      <div className="mb-5 flex items-center gap-2 rounded-2xl bg-[#ff523b] px-5 py-2.5 text-lg font-bold text-white shadow-sm sm:px-6 sm:text-xl">
+        <img
+          className="h-5 w-5 invert sm:h-6 sm:w-6"
+          src={iconeTalher}
+          alt="Foodstuff"
+        />
+
         <span>Foodstuff</span>
       </div>
 
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-sm text-center">
-        <div className="w-12 h-12 mx-auto mb-3 Monarch bg-red-50 rounded-2xl flex items-center justify-center text-[#ff523b]">
+      <div className="w-full max-w-md rounded-3xl bg-white p-5 text-center shadow-sm sm:p-8">
+
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
           <img
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
+            className="h-6 w-6"
             src={iconeLogin}
-          ></img>
+            alt="Login"
+          />
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Login</h1>
-        <p className="text-xs text-gray-400 mb-6">
+        <h1 className="mb-1 text-2xl font-bold text-gray-900">
+          Login
+        </h1>
+
+        <p className="mb-6 text-xs leading-relaxed text-gray-400">
           Entre com suas credenciais para gerenciar a plataforma
         </p>
 
-        <form className="space-y-4 text-left">
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+
           <div>
-            <label className="block text-sm font-semibold text-gray-800 mb-1">
+            <label className="mb-1 block text-sm font-semibold text-gray-800">
               E-mail
             </label>
+
             <div className="relative">
               <img
-                className="w-4 h-4 absolute left-3.5 top-1/3"
-                fill="none"
-                stroke=""
-                stroke-width="2"
-                viewBox="0 0 24 24"
+                className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
                 src={email}
-              ></img>
+                alt=""
+              />
+
               <input
                 type="email"
                 placeholder="seunome@empresa.com.br"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50/50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff523b]/20 focus:border-[#ff523b] placeholder:text-gray-300"
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-gray-200
+                  bg-gray-50/50
+                  py-2.5
+                  pl-10
+                  pr-4
+                  text-sm
+                  outline-none
+                  transition
+                  focus:border-[#ff523b]
+                  focus:ring-2
+                  focus:ring-[#ff523b]/20
+                  placeholder:text-gray-300
+                "
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-800 mb-1">
+            <label className="mb-1 block text-sm font-semibold text-gray-800">
               Senha
             </label>
+
             <div className="relative">
               <img
-                className="w-4 h-4 absolute left-3 top-1/3"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
                 src={cadeado}
-              ></img>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-50/50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff523b]/20 focus:border-[#ff523b] placeholder:text-gray-300"
+                alt=""
               />
-              <img
-                className="w-4 h-4 absolute left-88 top-[13px] "
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                src={olho_cerrado}
-              ></img>
+
+              <input
+                type={mostrarSenha ? "text" : "password"}
+                placeholder="••••••••"
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-gray-200
+                  bg-gray-50/50
+                  py-2.5
+                  pl-10
+                  pr-12
+                  text-sm
+                  outline-none
+                  transition
+                  focus:border-[#ff523b]
+                  focus:ring-2
+                  focus:ring-[#ff523b]/20
+                "
+              />
+
+              <button
+                type="button"
+                onClick={() => setMostrarSenha(!mostrarSenha)}
+                className="
+                  absolute
+                  right-3
+                  top-1/2
+                  -translate-y-1/2
+                  cursor-pointer
+                "
+              >
+                <img
+                  src={mostrarSenha ? olhinho : olho_cerrado}
+                  alt={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                  className="h-5 w-5"
+                />
+              </button>
             </div>
-            <span className="block text-[11px] text-gray-400 mt-1">
+
+            <span className="mt-1 block text-[11px] leading-relaxed text-gray-400">
               Sua senha deve conter pelo menos 8 caracteres.
             </span>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#ff523b] hover:bg-[#e0442f] text-white font-semibold py-3 rounded-xl transition-colors mt-2"
+            className="
+              mt-2
+              w-full
+              rounded-xl
+              bg-[#ff523b]
+              py-3
+              font-semibold
+              text-white
+              transition-colors
+              hover:bg-[#e0442f]
+              cursor-pointer
+            "
           >
             Entrar
           </button>
 
-          <div className="text-center pt-2">
+          <div className="pt-2 text-center">
             <a
               href="#"
               className="text-sm font-semibold text-[#ff523b] hover:underline"
@@ -104,8 +168,9 @@ export default function Login() {
               Esqueceu a senha?
             </a>
           </div>
+
         </form>
       </div>
-    </div>
+    </main>
   );
 }
