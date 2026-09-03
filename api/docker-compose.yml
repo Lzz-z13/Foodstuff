@@ -1,0 +1,39 @@
+# Docker Compose -> Container Orchestrator
+
+services: # Containers
+  app:
+    restart: unless-stopped
+    build: .
+    ports:
+      - "5000:5000" # Host : Container
+    volumes:
+      - .:/usr/app 
+      - /usr/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+  
+  db:
+    image: mysql:8.0 # Docker hub (v8 most compatible)
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql-database:/docker-entrypoint-initdb.d # Automatic startup execution (internal folder)
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db_data:
