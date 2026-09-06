@@ -29,7 +29,7 @@ export default function Login() {
         <span>Foodstuff</span>
       </div>
 
-      <div className="w-full max-w-md rounded-3xl bg-white p-5 text-center shadow-sm sm:p-8">
+      <div className="w-full max-w-md rounded-3xl bg-white p-5 text-center shadow-xl sm:p-8">
 
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
           <img
@@ -162,7 +162,7 @@ export default function Login() {
 
           <div className="pt-2 text-center">
             <a
-              href="#"
+              href='/recuperarSenha'
               className="text-sm font-semibold text-[#ff523b] hover:underline"
             >
               Esqueceu a senha?
