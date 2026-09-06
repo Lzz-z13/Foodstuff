@@ -1,17 +1,21 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 import iconeLogin from "../../../assets/loginImages/login_image.png";
 import iconeTalher from "../../../assets/loginImages/talher_image.png";
-import email from "../../../assets/loginImages/email.png";
+import email_img from "../../../assets/loginImages/email.png";
+import Snackbar from "../../components/snackBar/SnackBar";
 
 export default function RecupSenha() {
-  const handleSubmit = (e) => {
+    const [email, setEmail] = useState("");
+
+    const handleSubmit = (e) => {
     e.preventDefault();
   };
 
   return (
     <main className="min-h-dvh w-full bg-gray-100 flex flex-col items-center justify-center px-4 py-6 sm:px-6">
-      <div className="mb-5 flex items-center gap-2 rounded-2xl bg-[#ff523b] px-5 py-2.5 text-lg font-bold text-white shadow-sm sm:px-6 sm:text-xl">
+      <div className="mb-5 flex items-center gap-2 rounded-2xl bg-[#ff523b] py-3 text-lg font-bold text-white shadow-sm sm:px-10 sm:text-xl">
         <img
           className="h-5 w-5 invert sm:h-6 sm:w-6"
           src={iconeTalher}
@@ -37,19 +41,21 @@ export default function RecupSenha() {
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
             <label className="mb-1 block text-sm font-semibold text-gray-800">
-              E-mail
+              E-mail para recuperar a senha
             </label>
 
             <div className="relative">
               <img
                 className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
-                src={email}
+                src={email_img}
                 alt=""
               />
 
               <input
-                type="email"
+                type="txt"
                 placeholder="seunome@empresa.com.br"
+                value={email}
+                onChange={(e)=> setEmail(e.target.value)}
                 className="
                           w-full
                           rounded-xl
@@ -90,7 +96,7 @@ export default function RecupSenha() {
           </button>
 
           <div className="pt-2 text-center">
-            <span>
+            <span className="text-sm">
               Lembrou da senha??
               <Link
                 to="/"
