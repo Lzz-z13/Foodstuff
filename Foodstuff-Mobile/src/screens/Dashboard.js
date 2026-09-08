@@ -7,12 +7,10 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
-
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-
 import {
   Ionicons,
   MaterialCommunityIcons,
@@ -36,7 +34,10 @@ const TABS = [
   ["Config", "settings-outline", "ion"],
 ];
 
-const REGISTERED_ROUTES = ["Dashboard"];
+const ROUTES = {
+  Dashboard: "Dashboard",
+  Users: "Cadastro",
+};
 
 export default function Dashboard({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -47,16 +48,28 @@ export default function Dashboard({ navigation, route }) {
   function handleTabPress(tab) {
     setActiveTab(tab);
 
-    if (REGISTERED_ROUTES.includes(tab)) {
-      navigation.navigate(tab);
+    if (ROUTES[tab]) {
+      navigation.navigate(ROUTES[tab]);
     }
   }
 
   function renderIcon(icon, lib, color) {
-    return lib === "mci" ? (
-      <MaterialCommunityIcons name={icon} size={22} color={color} />
-    ) : (
-      <Ionicons name={icon} size={22} color={color} />
+    if (lib === "mci") {
+      return (
+        <MaterialCommunityIcons
+          name={icon}
+          size={22}
+          color={color}
+        />
+      );
+    }
+
+    return (
+      <Ionicons
+        name={icon}
+        size={22}
+        color={color}
+      />
     );
   }
 
@@ -75,7 +88,10 @@ export default function Dashboard({ navigation, route }) {
             size={22}
             color={COLORS.primary}
           />
-          <Text style={styles.headerTitle}>Foodstuff</Text>
+
+          <Text style={styles.headerTitle}>
+            Foodstuff
+          </Text>
         </View>
 
         <View style={styles.avatar} />
@@ -85,6 +101,7 @@ export default function Dashboard({ navigation, route }) {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.greetingRow}>
           <View>
@@ -119,6 +136,7 @@ export default function Dashboard({ navigation, route }) {
       >
         {TABS.map(([key, icon, lib]) => {
           const active = activeTab === key;
+
           const color = active
             ? COLORS.primary
             : COLORS.textGray;
@@ -127,13 +145,19 @@ export default function Dashboard({ navigation, route }) {
             <TouchableOpacity
               key={key}
               style={styles.tabItem}
+              activeOpacity={0.7}
               onPress={() => handleTabPress(key)}
             >
               <View style={styles.icon}>
                 {renderIcon(icon, lib, color)}
               </View>
 
-              <Text style={[styles.tabLabel, { color }]}>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  { color },
+                ]}
+              >
                 {key}
               </Text>
             </TouchableOpacity>
