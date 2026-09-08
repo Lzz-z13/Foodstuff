@@ -1,7 +1,7 @@
 const router = require("express").Router();
 
-// const verifyRole = require("../middlewares/verifyRole");
-//const verifyFirstLogin = require("../middlewares/verifyFirstLogin");
+const verifyRole = require("../middlewares/verifyRole");
+// const verifyFirstLogin = require("../middlewares/verifyFirstLogin");
 
 const UserController = require("../controllers/userController");
 
@@ -10,8 +10,8 @@ const UserController = require("../controllers/userController");
 
 // router.use(verifyFirstLogin);
 
-// [role] only
-// verfyRole([role], [role])
+// manager only
+router.use(verifyRole("MANAGER"));
 
 router.post(
   "/",
