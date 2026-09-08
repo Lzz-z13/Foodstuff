@@ -11,13 +11,15 @@ CREATE TABLE
         user_id CHAR(36) NOT NULL,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(150) NOT NULL,
+        phone CHAR(11) NOT NULL,
         password VARCHAR(255) NOT NULL,
         role ENUM ('MANAGER', 'WAITER', 'KITCHEN', 'CASHIER') NOT NULL,
         first_login TINYINT NOT NULL DEFAULT TRUE,
         is_active TINYINT NOT NULL DEFAULT TRUE,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT pk_users PRIMARY KEY (user_id),
-        CONSTRAINT uk_users_email UNIQUE (email)
+        CONSTRAINT uk_users_email UNIQUE (email),
+        CONSTRAINT uk_users_phone UNIQUE (phone)
     );
 
 -- 2. TABLES
