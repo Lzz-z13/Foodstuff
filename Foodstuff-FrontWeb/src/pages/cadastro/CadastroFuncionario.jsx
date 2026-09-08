@@ -20,6 +20,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import "./Cadastro.css";
+import SideBar from "../../components/sideBar/SideBar";
 
 const cargos = ["Garçom", "Cozinha", "Caixa", "Gerente"];
 
@@ -31,8 +32,6 @@ export default function CadastroFuncionario() {
     cargo: "Garçom",
     senha: "",
   });
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [mensagem, setMensagem] = useState("");
 
   const alterar = (campo, valor) => setForm({ ...form, [campo]: valor });
   const formatarTelefone = (v) => {
@@ -60,70 +59,85 @@ export default function CadastroFuncionario() {
   }
 
   return (
-    <div className="cadastro-layout">
-      <main className="cadastro-main">
-        <div className="top-actions">
-          <Bell />
-          <CircleHelp />
-          <CircleUserRound className="profile-dot" />
-        </div>
-        <section className="cadastro-card">
-          <header className="cadastro-heading">
-            <div className="heading-icon">
-              <UserRoundPlus />
+    <>
+      <SideBar />
+      <div className="md:ml-[163px]">
+        <div className="cadastro-layout">
+          <main className="cadastro-main">
+            <div className="top-actions">
+              <Bell />
+              <CircleHelp />
+              <CircleUserRound className="profile-dot" />
             </div>
-            <h1>Cadastre um funcionário</h1>
-            <p>Cadastre novos funcionários para te ajudar</p>
-          </header>
-          <form onSubmit={cadastrar}>
-            <Campo label="Nome completo" icon={<UserRound />}>
-              <input
-                required
-                value={form.nome}
-                onChange={(e) => alterar("nome", e.target.value)}
-                placeholder="Nome completo do funcionário"
-              />
-            </Campo>
-            <Campo label="E-mail" icon={<Mail />}>
-              <input
-                required
-                type="email"
-                value={form.email}
-                onChange={(e) => alterar("email", e.target.value)}
-                placeholder="Digite o e-mail do funcionário"
-              />
-            </Campo>
-            <Campo label="Telefone" icon={<Phone />}>
-              <input
-                required
-                value={form.telefone}
-                onChange={(e) =>
-                  alterar("telefone", formatarTelefone(e.target.value))
-                }
-                placeholder="(16) 00000-0000"
-              />
-            </Campo>
 
-            <div className="cargo">
-              <label>Cargo</label>
-              <div className="roles">
-                {cargos.map((c) => (
-                  <button
-                    type="button"
-                    key={c}
-                    className={form.cargo === c ? "selected" : ""}
-                    onClick={() => alterar("cargo", c)}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button className="submit">Cadastrar funcionário</button>
-          </form>
-        </section>
-      </main>
-    </div>
+            <section className="cadastro-card">
+              <header className="cadastro-heading">
+                <div className="heading-icon">
+                  <UserRoundPlus />
+                </div>
+
+                <h1>Cadastre um funcionário</h1>
+
+                <p>Cadastre novos funcionários para te ajudar</p>
+              </header>
+
+              <form onSubmit={cadastrar}>
+                <Campo label="Nome completo" icon={<UserRound />}>
+                  <input
+                    required
+                    value={form.nome}
+                    onChange={(e) => alterar("nome", e.target.value)}
+                    placeholder="Nome completo do funcionário"
+                  />
+                </Campo>
+
+                <Campo label="E-mail" icon={<Mail />}>
+                  <input
+                    required
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => alterar("email", e.target.value)}
+                    placeholder="Digite o e-mail do funcionário"
+                  />
+                </Campo>
+
+                <Campo label="Telefone" icon={<Phone />}>
+                  <input
+                    required
+                    value={form.telefone}
+                    onChange={(e) =>
+                      alterar("telefone", formatarTelefone(e.target.value))
+                    }
+                    placeholder="(16) 00000-0000"
+                  />
+                </Campo>
+
+                <div className="cargo">
+                  <label>Cargo</label>
+
+                  <div className="roles">
+                    {cargos.map((c) => (
+                      <button
+                        type="button"
+                        key={c}
+                        className={form.cargo === c ? "selected" : ""}
+                        onClick={() => alterar("cargo", c)}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button className="submit" type="submit">
+                  Cadastrar funcionário
+                </button>
+              </form>
+            </section>
+          </main>
+        </div>
+      </div>
+    </>
   );
 }
 

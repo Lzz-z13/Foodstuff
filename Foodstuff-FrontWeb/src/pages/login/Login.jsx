@@ -152,7 +152,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 flex w-full items-center justify-center rounded-xl bg-[#ff523b] py-3 font-semibold text-white hover:bg-[#e0442f] disabled:opacity-70"
+            className="mt-2 flex w-full items-center justify-center rounded-xl bg-[#ff523b] py-3 font-semibold text-white hover:bg-[#e0442f] disabled:opacity-70 cursor-pointer"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>

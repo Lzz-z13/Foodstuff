@@ -1,6 +1,7 @@
 * {
   box-sizing: border-box;
 }
+
 .cadastro-layout {
   min-height: 100vh;
   background: #f8f9fa;
@@ -13,226 +14,338 @@
   position: relative;
   flex: 1;
   min-width: 0;
+
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding-top: 8px;
+  align-items: center;
+
+  padding: 40px 24px;
 }
+
+/* =========================
+   AÇÕES DO TOPO
+========================= */
+
 .top-actions {
   position: absolute;
   right: 28px;
-  top: 12px;
+  top: 16px;
+
   display: flex;
-  gap: 18px;
   align-items: center;
+  gap: 18px;
+
   color: #685a55;
 }
+
 .top-actions svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   stroke-width: 1.7;
 }
+
 .top-actions .profile-dot {
   width: 20px;
   height: 20px;
   padding: 3px;
+
   border-radius: 50%;
+
   background: #e7c4bc;
   color: #e7c4bc;
   stroke: #e7c4bc;
 }
+
+/* =========================
+   CARD
+========================= */
+
 .cadastro-card {
-  display: grid;
-  width: 379px;
-  min-height: 517px;
-  background: #fff;
+  width: 440px;
+  max-width: 100%;
+
+  background: #ffffff;
+
   border: 1px solid #e0e3e7;
-  border-radius: 12px;
-  box-shadow: 0 7px 20px rgba(31, 41, 55, 0.07);
-  padding: 19px 18px 13px;
-  margin-top: 70px;
+  border-radius: 14px;
+
+  box-shadow: 0 8px 24px rgba(31, 41, 55, 0.07);
+
+  padding: 28px 30px 30px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 28px;
 }
+
+/* =========================
+   CABEÇALHO
+========================= */
 
 .cadastro-heading {
   text-align: center;
-  margin-bottom: 14px;
+  margin: 0;
 }
+
 .heading-icon {
-  width: 31px;
-  height: 31px;
-  margin: 0 auto 7px;
+  width: 34px;
+  height: 34px;
+
+  margin: 0 auto 10px;
+
   border-radius: 9px;
+
   background: #fff0ed;
   color: #ff5a43;
+
   display: grid;
   place-items: center;
 }
+
 .heading-icon svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   stroke-width: 1.5;
 }
+
 .cadastro-heading h1 {
-  margin: 0 0 4px;
+  margin: 0 0 5px;
+
+  color: #20242a;
+
   font-size: 20px;
   line-height: 24px;
-  font-weight: 750;
+  font-weight: 700;
 }
+
 .cadastro-heading p {
   margin: 0;
-  color: #8d949d;
-  font-size: 9px;
+
+  color: #9299a2;
+
+  font-size: 10px;
+  line-height: 14px;
 }
+
+/* =========================
+   FORMULÁRIO
+========================= */
+
 .cadastro-card form {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 14px;
 }
+
+/* =========================
+   CAMPOS
+========================= */
+
 .field label,
 .cargo label {
   display: block;
-  margin-bottom: 5px;
+
+  margin-bottom: 6px;
+
   color: #202630;
-  font-size: 9px;
+
+  font-size: 10px;
   font-weight: 650;
 }
+
 .input-wrap {
-  height: 33px;
   position: relative;
+
+  width: 100%;
+  height: 40px;
+
   display: flex;
   align-items: center;
+
   border: 1px solid #dfe3e8;
   border-radius: 8px;
+
   background: #fcfdfe;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
+
 .input-wrap > span {
   position: absolute;
-  left: 9px;
+  left: 10px;
+
   display: grid;
   place-items: center;
+
   color: #9da5ae;
 }
+
 .input-wrap > span svg {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   stroke-width: 1.5;
 }
+
 .input-wrap input {
   width: 100%;
   height: 100%;
+
   border: 0;
   outline: 0;
+
   background: transparent;
-  padding: 0 10px 0 31px;
+
+  padding: 0 12px 0 34px;
+
   color: #303640;
-  font-size: 9px;
+
+  font-size: 11px;
   font-weight: 500;
 }
+
 .input-wrap input::placeholder {
   color: #aeb5be;
 }
+
 .input-wrap:focus-within {
   border-color: #ff6a59;
+
   box-shadow: 0 0 0 2px rgba(255, 106, 89, 0.08);
 }
+
+/* =========================
+   CARGOS
+========================= */
+
 .roles {
   display: grid;
+
   grid-template-columns: 1fr 1fr;
-  gap: 7px;
+
+  gap: 8px;
+
+  margin: 0;
 }
+
 .roles button {
-  height: 26px;
+  width: 100%;
+  height: 34px;
+
   border: 1px solid #ff5a43;
-  border-radius: 6px;
-  background: #fff;
+  border-radius: 7px;
+
+  background: #ffffff;
+
   color: #37404a;
-  font-size: 9px;
+
+  font-size: 10px;
+  font-weight: 500;
+
   cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
+
+.roles button:hover {
+  background: #fff4f1;
+}
+
 .roles button.selected {
   background: #24232a;
-  color: #fff;
+
+  color: #ffffff;
+
   border-color: #ff5a43;
+
   font-weight: 700;
 }
-.senha-area {
-  padding-top: 13px;
-}
-.eye {
-  position: absolute;
-  right: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 0;
-  background: transparent;
-  color: #9da5ae;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  cursor: pointer;
-}
-.eye svg {
-  width: 13px;
-  height: 13px;
-}
-.hint {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 7px 0 0 6px;
-  color: #737b84;
-  font-size: 7px;
-  font-weight: 500;
-}
-.hint svg {
-  width: 10px;
-  height: 10px;
-  color: #e7b63d;
-}
-.success {
-  padding: 6px;
-  border-radius: 6px;
-  background: #f0faef;
-  color: #37823b;
-  text-align: center;
-  font-size: 8px;
-  font-weight: 700;
-}
+
+/* =========================
+   BOTÃO ENVIAR
+========================= */
+
 .submit {
-  height: 34px;
+  width: 100%;
+  height: 40px;
+
+  margin-top: 6px;
+
   border: 0;
   border-radius: 8px;
+
   background: #ff5742;
-  color: #fff;
+
+  color: #ffffff;
+
   font-size: 10px;
   font-weight: 700;
+
   cursor: pointer;
-  margin-top: 2px;
+
+  transition: background 0.15s ease;
 }
+
 .submit:hover {
   background: #eb4936;
 }
+
+/* =========================
+   MENSAGEM DE SUCESSO
+========================= */
+
+.success {
+  padding: 8px;
+
+  border-radius: 7px;
+
+  background: #f0faef;
+
+  color: #37823b;
+
+  text-align: center;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* =========================
+   RESPONSIVIDADE
+========================= */
+
 @media (max-width: 700px) {
-  .cadastro-sidebar {
-    width: 135px;
-    min-width: 135px;
-  }
   .cadastro-card {
-    width: min(379px, calc(100vw - 155px));
+    width: min(440px, calc(100vw - 32px));
+  }
+
+  .cadastro-main {
+    padding: 32px 16px;
   }
 }
+
 @media (max-width: 520px) {
-  .cadastro-sidebar {
-    display: none;
-  }
   .cadastro-main {
-    padding: 55px 12px 20px;
+    min-height: 100vh;
+
+    padding: 70px 12px 24px;
+
+    align-items: flex-start;
   }
+
   .cadastro-card {
     width: 100%;
+
+    padding: 24px 20px 24px;
+
     margin: 0;
   }
+
   .top-actions {
     right: 12px;
+    top: 16px;
   }
 }
