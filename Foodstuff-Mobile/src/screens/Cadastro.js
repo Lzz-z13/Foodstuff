@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,17 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../axios/axios";
 
-const LISTA_CARGOS = [
-  "Chef de Cozinha",
-  "Garçom",
-  "Gerente",
-  "Caixa"
-];
+const LISTA_CARGOS = ["Chef de Cozinha", "Garçom", "Gerente", "Caixa"];
 
-export default function Cadastro() {
+export default function Cadastro({ navigation }) {
   const [user, setUser] = useState({
     nome: "",
     email: "",
@@ -33,26 +28,32 @@ export default function Cadastro() {
 
   const { nome, email, cargo } = user;
 
-  const handleChange = (field, value) => {
-    setUser((prev) => ({ ...prev, [field]: value }));
-  };
+  function handleChange(field, value) {
+    setUser((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
 
-  const validarFormulario = () => {
+  function validarFormulario() {
     if (!nome.trim()) {
-      Alert.alert("Campo obrigatório", "Por favor, informe seu nome completo.");
+      Alert.alert("Campo obrigatório", "Informe seu nome completo.");
       return false;
     }
-    if (!email.trim() || !email.includes("@")) {
-      Alert.alert("E-mail inválido", "Insira um endereço de e-mail válido.");
-      return false;
-    }
-    return true;
-  };
 
-  const handleCadastro = async () => {
+    if (!email.trim() || !email.includes("@")) {
+      Alert.alert("E-mail inválido", "Insira um e-mail válido.");
+      return false;
+    }
+
+    return true;
+  }
+
+  async function handleCadastro() {
     if (!validarFormulario()) return;
 
     setLoading(true);
+
     try {
       const response = await api.postUser({
         nome: nome.trim(),
@@ -60,42 +61,54 @@ export default function Cadastro() {
         cargo,
       });
 
-      Alert.alert("Sucesso!", response.data.message || "Conta criada com sucesso.");
-      
-      // Limpa os campos após o cadastro com sucesso
+      Alert.alert(
+        "Sucesso!",
+        response.data.message || "Conta criada com sucesso.",
+      );
+
       setUser({
         nome: "",
         email: "",
         cargo: LISTA_CARGOS[0],
       });
     } catch (error) {
-      const mensagemErro =
-        error.response?.data?.error || "Não foi possível realizar o cadastro. Tente novamente.";
-      Alert.alert("Ops!", mensagemErro);
+      const mensagem =
+        error.response?.data?.error || "Não foi possível realizar o cadastro.";
+
+      Alert.alert("Ops!", mensagem);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Cabeçalho */}
+  <SafeAreaView style={styles.safeArea}>
+
+    <TouchableOpacity
+      style={styles.backButton}
+      onPress={() => navigation.goBack()}
+    >
+      <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
+    </TouchableOpacity>
+
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+        {/* LOGO */}
         <View style={styles.logoBadge}>
           <Ionicons name="restaurant" size={16} color="#fff" />
+
           <Text style={styles.logoText}>Foodstuff</Text>
         </View>
 
         <Text style={styles.title}>Criar sua conta</Text>
 
-        {/* Card do Formulário */}
+        {/* FORMULÁRIO */}
         <View style={styles.card}>
-          {/* Nome */}
           <Text style={styles.label}>Nome completo</Text>
+
           <View style={styles.inputWrapper}>
             <Ionicons
               name="person-outline"
@@ -103,6 +116,7 @@ export default function Cadastro() {
               color="#9CA3AF"
               style={styles.inputIcon}
             />
+
             <TextInput
               style={styles.input}
               placeholder="Ex: Maria Silva"
@@ -114,8 +128,8 @@ export default function Cadastro() {
             />
           </View>
 
-          {/* Email */}
           <Text style={styles.label}>E-mail</Text>
+
           <View style={styles.inputWrapper}>
             <Ionicons
               name="mail-outline"
@@ -123,6 +137,7 @@ export default function Cadastro() {
               color="#9CA3AF"
               style={styles.inputIcon}
             />
+
             <TextInput
               style={styles.input}
               placeholder="seuemail@foodhub.com"
@@ -135,8 +150,8 @@ export default function Cadastro() {
             />
           </View>
 
-          {/* Dropdown de Cargo */}
           <Text style={styles.label}>Cargo na equipe</Text>
+
           <TouchableOpacity
             style={styles.inputWrapper}
             activeOpacity={0.7}
@@ -148,11 +163,13 @@ export default function Cadastro() {
               color="#9CA3AF"
               style={styles.inputIcon}
             />
+
             <Text style={styles.dropdownValue}>{cargo}</Text>
+
             <Ionicons name="chevron-down" size={18} color="#9CA3AF" />
           </TouchableOpacity>
 
-          {/* Botão de Envio */}
+          {/* BOTÃO */}
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleCadastro}
@@ -168,7 +185,7 @@ export default function Cadastro() {
         </View>
       </ScrollView>
 
-      {/* Modal Dropdown */}
+      {/* MODAL DE CARGOS */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <TouchableOpacity
           style={styles.modalOverlay}
@@ -177,14 +194,16 @@ export default function Cadastro() {
         >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Selecione o seu Cargo</Text>
+
             {LISTA_CARGOS.map((item) => {
-              const isSelected = cargo === item;
+              const selected = cargo === item;
+
               return (
                 <TouchableOpacity
                   key={item}
                   style={[
                     styles.modalItem,
-                    isSelected && styles.modalItemSelected,
+                    selected && styles.modalItemSelected,
                   ]}
                   onPress={() => {
                     handleChange("cargo", item);
@@ -194,12 +213,13 @@ export default function Cadastro() {
                   <Text
                     style={[
                       styles.modalItemText,
-                      isSelected && styles.modalItemTextSelected,
+                      selected && styles.modalItemTextSelected,
                     ]}
                   >
                     {item}
                   </Text>
-                  {isSelected && (
+
+                  {selected && (
                     <Ionicons name="checkmark" size={18} color="#FF5A36" />
                   )}
                 </TouchableOpacity>
@@ -217,12 +237,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F3F4F6",
   },
+  
+
   container: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
+
   logoBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -232,28 +255,28 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 16,
   },
+
   logoText: {
     color: "#fff",
     fontWeight: "bold",
     marginLeft: 6,
   },
+
   title: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#1A1A1A",
     marginBottom: 20,
   },
+
   card: {
     width: "100%",
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+
   label: {
     fontSize: 13,
     fontWeight: "600",
@@ -261,6 +284,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: 12,
   },
+
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -271,39 +295,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 48,
   },
+
   inputIcon: {
     marginRight: 8,
   },
+
   input: {
     flex: 1,
     height: "100%",
     color: "#111827",
     fontSize: 14,
   },
+
   dropdownValue: {
     flex: 1,
     color: "#111827",
     fontSize: 14,
   },
+
   button: {
     backgroundColor: "#FF5A36",
     borderRadius: 10,
     height: 48,
-    justifycontent: "center",
+    justifyContent: "center",
     alignItems: "center",
     marginTop: 24,
   },
+
   buttonDisabled: {
     opacity: 0.7,
   },
+
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 15,
-    margin:11
   },
 
-  /* Modal */
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -311,6 +339,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 24,
   },
+
   modalContent: {
     width: "100%",
     backgroundColor: "#fff",
@@ -318,6 +347,7 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 5,
   },
+
   modalTitle: {
     fontSize: 16,
     fontWeight: "bold",
@@ -325,6 +355,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: "center",
   },
+
   modalItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -333,15 +364,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
   },
+
   modalItemSelected: {
     backgroundColor: "#FFF0ED",
   },
+
   modalItemText: {
     fontSize: 14,
     color: "#374151",
   },
+
   modalItemTextSelected: {
     fontWeight: "bold",
     color: "#FF5A36",
   },
+
+// BOTÃO VOLTAR PARA DASHBOARD
+  backButton: {
+  position: "absolute",
+  top: 40,
+  left: 16,
+  zIndex: 10,
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  backgroundColor: "#fff",
+  alignItems: "center",
+  justifyContent: "center",
+  elevation: 3,
+},
 });
