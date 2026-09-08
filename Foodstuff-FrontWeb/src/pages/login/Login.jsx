@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import "../../style.css";
 import Snackbar from "../../components/snackBar/SnackBar";
@@ -9,47 +10,81 @@ import cadeado from "../../../assets/loginImages/cadeado.png";
 import email_img from "../../../assets/loginImages/email.png";
 import olhinho from "../../../assets/loginImages/olhinho.png";
 import olho_cerrado from "../../../assets/loginImages/olho_cerrado.png";
-import { Link } from "react-router-dom";
+
+import api from "../../axios/axios";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState(null);
 
-  const handleSubmit = (e) => { 
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!email || !password) {
+      setSnackbar({
+        message: "Preencha todos os campos.",
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      const response = await api.postLogin({
+        email,
+        password,
+      });
+
+      localStorage.setItem("token", response.data.token);
+
+      if (response.data.instructor) {
+        localStorage.setItem("user", JSON.stringify(response.data.instructor));
+      }
+
+      setSnackbar({
+        message: response.data.message || "Login realizado com sucesso!",
+        type: "success",
+      });
+
+      setTimeout(() => navigate("/home"), 1000);
+    } catch (error) {
+      setSnackbar({
+        message: error?.response?.data?.message || "Erro ao conectar com o Servidor",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <main className="min-h-dvh w-full bg-gray-100 flex flex-col items-center justify-center px-4 py-6 sm:px-6">
+    <main className="min-h-dvh w-full bg-gray-100 flex flex-col items-center justify-center px-4 py-6">
       {snackbar && (
         <Snackbar
-          isOpen={snackbar.message !== ""}
+          isOpen={true}
           message={snackbar.message}
           type={snackbar.type}
-          onClose={() => setSnackbar({ message: "", type: "" })}
+          onClose={() => setSnackbar(null)}
         />
       )}
-      <div className="mb-5 flex items-center gap-2 rounded-2xl bg-[#ff523b] py-3 text-lg font-bold text-white shadow-sm sm:px-10 sm:text-xl">
-        <img
-          className="h-5 w-5 invert sm:h-6 sm:w-6"
-          src={iconeTalher}
-          alt="Foodstuff"
-        />
 
+      <div className="mb-5 flex items-center gap-2 rounded-2xl bg-[#ff523b] px-6 py-3 text-lg font-bold text-white shadow-sm">
+        <img src={iconeTalher} alt="Foodstuff" className="h-5 w-5 invert" />
         <span>Foodstuff</span>
       </div>
 
       <div className="w-full max-w-md rounded-3xl bg-white p-5 text-center shadow-xl sm:p-8">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
-          <img className="h-6 w-6" src={iconeLogin} alt="Login" />
+          <img src={iconeLogin} alt="Login" className="h-6 w-6" />
         </div>
 
         <h1 className="mb-1 text-2xl font-bold text-gray-900">Login</h1>
 
-        <p className="mb-6 text-xs leading-relaxed text-gray-400">
+        <p className="mb-6 text-xs text-gray-400">
           Entre com suas credenciais para gerenciar a plataforma
         </p>
 
@@ -61,33 +96,17 @@ export default function Login() {
 
             <div className="relative">
               <img
-                className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
                 src={email_img}
                 alt=""
+                className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
               />
 
               <input
                 type="text"
                 placeholder="seunome@empresa.com.br"
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-gray-50/50
-                  py-2.5
-                  pl-10
-                  pr-4
-                  text-sm
-                  outline-none
-                  transition
-                  focus:border-[#ff523b]
-                  focus:ring-2
-                  focus:ring-[#ff523b]/20
-                  placeholder:text-gray-300
-                "
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#ff523b] focus:ring-2 focus:ring-[#ff523b]/20"
               />
             </div>
           </div>
@@ -99,9 +118,9 @@ export default function Login() {
 
             <div className="relative">
               <img
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
                 src={cadeado}
                 alt=""
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
               />
 
               <input
@@ -109,34 +128,13 @@ export default function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-gray-50/50
-                  py-2.5
-                  pl-10
-                  pr-12
-                  text-sm
-                  outline-none
-                  transition
-                  focus:border-[#ff523b]
-                  focus:ring-2
-                  focus:ring-[#ff523b]/20
-                "
+                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2.5 pl-10 pr-12 text-sm outline-none focus:border-[#ff523b] focus:ring-2 focus:ring-[#ff523b]/20"
               />
 
               <button
                 type="button"
                 onClick={() => setMostrarSenha(!mostrarSenha)}
-                className="
-                  absolute
-                  right-3
-                  top-1/2
-                  -translate-y-1/2
-                  cursor-pointer
-                "
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
               >
                 <img
                   src={mostrarSenha ? olhinho : olho_cerrado}
@@ -146,27 +144,17 @@ export default function Login() {
               </button>
             </div>
 
-            <span className="mt-1 block text-[11px] leading-relaxed text-gray-400">
+            <span className="mt-1 block text-[11px] text-gray-400">
               Sua senha deve conter pelo menos 8 caracteres.
             </span>
           </div>
 
           <button
             type="submit"
-            className="
-              mt-2
-              w-full
-              rounded-xl
-              bg-[#ff523b]
-              py-3
-              font-semibold
-              text-white
-              transition-colors
-              hover:bg-[#e0442f]
-              cursor-pointer
-            "
+            disabled={loading}
+            className="mt-2 flex w-full items-center justify-center rounded-xl bg-[#ff523b] py-3 font-semibold text-white hover:bg-[#e0442f] disabled:opacity-70"
           >
-            Entrar
+            {loading ? "Entrando..." : "Entrar"}
           </button>
 
           <div className="pt-2 text-center">
