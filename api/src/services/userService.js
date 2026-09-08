@@ -222,7 +222,7 @@ module.exports = class UserService {
       const token = jwt.sign(
         {
           id: user.user_id,
-          type: user.user_type,
+          role: user.role,
           first_login: user.first_login,
         },
         process.env.SECRET,
