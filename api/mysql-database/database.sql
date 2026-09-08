@@ -268,3 +268,8 @@ CREATE TABLE
         CONSTRAINT pk_audit_logs PRIMARY KEY (log_id),
         CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE SET NULL
     );
+
+-- First insert (just for development):
+-- password: admin
+INSERT INTO users (user_id, name, email, password, role, first_login) values
+("1c869085-e414-4b18-8f8f-1ca8181c1033", "admin_first_user", "admin@admin.com", "$2b$10$YS0iwI4iNnnmwyVy8WatdOEgOPWWohkEFixRvKfEKXYlE7OPLmgP.", "MANAGER", 0);
