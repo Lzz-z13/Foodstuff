@@ -18,6 +18,7 @@ const LISTA_CARGOS = [
   "Chef de Cozinha",
   "Garçom",
   "Gerente",
+  "Caixa"
 ];
 
 export default function Cadastro() {
