@@ -35,7 +35,7 @@ export default function RecupSenha() {
         </h1>
 
         <p className="mb-6 text-xs leading-relaxed text-gray-400">
-          Recupere sua senha
+          Recupere a sua senha para poder entrar
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
@@ -53,7 +53,7 @@ export default function RecupSenha() {
 
               <input
                 type="txt"
-                placeholder="seunome@empresa.com.br"
+                placeholder="adm@foodstuff.com"
                 value={email}
                 onChange={(e)=> setEmail(e.target.value)}
                 className="
@@ -97,7 +97,7 @@ export default function RecupSenha() {
 
           <div className="pt-2 text-center">
             <span className="text-sm">
-              Lembrou da senha??
+              Lembrou a senha?
               <Link
                 to="/"
                 className="text-sm font-bold text-[#ff523b] hover:underline ml-1"

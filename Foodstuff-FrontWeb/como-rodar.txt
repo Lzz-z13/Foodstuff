@@ -1,0 +1,15 @@
+FOODSTUFF - CADASTRO DE FUNCIONÁRIO
+
+Esta versão altera somente a tela de cadastro de funcionário.
+A tela de login continua em /.
+
+Para abrir diretamente o cadastro:
+http://localhost:5173/cadastro
+
+Instalação:
+1. Abra a pasta no VS Code.
+2. Abra o terminal nessa pasta.
+3. Execute: npm install
+4. Execute: npm run dev
+
+O botão Cadastrar funcionário valida os campos e salva os funcionários no localStorage do navegador.
