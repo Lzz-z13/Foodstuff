@@ -50,7 +50,7 @@ export default function Login() {
         <h1 className="mb-1 text-2xl font-bold text-gray-900">Login</h1>
 
         <p className="mb-6 text-xs leading-relaxed text-gray-400">
-          Entre com suas credenciais para gerenciar a plataforma
+          Cadastre novos funcionários para te ajudar
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
@@ -68,7 +68,7 @@ export default function Login() {
 
               <input
                 type="text"
-                placeholder="seunome@empresa.com.br"
+                placeholder="adm@foodstuff"
                 className="
                   w-full
                   rounded-xl
