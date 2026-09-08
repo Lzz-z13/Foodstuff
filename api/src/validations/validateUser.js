@@ -4,7 +4,6 @@ const {
 } = require("../utils/validators/emailValidator");
 
 const {
-  normalizePhone,
   isValidPhone,
 } = require("../utils/validators/phoneValidator");
 
@@ -41,15 +40,11 @@ module.exports = function validateUser({ name, email, phone, role }, update) {
     }
   }
 
-  if (phone) {
-    const normalizedPhone = normalizePhone(phone);
-
-    if (!isValidPhone(normalizedPhone)) {
-      throw {
-        status: 400,
-        message: "Telefone inválido.",
-      };
-    }
+  if (phone && !isValidPhone(phone)) {
+    throw {
+      status: 400,
+      message: "Telefone inválido.",
+    };
   }
 
   const validRoles = ["MANAGER", "WAITER", "KITCHEN", "CASHIER"];
