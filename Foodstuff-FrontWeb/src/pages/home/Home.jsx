@@ -6,7 +6,7 @@ export default function Home() {
 
   return (
     <>
-      <SideBar />
+      <SideBar userName={user.name} userEmail={user.email}/>
       <main className="min-h-screen bg-[#f8fafc]">
         {/* Conteúdo */}
         <div className="min-w-0 md:ml-[163px]">

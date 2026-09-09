@@ -10,7 +10,7 @@ import {
   ForkKnife,
 } from "lucide-react";
 
-export default function SideBar() {
+export default function SideBar({userName, userEmail}) {
   return (
     <aside
       className="
@@ -179,11 +179,11 @@ export default function SideBar() {
 
           <div className="min-w-0">
             <p className="truncate text-[10px] font-semibold text-gray-800">
-              Luiz Felipe
+              {userName}
             </p>
 
             <p className="truncate text-[8px] text-gray-400">
-              luizfelipe@foodstuff.adm...
+              {userEmail}
             </p>
           </div>
         </div>
