@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
-import api from "../axios/axios";
+import api from "../services/api";
 
 const COLORS = {
   background: "#F5F6F8",
@@ -26,7 +26,7 @@ const COLORS = {
 };
 
 export default function Login({ navigation }) {
-  const [user, setUser] = useState({ email: "", senhaPin: "" });
+  const [user, setUser] = useState({ email: "", password : "" });
   const [loading, setLoading] = useState(false);
   const [showPin, setShowPin] = useState(false);
 
@@ -34,21 +34,27 @@ export default function Login({ navigation }) {
     setUser((prev) => ({ ...prev, [name]: value }));
   };
 
-  const login = async () => {
-    if (!user.email || !user.senhaPin) {
-      Alert.alert("Atenção", "Preencha o email institucional e a senha PIN.");
+  const handleSubmit = async () => {
+    if (!user.email || !user.password ) {
+      Alert.alert("Atenção", "Preencha o email institucional e a senha.");
       return;
     }
 
     setLoading(true);
     try {
       const response = await api.postLogin(user);
-      await SecureStore.setItemAsync("token", response.data.token);
-      await SecureStore.setItemAsync("nome", response.data.user.nome);
-      navigation.navigate("Home");
+      await SecureStore.setItemAsync("token", response.data.data.token);
+
+      if (response.data.data.user) {
+        await SecureStore.setItemAsync(
+          "user",
+          JSON.stringify(response.data.data.user),
+        );
+      }
+      navigation.navigate("Dashboard");
     } catch (error) {
       const errorMsg =
-        error.response?.data?.error || "Erro ao conectar ao servidor";
+        error?.response?.data?.message || "Erro ao conectar ao servidor";
       Alert.alert("Erro", errorMsg);
     } finally {
       setLoading(false);
@@ -110,10 +116,9 @@ export default function Login({ navigation }) {
               style={styles.input}
               placeholder="Sua senha de 6 dígitos"
               placeholderTextColor={COLORS.gray}
-              value={user.senhaPin}
-              onChangeText={(value) => onChange("senhaPin", value)}
-              keyboardType="numeric"
-              maxLength={6}
+              value={user.password}
+              onChangeText={(value) => onChange("password", value)}
+              keyboardType="text"
               secureTextEntry={!showPin}
             />
             <TouchableOpacity onPress={() => setShowPin(!showPin)}>
@@ -125,16 +130,9 @@ export default function Login({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => navigation.navigate("EsqueciSenha")}
-          >
-            <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
-          </TouchableOpacity> */}
-
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={login}
+            onPress={handleSubmit}
             disabled={loading}
             activeOpacity={0.8}
           >

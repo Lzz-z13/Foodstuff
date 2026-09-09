@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,8 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
 
 const COLORS = {
   primary: "#FF6B2C",
@@ -39,11 +37,38 @@ const ROUTES = {
   Users: "Cadastro",
 };
 
-export default function Dashboard({ navigation, route }) {
+export default function Dashboard({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState("Dashboard");
 
-  const userName = route?.params?.userName || "Luiz";
+  const [activeTab, setActiveTab] = useState("Dashboard");
+  const [user, setUser] = useState(null);
+  const [menuAberto, setMenuAberto] = useState(false);
+
+  useEffect(() => {
+    async function carregarUsuario() {
+      try {
+        const dados = await SecureStore.getItemAsync("user");
+
+        if (dados) {
+          setUser(JSON.parse(dados));
+        }
+      } catch (error) {
+        console.log("Erro ao carregar usuário:", error);
+      }
+    }
+
+    carregarUsuario();
+  }, []);
+
+  const userName = user?.name || "Usuário";
+
+  async function handleLogout() {
+    await SecureStore.deleteItemAsync("token");
+    await SecureStore.deleteItemAsync("user");
+
+    setMenuAberto(false);
+    navigation.replace("Login");
+  }
 
   function handleTabPress(tab) {
     setActiveTab(tab);
@@ -55,30 +80,15 @@ export default function Dashboard({ navigation, route }) {
 
   function renderIcon(icon, lib, color) {
     if (lib === "mci") {
-      return (
-        <MaterialCommunityIcons
-          name={icon}
-          size={22}
-          color={color}
-        />
-      );
+      return <MaterialCommunityIcons name={icon} size={22} color={color} />;
     }
 
-    return (
-      <Ionicons
-        name={icon}
-        size={22}
-        color={color}
-      />
-    );
+    return <Ionicons name={icon} size={22} color={color} />;
   }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={COLORS.card}
-      />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
 
       {/* HEADER */}
       <View style={styles.header}>
@@ -89,12 +99,33 @@ export default function Dashboard({ navigation, route }) {
             color={COLORS.primary}
           />
 
-          <Text style={styles.headerTitle}>
-            Foodstuff
-          </Text>
+          <Text style={styles.headerTitle}>Foodstuff</Text>
         </View>
 
-        <View style={styles.avatar} />
+        <View style={styles.profileContainer}>
+          <TouchableOpacity
+            style={styles.avatar}
+            activeOpacity={0.7}
+            onPress={() => setMenuAberto(!menuAberto)}
+          >
+            <Ionicons name="person-outline" size={18} color={COLORS.textDark} />
+          </TouchableOpacity>
+
+          {menuAberto && (
+            <View style={styles.dropdown}>
+
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="log-out-outline" size={17} color="#EF4444" />
+
+                <Text style={styles.dropdownLogout}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* CONTEÚDO */}
@@ -105,13 +136,9 @@ export default function Dashboard({ navigation, route }) {
       >
         <View style={styles.greetingRow}>
           <View>
-            <Text style={styles.greetingTitle}>
-              Bom dia, {userName}
-            </Text>
+            <Text style={styles.greetingTitle}>Bom dia, {userName}</Text>
 
-            <Text style={styles.greetingSubtitle}>
-              Desempenho hoje.
-            </Text>
+            <Text style={styles.greetingSubtitle}>Desempenho hoje.</Text>
           </View>
 
           <TouchableOpacity style={styles.calendarButton}>
@@ -136,10 +163,7 @@ export default function Dashboard({ navigation, route }) {
       >
         {TABS.map(([key, icon, lib]) => {
           const active = activeTab === key;
-
-          const color = active
-            ? COLORS.primary
-            : COLORS.textGray;
+          const color = active ? COLORS.primary : COLORS.textGray;
 
           return (
             <TouchableOpacity
@@ -148,18 +172,9 @@ export default function Dashboard({ navigation, route }) {
               activeOpacity={0.7}
               onPress={() => handleTabPress(key)}
             >
-              <View style={styles.icon}>
-                {renderIcon(icon, lib, color)}
-              </View>
+              <View style={styles.icon}>{renderIcon(icon, lib, color)}</View>
 
-              <Text
-                style={[
-                  styles.tabLabel,
-                  { color },
-                ]}
-              >
-                {key}
-              </Text>
+              <Text style={[styles.tabLabel, { color }]}>{key}</Text>
             </TouchableOpacity>
           );
         })}
@@ -197,11 +212,59 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 
+  profileContainer: {
+    position: "relative",
+  },
+
   avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: "#D9D9D9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  dropdown: {
+    position: "absolute",
+    top: 40,
+    right: 0,
+    width: 170,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    padding: 8,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    zIndex: 100,
+  },
+
+  dropdownName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.textDark,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+
+  dropdownLogout: {
+    fontSize: 13,
+    color: "#EF4444",
+    fontWeight: "600",
   },
 
   content: {
