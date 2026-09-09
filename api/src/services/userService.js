@@ -8,6 +8,8 @@ const {
   templateEmail,
 } = require("../services/mailService");
 
+const validatePassword = require("../validations/validatePassword");
+
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
@@ -311,7 +313,7 @@ module.exports = class UserService {
         throw { status: 400, message: "Senha incorreta." };
       }
 
-      // validatePassword(new_password);
+      validatePassword(new_password);
       const hashed_password = await bcrypt.hash(new_password, SALT_ROUNDS);
 
       const query = `
