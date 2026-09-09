@@ -206,6 +206,78 @@ module.exports = class UserService {
     }
   }
 
+  static async updateUserCredentials(name, email, phone, jwt_user_id) {
+    const updates = [];
+    const values = [];
+
+    if (name) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (email) {
+      updates.push("email = ?");
+      values.push(email);
+    }
+    if (phone) {
+      updates.push("phone = ?");
+      values.push(phone);
+    }
+
+    values.push(jwt_user_id);
+    const query = `
+      UPDATE users
+      SET ${updates.join(", ")}
+      WHERE user_id = ?
+        AND is_active = 1
+    `;
+
+    const userQuery = `
+      SELECT name
+      FROM users
+      WHERE user_id = ?
+        AND is_active = 1
+      LIMIT 1
+    `;
+
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [userResult] = await connection.execute(userQuery, [jwt_user_id]);
+
+      if (userResult.length === 0) {
+        throw { status: 404, message: "Usuário não encontrado." };
+      }
+
+      const old_name = userResult[0].name;
+
+      await connection.execute(query, values);
+
+      const final_name = name || old_name;
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "users",
+        jwt_user_id,
+        `Usuário ${final_name} atualizou suas próprias credenciais.`,
+      );
+
+      await connection.commit();
+      return;
+    } catch (error) {
+      console.error(error);
+      await connection.rollback();
+      if (error.status) throw error;
+      if (error.code === "ER_DUP_ENTRY") {
+        throw { status: 409, message: "Telefone ou email já registrado." };
+      }
+      throw { status: 500, message: "Erro interno do servidor." };
+    } finally {
+      connection.release();
+    }
+  }
+
   static async loginUser(email, password) {
     const query = `
       SELECT

@@ -6,7 +6,15 @@ const verifyRole = require("../middlewares/verifyRole");
 const UserController = require("../controllers/userController");
 
 // Logged user
-// Change password route here
+router.patch(
+  "/me",
+  UserController.updateUserCredentials
+);
+
+// router.patch(
+//   "/me/password",
+//   UserController.updateUserPassword
+// );
 
 // router.use(verifyFirstLogin);
 

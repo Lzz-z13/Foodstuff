@@ -51,6 +51,34 @@ module.exports = class UserController {
     }
   }
 
+  static async updateUserCredentials(req, res, next) {
+    const jwt_user_id = req.user.id;
+    if (req.body.email) {
+      req.body.email = normalizeEmail(req.body.email);
+    }
+    if (req.body.phone) {
+      req.body.phone = normalizePhone(req.body.phone);
+    }
+    const { name, email, phone } = req.body;
+
+    try {
+      validateUser(req.body, true);
+
+      await UserService.updateUserCredentials(
+        name,
+        email,
+        phone,
+        jwt_user_id
+      );
+      return res.status(200).json({
+        error: false,
+        message: "Usuário atualizado com sucesso.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async loginUser(req, res, next) {
     req.body.email = normalizeEmail(req.body.email || "");
 
