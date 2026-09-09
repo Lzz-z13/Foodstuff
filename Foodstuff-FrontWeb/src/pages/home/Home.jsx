@@ -2,13 +2,15 @@ import Header from "../../components/header/Header";
 import SideBar from "../../components/sideBar/SideBar";
 
 export default function Home() {
+  const user = JSON.parse(localStorage.getItem("user"));
+
   return (
     <>
       <SideBar />
       <main className="min-h-screen bg-[#f8fafc]">
         {/* Conteúdo */}
         <div className="min-w-0 md:ml-[163px]">
-          <Header />
+          <Header userName={user?.name} />
 
           <div className="px-4 py-6 sm:px-5 lg:px-8">
             {/* CARDS */}

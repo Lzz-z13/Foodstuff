@@ -9,23 +9,23 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      console.error("Erro ao acessar o localStorage:", error);
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = token;
     }
+
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
 const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
+  postUser: (user) => api.post("/users", user),
 };
 
 export default sheets;

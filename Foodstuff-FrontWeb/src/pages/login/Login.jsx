@@ -39,10 +39,10 @@ export default function Login() {
         password,
       });
 
-      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("token", response.data.data.token);
 
-      if (response.data.instructor) {
-        localStorage.setItem("user", JSON.stringify(response.data.instructor));
+      if (response.data.data.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.data.user));
       }
 
       setSnackbar({
@@ -53,7 +53,8 @@ export default function Login() {
       setTimeout(() => navigate("/home"), 1000);
     } catch (error) {
       setSnackbar({
-        message: error?.response?.data?.message || "Erro ao conectar com o Servidor",
+        message:
+          error?.response?.data?.message || "Erro ao conectar com o Servidor",
         type: "error",
       });
     } finally {
