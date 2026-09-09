@@ -8,6 +8,8 @@ const {
   templateEmail,
 } = require("../services/mailService");
 
+const validatePassword = require("../validations/validatePassword");
+
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
@@ -203,6 +205,148 @@ module.exports = class UserService {
         status: 500,
         message: "Erro interno do servidor.",
       };
+    }
+  }
+
+  static async updateUserCredentials(name, email, phone, jwt_user_id) {
+    const updates = [];
+    const values = [];
+
+    if (name) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (email) {
+      updates.push("email = ?");
+      values.push(email);
+    }
+    if (phone) {
+      updates.push("phone = ?");
+      values.push(phone);
+    }
+
+    values.push(jwt_user_id);
+    const query = `
+      UPDATE users
+      SET ${updates.join(", ")}
+      WHERE user_id = ?
+        AND is_active = 1
+    `;
+
+    const userQuery = `
+      SELECT name
+      FROM users
+      WHERE user_id = ?
+        AND is_active = 1
+      LIMIT 1
+    `;
+
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [userResult] = await connection.execute(userQuery, [jwt_user_id]);
+
+      if (userResult.length === 0) {
+        throw { status: 404, message: "Usuário não encontrado." };
+      }
+
+      const old_name = userResult[0].name;
+
+      await connection.execute(query, values);
+
+      const final_name = name || old_name;
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "users",
+        jwt_user_id,
+        `Usuário ${final_name} atualizou suas próprias credenciais.`,
+      );
+
+      await connection.commit();
+      return;
+    } catch (error) {
+      console.error(error);
+      await connection.rollback();
+      if (error.status) throw error;
+      if (error.code === "ER_DUP_ENTRY") {
+        throw { status: 409, message: "Telefone ou email já registrado." };
+      }
+      throw { status: 500, message: "Erro interno do servidor." };
+    } finally {
+      connection.release();
+    }
+  }
+
+
+  static async updateUserPassword(jwt_user_id, current_password, new_password) {
+    
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const validateQuery = `
+        SELECT
+          name,
+          password,
+          role
+        FROM users
+        WHERE user_id = ?
+          AND is_active = 1
+        LIMIT 1
+      `;
+
+      const [result] = await connection.execute(validateQuery, [jwt_user_id]);
+
+      if (result.length === 0) {
+        throw { status: 404, message: "Usuário não encontrado." };
+      }
+
+      const old_password = result[0].password;
+      const name = result[0].name;
+      const role = result[0].role;
+
+      const correct_password = await bcrypt.compare(current_password, old_password);
+      if (!correct_password) {
+        throw { status: 400, message: "Senha incorreta." };
+      }
+
+      validatePassword(new_password);
+      const hashed_password = await bcrypt.hash(new_password, SALT_ROUNDS);
+
+      const query = `
+        UPDATE users
+        SET password = ?, first_login = 0
+        WHERE user_id = ?
+          AND is_active = 1
+      `;
+      await connection.execute(query, [hashed_password, jwt_user_id]);
+
+      await createLog(connection, jwt_user_id, "UPDATE", "users", jwt_user_id, `Usuário ${name} trocou sua senha.`);
+
+      await connection.commit();
+
+      const token = jwt.sign(
+        {
+          id: jwt_user_id,
+          role: role,
+          first_login: 0,
+        },
+        process.env.SECRET,
+        {
+          expiresIn: "1h",
+        }
+      );
+
+      return { token };
+    } catch (error) {
+      await connection.rollback();
+      if (error.status) throw error;
+      throw { status: 500, message: "Erro interno do servidor." };
+    } finally {
+      connection.release();
     }
   }
 
