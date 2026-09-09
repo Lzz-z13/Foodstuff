@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://forked-nontransient-natisha.ngrok-free.dev/api/foodstuff",
+  "baseURL": "http://[IP]:5000/api/foodstuff",
   headers: {
     accept: "application/json",
   },
