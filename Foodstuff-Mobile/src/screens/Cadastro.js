@@ -14,19 +14,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../services/api";
 
-const LISTA_CARGOS = ["KITCHEN", "WAITER", "MANAGER", "CASHIER"];
+const LISTA_CARGOS = ["KITCHEN", 
+  "WAITER", 
+  "CASHIER",
+  "MANAGER" 
+];
 
 export default function Cadastro({ navigation }) {
   const [user, setUser] = useState({
     nome: "",
     email: "",
+    phone: "",
     role: LISTA_CARGOS[0],
   });
 
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { nome, email, role } = user;
+  const { nome, email, phone, role } = user;
 
   function handleChange(field, value) {
     setUser((prev) => ({
@@ -45,6 +50,10 @@ export default function Cadastro({ navigation }) {
       Alert.alert("E-mail inválido", "Insira um e-mail válido.");
       return false;
     }
+    if (!phone.trim()) {
+      Alert.alert("Campo obrigatório", "Informe seu telefone.");
+      return false;
+    }
 
     return true;
   }
@@ -58,6 +67,7 @@ export default function Cadastro({ navigation }) {
       const response = await api.postUser({
         name: nome,
         email: email,
+        phone: phone,
         role: role,
       });
 
@@ -69,6 +79,7 @@ export default function Cadastro({ navigation }) {
       setUser({
         nome: "",
         email: "",
+        phone: "",
         role: LISTA_CARGOS[0],
       });
     } catch (error) {
@@ -148,6 +159,29 @@ export default function Cadastro({ navigation }) {
               autoCorrect={false}
               value={email}
               onChangeText={(value) => handleChange("email", value)}
+            />
+          </View>
+
+          <Text style={styles.label}>Telefone</Text>
+
+          <View style={styles.inputWrapper}>
+            <Ionicons
+              name="call-outline"
+              size={18}
+              color="#9CA3AF"
+              style={styles.inputIcon}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="(11) 99999-9999"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="phone-pad"
+              value={phone}
+              onChangeText={(value) => {
+                const numbers = value.replace(/\D/g, "").slice(0, 11);
+                handleChange("phone", numbers);
+              }}
             />
           </View>
 
