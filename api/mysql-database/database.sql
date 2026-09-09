@@ -11,13 +11,15 @@ CREATE TABLE
         user_id CHAR(36) NOT NULL,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(150) NOT NULL,
+        phone CHAR(11) NOT NULL,
         password VARCHAR(255) NOT NULL,
         role ENUM ('MANAGER', 'WAITER', 'KITCHEN', 'CASHIER') NOT NULL,
         first_login TINYINT NOT NULL DEFAULT TRUE,
         is_active TINYINT NOT NULL DEFAULT TRUE,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT pk_users PRIMARY KEY (user_id),
-        CONSTRAINT uk_users_email UNIQUE (email)
+        CONSTRAINT uk_users_email UNIQUE (email),
+        CONSTRAINT uk_users_phone UNIQUE (phone)
     );
 
 -- 2. TABLES
@@ -271,5 +273,5 @@ CREATE TABLE
 
 -- First insert (just for development):
 -- password: admin
-INSERT INTO users (user_id, name, email, password, role, first_login) values
-("1c869085-e414-4b18-8f8f-1ca8181c1033", "admin_first_user", "admin@admin.com", "$2b$10$YS0iwI4iNnnmwyVy8WatdOEgOPWWohkEFixRvKfEKXYlE7OPLmgP.", "MANAGER", 0);
+INSERT INTO users (user_id, name, email, phone, password, role, first_login) values
+("1c869085-e414-4b18-8f8f-1ca8181c1033", "admin_first_user", "admin@admin.com", "11999551188", "$2b$10$YS0iwI4iNnnmwyVy8WatdOEgOPWWohkEFixRvKfEKXYlE7OPLmgP.", "MANAGER", 0);

@@ -3,16 +3,20 @@ const {
   hasAllowedDomain,
 } = require("../utils/validators/emailValidator");
 
-module.exports = function validateUser({ name, email, role }, update) {
+const {
+  isValidPhone,
+} = require("../utils/validators/phoneValidator");
+
+module.exports = function validateUser({ name, email, phone, role }, update) {
   if (update) {
-    if (!name && !email && !role) {
+    if (!name && !email && !phone && !role) {
       throw {
         status: 400,
         message: "Nenhum campo fornecido para atualizar.",
       };
     }
   } else {
-    if (!name || !email || !role) {
+    if (!name || !email || !phone || !role) {
       throw {
         status: 400,
         message: "Todos os campos devem ser preenchidos.",
@@ -36,12 +40,19 @@ module.exports = function validateUser({ name, email, role }, update) {
     }
   }
 
+  if (phone && !isValidPhone(phone)) {
+    throw {
+      status: 400,
+      message: "Telefone inválido.",
+    };
+  }
+
   const validRoles = ["MANAGER", "WAITER", "KITCHEN", "CASHIER"];
+
   if (role && !validRoles.includes(role)) {
     throw {
       status: 400,
       message: "Cargo de usuário inválido.",
     };
   }
-
 };

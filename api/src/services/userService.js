@@ -10,10 +10,11 @@ const {
 
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+
 const SALT_ROUNDS = 10;
 
 module.exports = class UserService {
-  static async createUser(name, email, role, jwt_user_id) {
+  static async createUser(name, email, role, phone, jwt_user_id) {
     const user_password = passGenerator(8);
     const hashed_password = await bcrypt.hash(user_password, SALT_ROUNDS);
 
@@ -22,47 +23,51 @@ module.exports = class UserService {
     try {
       await connection.beginTransaction();
 
-      // Checks if there is an active user with this email
+      // Verifica se existe usuário ativo com o email ou telefone
       const checkActiveQuery = `
         SELECT user_id
         FROM users
-        WHERE email = ?
+        WHERE (email = ? OR phone = ?)
           AND is_active = 1
         LIMIT 1
       `;
 
       const [activeConflict] = await connection.execute(checkActiveQuery, [
         email,
+        phone,
       ]);
 
       if (activeConflict.length > 0) {
         throw {
           status: 409,
-          message: "Email já cadastrado.",
+          message: "Email ou telefone já cadastrado.",
         };
       }
 
-      // Checks if there is an inactive user with this email
+      // Verifica se existe usuário inativo com o email ou telefone
       const verifyInactiveQuery = `
         SELECT user_id
         FROM users
-        WHERE email = ?
+        WHERE (email = ? OR phone = ?)
           AND is_active = 0
         LIMIT 1
       `;
 
       const [inactiveUser] = await connection.execute(verifyInactiveQuery, [
         email,
+        phone,
       ]);
 
       if (inactiveUser.length > 0) {
-        // Reactivate existing user
+        // Reativa usuário existente
         const existingId = inactiveUser[0].user_id;
 
         const reactivateQuery = `
           UPDATE users
           SET
             name = ?,
+            email = ?,
+            phone = ?,
             password = ?,
             role = ?,
             first_login = 1,
@@ -72,6 +77,8 @@ module.exports = class UserService {
 
         await connection.execute(reactivateQuery, [
           name,
+          email,
+          phone,
           hashed_password,
           role,
           existingId,
@@ -86,7 +93,7 @@ module.exports = class UserService {
           `Usuário ${name} reativado.`,
         );
       } else {
-        // Create new user
+        // Cria novo usuário
         const user_id = crypto.randomUUID();
 
         const createQuery = `
@@ -95,29 +102,32 @@ module.exports = class UserService {
             user_id,
             name,
             email,
+            phone,
             password,
             role
           )
-          VALUES (?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?)
         `;
 
         await connection.execute(createQuery, [
           user_id,
           name,
           email,
+          phone,
           hashed_password,
           role,
         ]);
 
         await createLog(
           connection,
-          jwt_user_id, // who made the action
-          "INSERT", // action
-          "users", // entity
-          user_id, // affected ID (target ID)
+          jwt_user_id,
+          "INSERT",
+          "users",
+          user_id,
           `Usuário ${name} criado.`,
         );
       }
+
       await connection.commit();
     } catch (error) {
       await connection.rollback();
@@ -129,7 +139,7 @@ module.exports = class UserService {
       if (error.code === "ER_DUP_ENTRY") {
         throw {
           status: 409,
-          message: "Email já cadastrado.",
+          message: "Email ou telefone já cadastrado.",
         };
       }
 
@@ -143,8 +153,7 @@ module.exports = class UserService {
       connection.release();
     }
 
-    // Send the credentials just after then databases
-    // Confirmed the creation/reactivation
+    // Envia as credenciais somente após confirmação do banco
     try {
       await sendEmail(
         email,
@@ -172,6 +181,7 @@ module.exports = class UserService {
         user_id,
         name,
         email,
+        phone,
         role,
         first_login,
         is_active,
@@ -198,25 +208,39 @@ module.exports = class UserService {
 
   static async loginUser(email, password) {
     const query = `
-      SELECT user_id, name, email, password, role, first_login
+      SELECT
+        user_id,
+        name,
+        email,
+        phone,
+        password,
+        role,
+        first_login
       FROM users
-      WHERE email = ? AND is_active = 1
+      WHERE email = ?
+        AND is_active = 1
       LIMIT 1
     `;
 
     try {
       const [result] = await connect.execute(query, [email]);
+
       if (result.length === 0) {
-        throw { status: 401, message: "Email ou senha inválido." };
+        throw {
+          status: 401,
+          message: "Email ou senha inválido.",
+        };
       }
+
       const user = result[0];
-      const correct_password = await bcrypt.compare(
-        password,
-        user.password,
-      );
+
+      const correct_password = await bcrypt.compare(password, user.password);
 
       if (!correct_password) {
-        throw { status: 401, message: "Email ou senha inválido." };
+        throw {
+          status: 401,
+          message: "Email ou senha inválido.",
+        };
       }
 
       const token = jwt.sign(
@@ -233,10 +257,21 @@ module.exports = class UserService {
 
       delete user.password;
 
-      return { user, token };
+      return {
+        user,
+        token,
+      };
     } catch (error) {
-      if (error.status) throw error;
-      throw { status: 500, message: "Erro interno do servidor." };
+      if (error.status) {
+        throw error;
+      }
+
+      console.error(error);
+
+      throw {
+        status: 500,
+        message: "Erro interno do servidor.",
+      };
     }
   }
 };
