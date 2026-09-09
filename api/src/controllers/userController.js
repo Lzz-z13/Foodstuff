@@ -79,6 +79,29 @@ module.exports = class UserController {
     }
   }
 
+  static async updateUserPassword(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { current_password, new_password } = req.body;
+
+    try {
+      if (!current_password || !new_password) {
+        throw {
+          status: 400,
+          message: "Todos os campos devem ser preenchidos.",
+        };
+      }
+
+      const result = await UserService.updateUserPassword(jwt_user_id, current_password, new_password);
+      return res.status(200).json({
+        error: false,
+        message: "Senha atualizada com sucesso.",
+        token: result.token,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async loginUser(req, res, next) {
     req.body.email = normalizeEmail(req.body.email || "");
 

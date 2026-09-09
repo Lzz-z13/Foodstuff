@@ -11,10 +11,10 @@ router.patch(
   UserController.updateUserCredentials
 );
 
-// router.patch(
-//   "/me/password",
-//   UserController.updateUserPassword
-// );
+router.patch(
+  "/me/password",
+  UserController.updateUserPassword
+);
 
 // router.use(verifyFirstLogin);
 
