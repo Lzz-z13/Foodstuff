@@ -280,9 +280,7 @@ module.exports = class UserService {
     }
   }
 
-
   static async updateUserPassword(jwt_user_id, current_password, new_password) {
-    
     const connection = await connect.getConnection();
     try {
       await connection.beginTransaction();
@@ -308,7 +306,10 @@ module.exports = class UserService {
       const name = result[0].name;
       const role = result[0].role;
 
-      const correct_password = await bcrypt.compare(current_password, old_password);
+      const correct_password = await bcrypt.compare(
+        current_password,
+        old_password,
+      );
       if (!correct_password) {
         throw { status: 400, message: "Senha incorreta." };
       }
@@ -324,7 +325,14 @@ module.exports = class UserService {
       `;
       await connection.execute(query, [hashed_password, jwt_user_id]);
 
-      await createLog(connection, jwt_user_id, "UPDATE", "users", jwt_user_id, `Usuário ${name} trocou sua senha.`);
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "users",
+        jwt_user_id,
+        `Usuário ${name} trocou sua senha.`,
+      );
 
       await connection.commit();
 
@@ -337,7 +345,7 @@ module.exports = class UserService {
         process.env.SECRET,
         {
           expiresIn: "1h",
-        }
+        },
       );
 
       return { token };
@@ -416,6 +424,115 @@ module.exports = class UserService {
         status: 500,
         message: "Erro interno do servidor.",
       };
+    }
+  }
+
+  static async deleteOwnUserAccount(jwt_user_id) {
+    const userQuery = `SELECT name FROM users WHERE user_id = ? AND is_active = 1 LIMIT 1`;
+    const deleteQuery = `UPDATE users SET is_active = 0 WHERE user_id = ? AND is_active = 1`;
+
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [userResult] = await connection.execute(userQuery, [jwt_user_id]);
+      if (userResult.length === 0) {
+        throw { status: 404, message: "Usuário não encontrado." };
+      }
+      const name = userResult[0].name;
+
+      await connection.execute(deleteQuery, [jwt_user_id]);
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "DELETE",
+        "users",
+        jwt_user_id,
+        `Usuário ${name} desativou sua própria conta.`,
+      );
+
+      await connection.commit();
+      return;
+    } catch (error) {
+      await connection.rollback();
+      if (error.status) throw error;
+      throw { status: 500, message: "Erro interno do servidor." };
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async deleteUserById(user_id, jwt_user_id) {
+    if (user_id === jwt_user_id) {
+      throw {
+        status: 400,
+        message: "Para desativar sua própria conta, utilize a rota /me.",
+      };
+    }
+
+    const userQuery = `
+      SELECT user_id, name
+      FROM users
+      WHERE user_id IN (?, ?)
+        AND is_active = 1
+    `;
+    const deleteQuery = `
+      UPDATE users
+      SET is_active = 0
+      WHERE user_id = ?
+        AND is_active = 1
+    `;
+
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [users] = await connection.execute(userQuery, [user_id, jwt_user_id]);
+
+      // Manipulate the array to separate each users, because this query returns two users ("WHERE user_id IN (?, ?)")
+      const targetUser = users.find((user) => user.user_id === user_id);
+      const responsibleUser = users.find(
+        (user) => user.user_id === jwt_user_id,
+      );
+
+      if (!targetUser) {
+        throw {
+          status: 404,
+          message: "Usuário não encontrado.",
+        };
+      }
+
+      if (!responsibleUser) {
+        throw {
+          status: 404,
+          message: "Usuário responsável não encontrado.",
+        };
+      }
+
+      const target_name = targetUser.name;
+      const user_name = responsibleUser.name;
+
+      await connection.execute(deleteQuery, [user_id]);
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "DELETE",
+        "users",
+        user_id,
+        `Usuário ${user_name} desativou a conta de ${target_name}.`,
+      );
+
+      await connection.commit();
+      return;
+    } catch (error) {
+      await connection.rollback();
+      if (error.status) throw error;
+      console.log(error);
+      throw { status: 500, message: "Erro interno do servidor." };
+    } finally {
+      connection.release();
     }
   }
 };

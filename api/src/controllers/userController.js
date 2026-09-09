@@ -136,4 +136,31 @@ module.exports = class UserController {
       next(error);
     }
   }
+
+  static async deleteOwnUserAccount(req, res, next) {
+    const jwt_user_id = req.user.id;
+    try {
+      await UserService.deleteOwnUserAccount(jwt_user_id);
+      return res.status(200).json({
+        error: false,
+        message: "Conta desativada com sucesso.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteUserById(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { user_id } = req.params;
+    try {
+      await UserService.deleteUserById(user_id, jwt_user_id);
+      return res.status(200).json({
+        error: false,
+        message: "Usuário desativado com sucesso.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 };

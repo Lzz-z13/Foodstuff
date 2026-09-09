@@ -11,6 +11,11 @@ router.patch(
   UserController.updateUserPassword
 );
 
+router.delete(
+  "/me",
+  UserController.deleteOwnUserAccount
+);
+
 router.use(verifyFirstLogin);
 
 router.patch(
@@ -36,10 +41,10 @@ router.get(
 //   UserController.updateUser
 // );
 
-// router.delete(
-//   "/:user_id",
-//   UserController.deleteUser
-// );
+router.delete(
+  "/:user_id",
+  UserController.deleteUserById
+);
 
 // router.patch(
 //   "/:user_id/reset-password",
