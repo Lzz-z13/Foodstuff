@@ -90,9 +90,12 @@ export default function CadastroFuncionario() {
     }
   };
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
   return (
     <>
-      <SideBar />
+      <SideBar userName={user.name} userEmail={user.email}/>
+      
       <div className="md:ml-[163px]">
         {snackbar && (
           <Snackbar

@@ -8,9 +8,13 @@ import {
   Settings,
   UserRoundPlus,
   ForkKnife,
+  LogOut,
 } from "lucide-react";
+import { useState } from "react";
 
-export default function SideBar({userName, userEmail}) {
+export default function SideBar({ userName, userEmail }) {
+  const [menuAberto, setMenuAberto] = useState(false);
+
   return (
     <aside
       className="
@@ -173,8 +177,12 @@ export default function SideBar({userName, userEmail}) {
       </nav>
 
       {/* USUÁRIO */}
-      <div className="border-t border-gray-100 px-3 py-4">
-        <div className="flex items-center gap-2">
+      <div className="relative border-t border-gray-100 px-3 py-4">
+        <button
+          type="button"
+          onClick={() => setMenuAberto(!menuAberto)}
+          className="flex w-full items-center gap-2 rounded-lg p-1 text-left hover:bg-gray-200 cursor-pointer"
+        >
           <span className="h-8 w-8 shrink-0 rounded-full bg-gray-300" />
 
           <div className="min-w-0">
@@ -182,11 +190,26 @@ export default function SideBar({userName, userEmail}) {
               {userName}
             </p>
 
-            <p className="truncate text-[8px] text-gray-400">
-              {userEmail}
-            </p>
+            <p className="truncate text-[8px] text-gray-400">{userEmail}</p>
           </div>
-        </div>
+        </button>
+
+        {menuAberto && (
+          <div className="absolute bottom-[75px] left-2 right-2 z-50 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+            <button
+              type="button"
+              className="flex w-full rounded-lg px-3 py-2 text-left text-xs text-red-500 hover:bg-red-100 cursor-pointer"
+              onClick={() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.location.href = "/";
+              }}
+            >
+              <LogOut size={16}/>
+              <span className="ml-2">Sair</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
