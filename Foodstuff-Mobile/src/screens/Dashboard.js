@@ -12,7 +12,6 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
 const COLORS = {
@@ -38,10 +37,12 @@ const ROUTES = {
   Users: "Cadastro",
 };
 
-export default function Dashboard({ navigation, route }) {
+export default function Dashboard({ navigation }) {
   const insets = useSafeAreaInsets();
+
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [user, setUser] = useState(null);
+  const [menuAberto, setMenuAberto] = useState(false);
 
   useEffect(() => {
     async function carregarUsuario() {
@@ -59,7 +60,15 @@ export default function Dashboard({ navigation, route }) {
     carregarUsuario();
   }, []);
 
-  const userName = user?.name;
+  const userName = user?.name || "Usuário";
+
+  async function handleLogout() {
+    await SecureStore.deleteItemAsync("token");
+    await SecureStore.deleteItemAsync("user");
+
+    setMenuAberto(false);
+    navigation.replace("Login");
+  }
 
   function handleTabPress(tab) {
     setActiveTab(tab);
@@ -93,9 +102,30 @@ export default function Dashboard({ navigation, route }) {
           <Text style={styles.headerTitle}>Foodstuff</Text>
         </View>
 
-        <TouchableOpacity style={styles.avatar} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={18} color={COLORS.textDark} />
-        </TouchableOpacity>
+        <View style={styles.profileContainer}>
+          <TouchableOpacity
+            style={styles.avatar}
+            activeOpacity={0.7}
+            onPress={() => setMenuAberto(!menuAberto)}
+          >
+            <Ionicons name="person-outline" size={18} color={COLORS.textDark} />
+          </TouchableOpacity>
+
+          {menuAberto && (
+            <View style={styles.dropdown}>
+
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="log-out-outline" size={17} color="#EF4444" />
+
+                <Text style={styles.dropdownLogout}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* CONTEÚDO */}
@@ -133,7 +163,6 @@ export default function Dashboard({ navigation, route }) {
       >
         {TABS.map(([key, icon, lib]) => {
           const active = activeTab === key;
-
           const color = active ? COLORS.primary : COLORS.textGray;
 
           return (
@@ -183,11 +212,59 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 
+  profileContainer: {
+    position: "relative",
+  },
+
   avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: "#D9D9D9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  dropdown: {
+    position: "absolute",
+    top: 40,
+    right: 0,
+    width: 170,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    padding: 8,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    zIndex: 100,
+  },
+
+  dropdownName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.textDark,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+
+  dropdownLogout: {
+    fontSize: 13,
+    color: "#EF4444",
+    fontWeight: "600",
   },
 
   content: {
