@@ -12,21 +12,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import api from "../axios/axios";
+import api from "../services/api";
 
-const LISTA_CARGOS = ["Chef de Cozinha", "Garçom", "Gerente", "Caixa"];
+const LISTA_CARGOS = ["KITCHEN", "WAITER", "MANAGER", "CASHIER"];
 
 export default function Cadastro({ navigation }) {
   const [user, setUser] = useState({
     nome: "",
     email: "",
-    cargo: LISTA_CARGOS[0],
+    role: LISTA_CARGOS[0],
   });
 
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { nome, email, cargo } = user;
+  const { nome, email, role } = user;
 
   function handleChange(field, value) {
     setUser((prev) => ({
@@ -56,9 +56,9 @@ export default function Cadastro({ navigation }) {
 
     try {
       const response = await api.postUser({
-        nome: nome.trim(),
-        email: email.trim().toLowerCase(),
-        cargo,
+        name: nome,
+        email: email,
+        role: role,
       });
 
       Alert.alert(
@@ -69,33 +69,34 @@ export default function Cadastro({ navigation }) {
       setUser({
         nome: "",
         email: "",
-        cargo: LISTA_CARGOS[0],
+        role: LISTA_CARGOS[0],
       });
     } catch (error) {
       const mensagem =
-        error.response?.data?.error || "Não foi possível realizar o cadastro.";
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Não foi possível realizar o cadastro.";
 
-      Alert.alert("Ops!", mensagem);
+      Alert.alert("Erro", mensagem);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-  <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
+      </TouchableOpacity>
 
-    <TouchableOpacity
-      style={styles.backButton}
-      onPress={() => navigation.goBack()}
-    >
-      <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
-    </TouchableOpacity>
-
-    <ScrollView
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* LOGO */}
         <View style={styles.logoBadge}>
           <Ionicons name="restaurant" size={16} color="#fff" />
@@ -164,7 +165,7 @@ export default function Cadastro({ navigation }) {
               style={styles.inputIcon}
             />
 
-            <Text style={styles.dropdownValue}>{cargo}</Text>
+            <Text style={styles.dropdownValue}>{role}</Text>
 
             <Ionicons name="chevron-down" size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -196,7 +197,7 @@ export default function Cadastro({ navigation }) {
             <Text style={styles.modalTitle}>Selecione o seu Cargo</Text>
 
             {LISTA_CARGOS.map((item) => {
-              const selected = cargo === item;
+              const selected = role === item;
 
               return (
                 <TouchableOpacity
@@ -206,7 +207,7 @@ export default function Cadastro({ navigation }) {
                     selected && styles.modalItemSelected,
                   ]}
                   onPress={() => {
-                    handleChange("cargo", item);
+                    handleChange("role", item);
                     setModalVisible(false);
                   }}
                 >
@@ -237,7 +238,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F3F4F6",
   },
-  
 
   container: {
     flexGrow: 1,
@@ -379,18 +379,18 @@ const styles = StyleSheet.create({
     color: "#FF5A36",
   },
 
-// BOTÃO VOLTAR PARA DASHBOARD
+  // BOTÃO VOLTAR PARA DASHBOARD
   backButton: {
-  position: "absolute",
-  top: 40,
-  left: 16,
-  zIndex: 10,
-  width: 40,
-  height: 40,
-  borderRadius: 20,
-  backgroundColor: "#fff",
-  alignItems: "center",
-  justifyContent: "center",
-  elevation: 3,
-},
+    position: "absolute",
+    top: 40,
+    left: 16,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+  },
 });

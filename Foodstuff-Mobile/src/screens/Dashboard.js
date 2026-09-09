@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,9 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 const COLORS = {
   primary: "#FF6B2C",
@@ -42,8 +41,25 @@ const ROUTES = {
 export default function Dashboard({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [user, setUser] = useState(null);
 
-  const userName = route?.params?.userName || "Luiz";
+  useEffect(() => {
+    async function carregarUsuario() {
+      try {
+        const dados = await SecureStore.getItemAsync("user");
+
+        if (dados) {
+          setUser(JSON.parse(dados));
+        }
+      } catch (error) {
+        console.log("Erro ao carregar usuário:", error);
+      }
+    }
+
+    carregarUsuario();
+  }, []);
+
+  const userName = user?.name;
 
   function handleTabPress(tab) {
     setActiveTab(tab);
@@ -55,30 +71,15 @@ export default function Dashboard({ navigation, route }) {
 
   function renderIcon(icon, lib, color) {
     if (lib === "mci") {
-      return (
-        <MaterialCommunityIcons
-          name={icon}
-          size={22}
-          color={color}
-        />
-      );
+      return <MaterialCommunityIcons name={icon} size={22} color={color} />;
     }
 
-    return (
-      <Ionicons
-        name={icon}
-        size={22}
-        color={color}
-      />
-    );
+    return <Ionicons name={icon} size={22} color={color} />;
   }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={COLORS.card}
-      />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
 
       {/* HEADER */}
       <View style={styles.header}>
@@ -89,12 +90,12 @@ export default function Dashboard({ navigation, route }) {
             color={COLORS.primary}
           />
 
-          <Text style={styles.headerTitle}>
-            Foodstuff
-          </Text>
+          <Text style={styles.headerTitle}>Foodstuff</Text>
         </View>
 
-        <View style={styles.avatar} />
+        <TouchableOpacity style={styles.avatar} activeOpacity={0.7}>
+          <Ionicons name="log-out-outline" size={18} color={COLORS.textDark} />
+        </TouchableOpacity>
       </View>
 
       {/* CONTEÚDO */}
@@ -105,13 +106,9 @@ export default function Dashboard({ navigation, route }) {
       >
         <View style={styles.greetingRow}>
           <View>
-            <Text style={styles.greetingTitle}>
-              Bom dia, {userName}
-            </Text>
+            <Text style={styles.greetingTitle}>Bom dia, {userName}</Text>
 
-            <Text style={styles.greetingSubtitle}>
-              Desempenho hoje.
-            </Text>
+            <Text style={styles.greetingSubtitle}>Desempenho hoje.</Text>
           </View>
 
           <TouchableOpacity style={styles.calendarButton}>
@@ -137,9 +134,7 @@ export default function Dashboard({ navigation, route }) {
         {TABS.map(([key, icon, lib]) => {
           const active = activeTab === key;
 
-          const color = active
-            ? COLORS.primary
-            : COLORS.textGray;
+          const color = active ? COLORS.primary : COLORS.textGray;
 
           return (
             <TouchableOpacity
@@ -148,18 +143,9 @@ export default function Dashboard({ navigation, route }) {
               activeOpacity={0.7}
               onPress={() => handleTabPress(key)}
             >
-              <View style={styles.icon}>
-                {renderIcon(icon, lib, color)}
-              </View>
+              <View style={styles.icon}>{renderIcon(icon, lib, color)}</View>
 
-              <Text
-                style={[
-                  styles.tabLabel,
-                  { color },
-                ]}
-              >
-                {key}
-              </Text>
+              <Text style={[styles.tabLabel, { color }]}>{key}</Text>
             </TouchableOpacity>
           );
         })}
