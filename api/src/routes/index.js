@@ -6,6 +6,7 @@ const verifyFirstLogin = require("../middlewares/verifyFirstLogin");
 const healthRoutes = require("./healthRoutes");
 const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
+const logRoutes = require("./logRoutes");
 
 // Public routes
 router.use("/health", healthRoutes);
@@ -15,7 +16,9 @@ router.use("/auth", authRoutes);
 router.use(verifyJWT);
 router.use("/users", userRoutes);
 
-// Fully protected routes
+// Protected block FirstLogin routes
 router.use(verifyFirstLogin);
+router.use("/logs", logRoutes)
+
 
 module.exports = router;
