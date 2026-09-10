@@ -3,6 +3,8 @@ const verifyRole = require("../middlewares/verifyRole");
 
 const LogController = require("../controllers/logController");
 
+router.use(verifyRole("MANAGER"));
+
 router.get(
   "/",
   LogController.readAllLogs
