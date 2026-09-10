@@ -9,11 +9,11 @@ module.exports = class TableController {
     try {
       validateTable(req.body, false);
 
-      const newTableId = await TableService.createTable(number, jwt_user_id);
+      const result = await TableService.createTable(number, jwt_user_id);
       return res.status(201).json({
         error: false,
-        message: "Mesa criada com sucesso.",
-        data: { table_id: newTableId },
+        message: result.message,
+        data: { table_id: result.table_id },
       });
     } catch (error) {
       next(error);
