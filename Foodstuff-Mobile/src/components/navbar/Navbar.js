@@ -1,10 +1,12 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const COLORS = {
   primary: "#FF6B2C",
@@ -27,7 +29,10 @@ const ROUTES = {
   Users: "Cadastro",
 };
 
-export default function Navbar({ navigation, activeTab = "Dashboard" }) {
+export default function Navbar({
+  navigation,
+  activeTab,
+}) {
   const insets = useSafeAreaInsets();
 
   function handleTabPress(tab) {
@@ -38,72 +43,75 @@ export default function Navbar({ navigation, activeTab = "Dashboard" }) {
 
   function renderIcon(icon, lib, color) {
     if (lib === "mci") {
-      return <MaterialCommunityIcons name={icon} size={22} color={color} />;
+      return (
+        <MaterialCommunityIcons
+          name={icon}
+          size={22}
+          color={color}
+        />
+      );
     }
 
-    return <Ionicons name={icon} size={22} color={color} />;
+    return (
+      <Ionicons
+        name={icon}
+        size={22}
+        color={color}
+      />
+    );
   }
 
   return (
-    <SafeAreaView>
-      <View
-        style={[
-          styles.bottomNav,
-          {
-            paddingBottom: 1,
-          },
-        ]}
-      >
-        {TABS.map(([key, icon, lib]) => {
-          const active = activeTab === key;
-          const color = active ? COLORS.primary : COLORS.textGray;
+    <View
+      style={[
+        styles.bottomNav,
+        {
+          height: 68 + insets.bottom,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
+      {TABS.map(([key, icon, lib]) => {
+        const active = activeTab === key;
 
-          return (
-            <TouchableOpacity
-              key={key}
-              style={styles.tabItem}
-              activeOpacity={0.7}
-              onPress={() => handleTabPress(key)}
+        const color = active
+          ? COLORS.primary
+          : COLORS.textGray;
+
+        return (
+          <TouchableOpacity
+            key={key}
+            style={styles.tabItem}
+            activeOpacity={0.7}
+            onPress={() => handleTabPress(key)}
+          >
+            <View style={styles.icon}>
+              {renderIcon(icon, lib, color)}
+            </View>
+
+            <Text
+              style={[
+                styles.tabLabel,
+                { color },
+              ]}
             >
-              <View style={styles.icon}>{renderIcon(icon, lib, color)}</View>
-
-              <Text style={[styles.tabLabel, { color }]}>{key}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </SafeAreaView>
+              {key}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   bottomNav: {
-    position: "flex",
-    bottom: -540,
-    left: -14,
-    right: 0,
-
-    width:380,
-
-    minHeight: 68,
-
+    width: "100%",
     flexDirection: "row",
-    alignItems: "center",
-
     backgroundColor: COLORS.card,
-
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-
-    elevation: 10,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    elevation: 8,
   },
 
   tabItem: {

@@ -2,13 +2,17 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
+  StatusBar,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
+
+import Header from "../components/header/Header";
+import Navbar from "../components/navbar/Navbar";
 
 const COLORS = {
   primary: "#FF6B2C",
@@ -18,9 +22,6 @@ const COLORS = {
   textGray: "#8B8D98",
   border: "#ECEDF0",
 };
-
-import Navbar from "../components/navbar/Navbar";
-import Header from "../components/header/Header";
 
 export default function Dashboard({ navigation }) {
   const [user, setUser] = useState(null);
@@ -41,11 +42,15 @@ export default function Dashboard({ navigation }) {
     carregarUsuario();
   }, []);
 
-  const userName = user?.name;
+  const userName = user?.name || "Usuário";
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
+
+      {/* HEADER */}
       <Header navigation={navigation} />
+
       {/* CONTEÚDO */}
       <ScrollView
         style={styles.content}
@@ -58,9 +63,19 @@ export default function Dashboard({ navigation }) {
 
             <Text style={styles.greetingSubtitle}>Desempenho hoje.</Text>
           </View>
+
+          <TouchableOpacity style={styles.calendarButton}>
+            <Ionicons
+              name="calendar-outline"
+              size={18}
+              color={COLORS.textDark}
+            />
+          </TouchableOpacity>
         </View>
-        <Navbar navigation={navigation} activeTab="Dashboard" />
       </ScrollView>
+
+      {/* FOOTER */}
+      <Navbar navigation={navigation} activeTab="Dashboard" />
     </SafeAreaView>
   );
 }

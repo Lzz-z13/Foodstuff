@@ -1,6 +1,10 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 
@@ -8,7 +12,6 @@ const COLORS = {
   primary: "#FF6B2C",
   card: "#FFFFFF",
   textDark: "#1F2024",
-  textGray: "#8B8D98",
   border: "#ECEDF0",
 };
 
@@ -16,77 +19,63 @@ export default function Header({ navigation }) {
   const [menuAberto, setMenuAberto] = useState(false);
 
   async function handleLogout() {
-    try {
-      // Remove o token
-      await SecureStore.deleteItemAsync("token");
+    await SecureStore.deleteItemAsync("token");
+    await SecureStore.deleteItemAsync("user");
 
-      // Remove os dados do usuário
-      await SecureStore.deleteItemAsync("user");
-
-      console.log("Logout realizado com sucesso");
-
-      // Fecha o menu
-      setMenuAberto(false);
-
-      // Volta para a tela de Login
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Login" }],
-      });
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-    }
+    setMenuAberto(false);
+    navigation.replace("Login");
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.header}>
-        {/* LOGO */}
-        <View style={styles.headerLeft}>
-          <Ionicons
-            name="restaurant-outline"
-            size={22}
-            color={COLORS.primary}
-          />
+    <View style={styles.header}>
+      <View style={styles.headerLeft}>
+        <Ionicons
+          name="restaurant-outline"
+          size={22}
+          color={COLORS.primary}
+        />
 
-          <Text style={styles.headerTitle}>Foodstuff</Text>
-        </View>
-
-        {/* PERFIL */}
-        <View style={styles.profileContainer}>
-          <TouchableOpacity
-            style={styles.avatar}
-            activeOpacity={0.7}
-            onPress={() => setMenuAberto((prev) => !prev)}
-          >
-            <Ionicons name="person-outline" size={18} color={COLORS.textDark} />
-          </TouchableOpacity>
-
-          {/* DROPDOWN */}
-          {menuAberto && (
-            <View style={styles.dropdown}>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                activeOpacity={0.7}
-                onPress={handleLogout}
-              >
-                <Ionicons name="log-out-outline" size={17} color="#EF4444" />
-
-                <Text style={styles.dropdownLogout}>Sair</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        <Text style={styles.headerTitle}>Foodstuff</Text>
       </View>
-    </SafeAreaView>
+
+      <View style={styles.profileContainer}>
+        <TouchableOpacity
+          style={styles.avatar}
+          activeOpacity={0.7}
+          onPress={() => setMenuAberto(!menuAberto)}
+        >
+          <Ionicons
+            name="person-outline"
+            size={18}
+            color={COLORS.textDark}
+          />
+        </TouchableOpacity>
+
+        {menuAberto && (
+          <View style={styles.dropdown}>
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="log-out-outline"
+                size={17}
+                color="#EF4444"
+              />
+
+              <Text style={styles.dropdownLogout}>
+                Sair
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    backgroundColor: COLORS.card,
-  },
-
   header: {
     height: 64,
     flexDirection: "row",
@@ -112,7 +101,6 @@ const styles = StyleSheet.create({
 
   profileContainer: {
     position: "relative",
-    zIndex: 100,
   },
 
   avatar: {
@@ -128,13 +116,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 0,
-    width: 110,
+    width: 170,
     backgroundColor: COLORS.card,
     borderRadius: 12,
     padding: 8,
-
     elevation: 8,
-
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -142,16 +128,15 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.12,
     shadowRadius: 10,
-
-    zIndex: 999,
+    zIndex: 100,
   },
 
   dropdownItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     borderRadius: 8,
   },
 
