@@ -10,4 +10,11 @@ router.post(
   TableController.createTable
 );
 
+router.use(verifyRole("MANAGER", "WAITER"));
+
+router.get(
+  "/",
+  TableController.readAllTables
+);
+
 module.exports = router;

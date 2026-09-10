@@ -21,9 +21,26 @@ module.exports = class TableService {
       return newCourseId;
     } catch (error) {
       await connection.rollback();
-      throw { status: 500, message: "Erro ao criar o curso." };
+      throw { status: 500, message: "Erro ao criar a mesa." };
     } finally {
       connection.release();
+    }
+  }
+
+    static async readAllTables() {
+    const query = `
+      SELECT
+        table_id,
+        number
+      FROM tables
+      WHERE is_active = 1
+    `;
+
+    try {
+      const [tables] = await connect.execute(query);
+      return tables;
+    } catch (error) {
+      throw { status: 500, message: "Erro ao buscar as mesas do ativas." };
     }
   }
 }

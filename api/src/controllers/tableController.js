@@ -19,4 +19,17 @@ module.exports = class TableController {
       next(error);
     }
   }
+
+  static async readAllTables(req, res, next) {
+    try {
+      const tables = await TableService.readAllTables();
+      return res.status(200).json({
+        error: false,
+        message: "Mesas buscadas com sucesso.",
+        data: tables,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
