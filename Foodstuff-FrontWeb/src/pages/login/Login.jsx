@@ -11,7 +11,7 @@ import email_img from "../../../assets/loginImages/email.png";
 import olhinho from "../../../assets/loginImages/olhinho.png";
 import olho_cerrado from "../../../assets/loginImages/olho_cerrado.png";
 
-import api from "../../axios/axios";
+import api from "../../services/axios";
 
 export default function Login() {
   const navigate = useNavigate();

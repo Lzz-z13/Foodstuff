@@ -11,7 +11,7 @@ import {
 
 import "./Cadastro.css";
 import SideBar from "../../components/sideBar/SideBar";
-import api from "../../axios/axios";
+import api from "../../services/axios";
 import Snackbar from "../../components/snackBar/SnackBar";
 
 const cargos = ["WAITER", "KITCHEN", "CASHIER", "MANAGER"];

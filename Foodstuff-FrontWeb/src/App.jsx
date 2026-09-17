@@ -8,6 +8,8 @@ import CadastroFuncionario from "./pages/cadastro/CadastroFuncionario";
 import Home from "./pages/home/Home";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 
+import DefaultLayout from "./layouts/DefaultLayout";
+
 function App() {
   return (
     <BrowserRouter>
@@ -17,9 +19,11 @@ function App() {
         <Route path="/recuperarSenha" element={<RecupSenha />} />
 
         {/* Protegidas */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/cadastro" element={<CadastroFuncionario />} />
+        <Route element={<ProtectedRoute/>}>
+          <Route element={<DefaultLayout/>}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/cadastro" element={<CadastroFuncionario />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<Pg404 />} />

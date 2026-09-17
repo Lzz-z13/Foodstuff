@@ -12,8 +12,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-export default function SideBar({ userName, userEmail }) {
+export default function SideBar() {
   const [menuAberto, setMenuAberto] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   return (
     <aside
@@ -187,10 +188,10 @@ export default function SideBar({ userName, userEmail }) {
 
           <div className="min-w-0">
             <p className="truncate text-[10px] font-semibold text-gray-800">
-              {userName}
+              {user.name}
             </p>
 
-            <p className="truncate text-[8px] text-gray-400">{userEmail}</p>
+            <p className="truncate text-[8px] text-gray-400">{user.email}</p>
           </div>
         </button>
 
