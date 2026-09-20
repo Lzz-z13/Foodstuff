@@ -92,26 +92,7 @@ CREATE TABLE
         CONSTRAINT fk_commands_closed_by FOREIGN KEY (closed_by) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE SET NULL
     );
 
--- 5. TABLE_WAITERS
--- Relação N:N entre USERS e TABLES. (redundante, relação removida)
---
--- Um garçom pode atender várias mesas.
--- Uma mesa pode possuir vários garçons.
--- =========================================================
--- CREATE TABLE
---     table_waiters (
---         table_waiter_id BIGINT NOT NULL AUTO_INCREMENT,
---         user_id CHAR(36) NOT NULL,
---         table_id INT NOT NULL,
---         assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
---         is_active TINYINT NOT NULL DEFAULT TRUE,
---         CONSTRAINT pk_table_waiters PRIMARY KEY (table_waiter_id),
---         CONSTRAINT uk_table_waiters_user_table UNIQUE (user_id, table_id),
---         CONSTRAINT fk_table_waiters_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
---         CONSTRAINT fk_table_waiters_table FOREIGN KEY (table_id) REFERENCES tables (table_id) ON UPDATE CASCADE ON DELETE CASCADE
---     );
-
--- 6. CATEGORIES
+-- 7. CATEGORIES
 -- Categorias do cardápio
 -- =========================================================
 CREATE TABLE
@@ -124,7 +105,7 @@ CREATE TABLE
         CONSTRAINT uk_categories_name UNIQUE (name)
     );
 
--- 7. PRODUCTS
+-- 8. PRODUCTS
 -- Produtos disponíveis no cardápio
 -- =========================================================
 CREATE TABLE
@@ -149,7 +130,7 @@ CREATE TABLE
         )
     );
 
--- 8. ORDERS
+-- 9. ORDERS
 -- Pedido realizado dentro de uma comanda.
 --
 -- origin:
@@ -179,7 +160,7 @@ CREATE TABLE
         CONSTRAINT fk_orders_command FOREIGN KEY (command_id) REFERENCES commands (command_id) ON UPDATE CASCADE ON DELETE RESTRICT
     );
 
--- 9. ORDER_ITEMS
+-- 10. ORDER_ITEMS
 -- Entidade associativa entre ORDERS e PRODUCTS.
 --
 -- Um ORDER possui vários ORDER_ITEMS.
@@ -203,7 +184,7 @@ CREATE TABLE
         CONSTRAINT chk_order_items_unit_price CHECK (unit_price >= 0)
     );
 
--- 10. PAYMENTS
+-- 11. PAYMENTS
 -- Uma comanda pode possuir vários pagamentos.
 --
 -- Isso permite:
@@ -231,7 +212,7 @@ CREATE TABLE
         CONSTRAINT chk_payments_value CHECK (value > 0)
     );
 
--- 11. AUDIT_LOGS
+-- 12. AUDIT_LOGS
 -- Registro das ações realizadas no sistema.
 --
 -- entity + entity_id são referências lógicas.
