@@ -21,4 +21,10 @@ router.patch(
   TableController.updateTable
 );
 
+router.delete(
+  "/:table_id",
+  verifyRole("MANAGER"),
+  TableController.deleteTable
+);
+
 module.exports = router;

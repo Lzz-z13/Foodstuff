@@ -56,4 +56,26 @@ module.exports = class TableController {
       next(error);
     }
   }
+
+  static async deleteTable(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { table_id } = req.params;
+
+    try {
+      const result = await TableService.deleteTable(table_id, jwt_user_id);
+
+      return res.status(200).json({
+        error: false,
+        message: result.message,
+        data: {
+          table_id: result.table_id,
+          qr_codes_deactivated: result.qr_codes_deactivated,
+          commands_cancelled: result.commands_cancelled,
+          orders_cancelled: result.orders_cancelled,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

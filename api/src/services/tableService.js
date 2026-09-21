@@ -255,6 +255,163 @@ module.exports = class TableService {
     }
   }
 
+  static async deleteTable(table_id, jwt_user_id) {
+    const connection = await connect.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // Search the responsible
+      const userQuery = `
+        SELECT name
+        FROM users
+        WHERE user_id = ?
+          AND is_active = 1
+        LIMIT 1
+      `;
+
+      const [userResult] = await connection.execute(userQuery, [jwt_user_id]);
+
+      if (userResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Usuário responsável não encontrado.",
+        };
+      }
+
+      const user_name = userResult[0].name;
+
+      // Verify the target table exists and is active
+      const tableQuery = `
+        SELECT table_id, number
+        FROM tables
+        WHERE table_id = ?
+          AND is_active = 1
+        LIMIT 1
+      `;
+
+      const [tableResult] = await connection.execute(tableQuery, [table_id]);
+
+      if (tableResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Mesa não encontrada.",
+        };
+      }
+
+      const table_number = tableResult[0].number;
+
+      // Find the OPEN commands of this table
+      const commandsQuery = `
+        SELECT command_id
+        FROM commands
+        WHERE table_id = ?
+          AND status = 'OPEN'
+      `;
+
+      const [openCommands] = await connection.execute(commandsQuery, [
+        table_id,
+      ]);
+
+      const commandIds = openCommands.map((command) => command.command_id);
+
+      let orders_cancelled = 0;
+      let commands_cancelled = 0;
+
+      // Cancel the PENDING, PREPARING and READY orders of the commands being cancelled
+      if (commandIds.length > 0) {
+        const placeholders = commandIds.map(() => "?").join(", ");
+
+        const cancelOrdersQuery = `
+          UPDATE orders
+          SET status = 'CANCELLED',
+            cancelled_at = CURRENT_TIMESTAMP
+          WHERE command_id IN (${placeholders})
+            AND status IN ('PENDING', 'PREPARING', 'READY')
+        `;
+
+        const [ordersResult] = await connection.execute(
+          cancelOrdersQuery,
+          commandIds,
+        );
+
+        orders_cancelled = ordersResult.affectedRows;
+
+        // Cancel the OPEN commands of this table
+        const cancelCommandsQuery = `
+          UPDATE commands
+          SET status = 'CANCELLED',
+            closed_at = CURRENT_TIMESTAMP
+          WHERE table_id = ?
+            AND status = 'OPEN'
+        `;
+
+        const [commandsResult] = await connection.execute(
+          cancelCommandsQuery,
+          [table_id],
+        );
+
+        commands_cancelled = commandsResult.affectedRows;
+      }
+
+      // Deactivate the active QR codes of this table
+      const deactivateQrQuery = `
+        UPDATE qr_codes
+        SET is_active = 0
+        WHERE table_id = ?
+          AND is_active = 1
+      `;
+
+      const [qrResult] = await connection.execute(deactivateQrQuery, [
+        table_id,
+      ]);
+
+      const qr_codes_deactivated = qrResult.affectedRows;
+
+      // Deactivate the table
+      const deactivateTableQuery = `
+        UPDATE tables
+        SET is_active = 0
+        WHERE table_id = ?
+          AND is_active = 1
+      `;
+
+      await connection.execute(deactivateTableQuery, [table_id]);
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "DELETE",
+        "tables",
+        table_id,
+        `Usuário ${user_name} desativou a mesa #${table_number} (${qr_codes_deactivated} QR codes desativados, ${commands_cancelled} comandas canceladas, ${orders_cancelled} pedidos cancelados).`,
+      );
+
+      await connection.commit();
+
+      return {
+        message: "Mesa desativada com sucesso.",
+        table_id: table_id,
+        qr_codes_deactivated: qr_codes_deactivated,
+        commands_cancelled: commands_cancelled,
+        orders_cancelled: orders_cancelled,
+      };
+    } catch (error) {
+      await connection.rollback();
+
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao desativar a mesa.",
+      };
+    } finally {
+      connection.release();
+    }
+  }
+
   static async readAllTables() {
     const query = `
       SELECT
