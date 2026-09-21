@@ -169,6 +169,13 @@ module.exports = class TableService {
 
       const old_number = targetResult[0].number;
 
+      if (number === old_number) {
+        throw {
+          status: 409,
+          message: "O número informado já é o número atual da mesa.",
+        };
+      }
+
       // Verify if another table already uses this number
       const conflictQuery = `
         SELECT table_id, is_active
