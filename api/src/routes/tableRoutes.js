@@ -3,17 +3,15 @@ const verifyRole = require("../middlewares/verifyRole");
 
 const TableController = require("../controllers/tableController");
 
-router.use(verifyRole("MANAGER"));
-
 router.post(
   "/",
+  verifyRole("MANAGER"),
   TableController.createTable
 );
 
-router.use(verifyRole("MANAGER", "WAITER"));
-
 router.get(
   "/",
+  verifyRole("MANAGER", "WAITER"),
   TableController.readAllTables
 );
 

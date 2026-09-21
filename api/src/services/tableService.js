@@ -130,6 +130,7 @@ module.exports = class TableService {
         number
       FROM tables
       WHERE is_active = 1
+      ORDER BY number
     `;
 
     try {
