@@ -123,6 +123,131 @@ module.exports = class TableService {
     }
   }
 
+  static async updateTable(table_id, number, jwt_user_id) {
+    const connection = await connect.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // Search the responsible
+      const userQuery = `
+        SELECT name
+        FROM users
+        WHERE user_id = ?
+          AND is_active = 1
+        LIMIT 1
+      `;
+
+      const [userResult] = await connection.execute(userQuery, [jwt_user_id]);
+
+      if (userResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Usuário responsável não encontrado.",
+        };
+      }
+
+      const user_name = userResult[0].name;
+
+      // Verify the target table exists and is active
+      const targetQuery = `
+        SELECT table_id, number
+        FROM tables
+        WHERE table_id = ?
+          AND is_active = 1
+        LIMIT 1
+      `;
+
+      const [targetResult] = await connection.execute(targetQuery, [table_id]);
+
+      if (targetResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Mesa não encontrada.",
+        };
+      }
+
+      const old_number = targetResult[0].number;
+
+      // Verify if another table already uses this number
+      const conflictQuery = `
+        SELECT table_id, is_active
+        FROM tables
+        WHERE number = ?
+          AND table_id != ?
+        LIMIT 1
+      `;
+
+      const [conflictResult] = await connection.execute(conflictQuery, [
+        number,
+        table_id,
+      ]);
+
+      if (conflictResult.length > 0) {
+        const conflictTable = conflictResult[0];
+
+        if (conflictTable.is_active) {
+          throw {
+            status: 409,
+            message: "Já existe uma mesa ativa com esse número.",
+          };
+        }
+
+        throw {
+          status: 409,
+          message:
+            "Esse número pertence a uma mesa desativada. Reative essa mesa ou escolha outro número.",
+        };
+      }
+
+      // Update table number
+      const updateQuery = `
+        UPDATE tables
+        SET number = ?
+        WHERE table_id = ?
+          AND is_active = 1
+      `;
+
+      await connection.execute(updateQuery, [number, table_id]);
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "tables",
+        table_id,
+        `Usuário ${user_name} alterou a mesa #${old_number} para #${number}.`,
+      );
+
+      await connection.commit();
+
+      return {
+        message: "Mesa atualizada com sucesso.",
+        table_id: table_id,
+      };
+    } catch (error) {
+      await connection.rollback();
+
+      if (error.status) {
+        throw error;
+      }
+
+      if (error.code === "ER_DUP_ENTRY") {
+        throw {
+          status: 409,
+          message: "O número informado já está em uso.",
+        };
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao atualizar a mesa.",
+      };
+    } finally {
+      connection.release();
+    }
+  }
+
   static async readAllTables() {
     const query = `
       SELECT

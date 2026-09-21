@@ -15,4 +15,10 @@ router.get(
   TableController.readAllTables
 );
 
+router.patch(
+  "/:table_id",
+  verifyRole("MANAGER"),
+  TableController.updateTable
+);
+
 module.exports = router;

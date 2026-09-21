@@ -32,4 +32,28 @@ module.exports = class TableController {
       next(error);
     }
   }
+
+  static async updateTable(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { table_id } = req.params;
+    const { number } = req.body;
+
+    try {
+      validateTable(req.body, true);
+
+      const result = await TableService.updateTable(
+        table_id,
+        number,
+        jwt_user_id,
+      );
+
+      return res.status(200).json({
+        error: false,
+        message: result.message,
+        data: { table_id: result.table_id },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
