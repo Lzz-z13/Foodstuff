@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import Cadastro from "./src/screens/Cadastro";
 import Login from "./src/screens/Login";
 import Dashboard from "./src/screens/Dashboard";
+import contaAdmin from "./src/screens/contaAdmin";
 
 const Stack = createNativeStackNavigator();
 
@@ -19,6 +20,8 @@ export default function App() {
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Cadastro" component={Cadastro} />
           <Stack.Screen name="Dashboard" component={Dashboard} />
+          <Stack.Screen name="contaAdmin" component={contaAdmin} />
+          
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

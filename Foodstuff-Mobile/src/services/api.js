@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const api = axios.create({
-  baseURL: "http://10.89.240.37:5000/api/foodstuff",
+  baseURL: "http://10.89.240.28:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },
@@ -21,6 +21,14 @@ api.interceptors.request.use(async (config) => {
 const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
   postUser: (user) => api.post("/users", user),
+
+  getUser: () => api.get("/users/me"),
+
+  updateUser: (user) =>
+    api.patch("/users/me", user),
+
+  updatePassword: (data) =>
+    api.patch("/users/me/password", data),
 };
 
 export default sheets;
