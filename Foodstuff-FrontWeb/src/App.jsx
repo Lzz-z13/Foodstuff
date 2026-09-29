@@ -9,7 +9,7 @@ import Home from "./pages/home/Home";
 import Mesas from "./pages/mesas/Mesas";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 
-import DefaultLayout from "./layouts/DefaultLayout";
+import DefaultLayout from "./components/defaultLayout/DefaultLayout";
 
 function App() {
   return (
