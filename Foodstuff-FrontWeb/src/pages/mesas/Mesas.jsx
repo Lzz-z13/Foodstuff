@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Table2 } from "lucide-react";
+import { Clock, Plus, Table2, Users } from "lucide-react";
 
 // MOCK inicial — depois você troca por dados da API
 const MESAS_MOCK = [
@@ -49,6 +49,22 @@ export default function Mesas() {
       ? MESAS_MOCK
       : MESAS_MOCK.filter((m) => m.status === filtro);
 
+  const totalMesas = MESAS_MOCK.length;
+  const mesasOcupadas = MESAS_MOCK.filter(
+    (m) => m.status === "ocupada",
+  ).length;
+  const mesasLivres = MESAS_MOCK.filter((m) => m.status === "livre").length;
+
+  const temposMin = MESAS_MOCK.map((m) => {
+    const match =
+      typeof m.tempo === "string" ? m.tempo.match(/(\d+)\s*min/) : null;
+    return match ? Number(match[1]) : null;
+  }).filter((n) => n !== null);
+  const tempoMedio =
+    temposMin.length > 0
+      ? `${Math.round(temposMin.reduce((soma, n) => soma + n, 0) / temposMin.length)} min`
+      : "—";
+
   return (
     <div className="min-h-full">
       {/* CABEÇALHO DA PÁGINA */}
@@ -68,6 +84,49 @@ export default function Mesas() {
           <Plus size={16} />
           Nova mesa
         </button>
+      </div>
+
+      {/* RESUMO */}
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+            <Table2 size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-xs text-slate-500">Total de Mesas</p>
+            <p className="text-xl font-bold text-slate-900">{totalMesas}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+            <Users size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-xs text-slate-500">Mesas Ocupadas</p>
+            <p className="text-xl font-bold text-slate-900">{mesasOcupadas}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-600">
+            <Table2 size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-xs text-slate-500">Mesas Livres</p>
+            <p className="text-xl font-bold text-slate-900">{mesasLivres}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <Clock size={20} />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-xs text-slate-500">Tempo Médio</p>
+            <p className="text-xl font-bold text-slate-900">{tempoMedio}</p>
+          </div>
+        </div>
       </div>
 
       {/* LEGENDA + FILTROS */}

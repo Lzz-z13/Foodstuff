@@ -142,21 +142,17 @@ export default function SideBar() {
 
           <Link to="/configs" onClick={fechar} className={LINK_BASE}>
             <Settings size={16} />
-            <span>Configurações</span>
+            <span>Configs do Restaurante</span>
           </Link>
 
-          <Link
-            to="/cadastro"
-            onClick={fechar}
-            className={`${LINK_BASE} mt-2`}
-          >
+          <Link to="/cadastro" onClick={fechar} className={`${LINK_BASE} mt-2`}>
             <UserRoundPlus size={16} />
             <span>Cadastrar Usuário</span>
           </Link>
         </nav>
 
         {/* USUÁRIO */}
-        <div className="relative border-t border-gray-100 px-3 py-4">
+        <div className="relative border-gray-100 px-3 py-4">
           <button
             type="button"
             onClick={() => setMenuAberto(!menuAberto)}
@@ -166,12 +162,10 @@ export default function SideBar() {
 
             <div className="min-w-0">
               <p className="truncate text-[10px] font-semibold text-gray-800">
-                {user.name ?? "Usuário"}
+                {user.name}
               </p>
 
-              <p className="truncate text-[8px] text-gray-400">
-                {user.email ?? ""}
-              </p>
+              <p className="truncate text-[8px] text-gray-400">{user.email}</p>
             </div>
           </button>
 
