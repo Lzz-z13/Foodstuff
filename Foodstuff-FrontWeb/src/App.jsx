@@ -6,9 +6,10 @@ import Login from "./pages/login/Login";
 import RecupSenha from "./pages/recupSenha/RecupSenha";
 import CadastroFuncionario from "./pages/cadastro/CadastroFuncionario";
 import Home from "./pages/home/Home";
+import Mesas from "./pages/mesas/Mesas";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 
-import DefaultLayout from "./layouts/DefaultLayout";
+import DefaultLayout from "./components/defaultLayout/DefaultLayout";
 
 function App() {
   return (
@@ -19,11 +20,12 @@ function App() {
         <Route path="/recuperarSenha" element={<RecupSenha />} />
 
         {/* Protegidas */}
-        <Route element={<ProtectedRoute/>}>
-          <Route element={<DefaultLayout/>}>
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DefaultLayout />}>
             <Route path="/home" element={<Home />} />
-            <Route path="/cadastro" element={<CadastroFuncionario />} />
+            <Route path="/mesas" element={<Mesas />} />
           </Route>
+          <Route path="/cadastro" element={<CadastroFuncionario />} />
         </Route>
 
         <Route path="*" element={<Pg404 />} />
