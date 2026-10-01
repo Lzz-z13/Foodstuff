@@ -1,6 +1,7 @@
 const QrCodeService = require("../services/qrCodeService");
 const validateQrCode = require("../validations/validateQrCode");
 const validateQrCodeToken = require("../validations/validateQrCodeToken");
+const validateQrCodeId = require("../validations/validateQrCodeId");
 
 module.exports = class QrCodeController {
   static async createQrCode(req, res, next) {
@@ -55,6 +56,25 @@ module.exports = class QrCodeController {
         error: false,
         message: "QR Code encontrado com sucesso.",
         data: qrCode,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteQrCode(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { qr_code_id } = req.params;
+
+    try {
+      validateQrCodeId(qr_code_id);
+
+      const result = await QrCodeService.deleteQrCode(qr_code_id, jwt_user_id);
+
+      return res.status(200).json({
+        error: false,
+        message: result.message,
+        data: { qr_code_id: result.qr_code_id },
       });
     } catch (error) {
       next(error);

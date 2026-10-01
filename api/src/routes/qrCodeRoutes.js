@@ -15,4 +15,10 @@ router.get(
   QrCodeController.readQrCodesByTable
 );
 
+router.delete(
+  "/qr-codes/:qr_code_id",
+  verifyRole("MANAGER"),
+  QrCodeController.deleteQrCode
+);
+
 module.exports = router;

@@ -238,4 +238,104 @@ module.exports = class QrCodeService {
       };
     }
   }
+
+  static async deleteQrCode(qr_code_id, jwt_user_id) {
+    const connection = await connect.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // Search the responsible
+      const userQuery = `
+        SELECT name
+        FROM users
+        WHERE user_id = ?
+          AND is_active = 1
+        LIMIT 1
+      `;
+
+      const [userResult] = await connection.execute(userQuery, [jwt_user_id]);
+
+      if (userResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Usuário responsável não encontrado.",
+        };
+      }
+
+      const user_name = userResult[0].name;
+
+      // Verify the target QR code exists
+      const qrQuery = `
+        SELECT
+          qr.qr_code_id,
+          qr.position,
+          qr.is_active,
+          qr.table_id,
+          tbl.number
+        FROM qr_codes qr
+        INNER JOIN tables tbl ON tbl.table_id = qr.table_id
+        WHERE qr.qr_code_id = ?
+        LIMIT 1
+      `;
+
+      const [qrResult] = await connection.execute(qrQuery, [qr_code_id]);
+
+      if (qrResult.length === 0) {
+        throw {
+          status: 404,
+          message: "QR Code não encontrado.",
+        };
+      }
+
+      const qr = qrResult[0];
+
+      // QR code is already inactive
+      if (!qr.is_active) {
+        throw {
+          status: 409,
+          message: "O QR Code já está inativo.",
+        };
+      }
+
+      // Soft delete: only is_active is changed
+      const deactivateQuery = `
+        UPDATE qr_codes
+        SET is_active = 0
+        WHERE qr_code_id = ?
+          AND is_active = 1
+      `;
+
+      await connection.execute(deactivateQuery, [qr_code_id]);
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "DELETE",
+        "qr_codes",
+        qr.qr_code_id,
+        `Usuário ${user_name} desativou o QR Code da mesa #${qr.number} na posição ${qr.position}.`,
+      );
+
+      await connection.commit();
+
+      return {
+        message: "QR Code desativado com sucesso.",
+        qr_code_id: qr.qr_code_id,
+      };
+    } catch (error) {
+      await connection.rollback();
+
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao desativar o QR Code.",
+      };
+    } finally {
+      connection.release();
+    }
+  }
 };

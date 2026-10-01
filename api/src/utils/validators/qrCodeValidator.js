@@ -16,7 +16,17 @@ function isValidQrCodeToken(token) {
   return tokenRegex.test(token);
 }
 
+function isValidQrCodeId(qr_code_id) {
+  if (process.env.SKIP_VALIDATORS === "true") return true;
+
+  // req.params chega sempre como string
+  const id = Number(qr_code_id);
+
+  return Number.isInteger(id) && id > 0;
+}
+
 module.exports = {
   isValidQrCodePosition,
   isValidQrCodeToken,
+  isValidQrCodeId,
 };
