@@ -10,9 +10,8 @@ function isValidQrCodeToken(token) {
   if (typeof token !== "string") return false;
 
   // Formato UUID gerado pelo backend (crypto.randomUUID()).
-  // Aceita também o sufixo numérico usado pelos fixtures de teste.
   const tokenRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:-\d)?$/i;
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   return tokenRegex.test(token);
 }

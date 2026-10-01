@@ -49,7 +49,7 @@ async function insertTable({ number, is_active = 1 }) {
 }
 
 async function insertQrCode({ table_id, position, is_active = 1 }) {
-  const token = `${require("crypto").randomUUID()}-${position}`;
+  const token = `${require("crypto").randomUUID()}`;
 
   const [result] = await connect.execute(
     "INSERT INTO qr_codes (token, position, is_active, table_id) VALUES (?, ?, ?, ?)",
