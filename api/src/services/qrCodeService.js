@@ -200,4 +200,42 @@ module.exports = class QrCodeService {
       };
     }
   }
+
+  static async resolveQrCodeByToken(token) {
+    const query = `
+      SELECT
+        qr.qr_code_id,
+        qr.position,
+        tbl.table_id,
+        tbl.number
+      FROM qr_codes qr
+      INNER JOIN tables tbl ON tbl.table_id = qr.table_id
+      WHERE qr.token = ?
+        AND qr.is_active = 1
+        AND tbl.is_active = 1
+      LIMIT 1
+    `;
+
+    try {
+      const [qrCodes] = await connect.execute(query, [token]);
+
+      if (qrCodes.length === 0) {
+        throw {
+          status: 404,
+          message: "QR Code não encontrado.",
+        };
+      }
+
+      return qrCodes[0];
+    } catch (error) {
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao buscar o QR Code.",
+      };
+    }
+  }
 };

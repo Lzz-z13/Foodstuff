@@ -1,5 +1,6 @@
 const QrCodeService = require("../services/qrCodeService");
 const validateQrCode = require("../validations/validateQrCode");
+const validateQrCodeToken = require("../validations/validateQrCodeToken");
 
 module.exports = class QrCodeController {
   static async createQrCode(req, res, next) {
@@ -36,6 +37,24 @@ module.exports = class QrCodeController {
         error: false,
         message: "QR Codes buscados com sucesso.",
         data: qrCodes,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async resolveQrCodeByToken(req, res, next) {
+    const { token } = req.params;
+
+    try {
+      validateQrCodeToken(token);
+
+      const qrCode = await QrCodeService.resolveQrCodeByToken(token);
+
+      return res.status(200).json({
+        error: false,
+        message: "QR Code encontrado com sucesso.",
+        data: qrCode,
       });
     } catch (error) {
       next(error);
