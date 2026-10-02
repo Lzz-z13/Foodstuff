@@ -20,6 +20,10 @@ router.post(
   "/qr-codes/token/:token/commands",
   CommandController.createCommandByQr,
 );
+router.get(
+  "/commands/session/:session_token",
+  CommandController.readCommandBySession,
+);
 
 // Routes with mixed rules
 router.use(verifyJWT);

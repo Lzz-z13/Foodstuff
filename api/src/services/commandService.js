@@ -91,4 +91,44 @@ module.exports = class CommandService {
       connection.release();
     }
   }
+
+  static async readCommandBySession(session_token) {
+    const query = `
+      SELECT
+        c.command_id,
+        c.customer_name,
+        c.status,
+        c.opened_at,
+        c.closed_at,
+        c.table_id,
+        c.qr_code_id,
+        tbl.number AS table_number
+      FROM commands c
+      INNER JOIN tables tbl ON tbl.table_id = c.table_id
+      WHERE c.session_token = ?
+      LIMIT 1
+    `;
+
+    try {
+      const [commands] = await connect.execute(query, [session_token]);
+
+      if (commands.length === 0) {
+        throw {
+          status: 404,
+          message: "Comanda não encontrada.",
+        };
+      }
+
+      return commands[0];
+    } catch (error) {
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao buscar a comanda.",
+      };
+    }
+  }
 };
