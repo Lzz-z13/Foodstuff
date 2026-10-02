@@ -8,6 +8,7 @@ const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
 const tableRoutes = require("./tableRoutes")
 const qrCodeRoutes = require("./qrCodeRoutes");
+const commandRoutes = require("./commandRoutes");
 const logRoutes = require("./logRoutes");
 const QrCodeController = require("../controllers/qrCodeController");
 const CommandController = require("../controllers/commandController");
@@ -33,6 +34,7 @@ router.use("/users", userRoutes);
 router.use(verifyFirstLogin);
 router.use("/tables", tableRoutes);
 router.use("/", qrCodeRoutes);
+router.use("/", commandRoutes);
 router.use("/logs", logRoutes);
 
 

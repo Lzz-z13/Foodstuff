@@ -281,13 +281,17 @@ module.exports = class TableService {
 
       const user_name = userResult[0].name;
 
-      // Verify the target table exists and is active
+      // Verify the target table exists and is active.
+      // FOR UPDATE locks the table row before the OPEN commands are read, so
+      // CommandService.createCommandByTable cannot insert a new OPEN command
+      // for a table that is being deactivated by this transaction.
       const tableQuery = `
         SELECT table_id, number
         FROM tables
         WHERE table_id = ?
           AND is_active = 1
         LIMIT 1
+        FOR UPDATE
       `;
 
       const [tableResult] = await connection.execute(tableQuery, [table_id]);
