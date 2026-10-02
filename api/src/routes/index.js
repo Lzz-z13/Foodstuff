@@ -10,11 +10,16 @@ const tableRoutes = require("./tableRoutes")
 const qrCodeRoutes = require("./qrCodeRoutes");
 const logRoutes = require("./logRoutes");
 const QrCodeController = require("../controllers/qrCodeController");
+const CommandController = require("../controllers/commandController");
 
 // Public routes
 router.use("/health", healthRoutes);
 router.use("/auth", authRoutes);
 router.get("/qr-codes/token/:token", QrCodeController.resolveQrCodeByToken);
+router.post(
+  "/qr-codes/token/:token/commands",
+  CommandController.createCommandByQr,
+);
 
 // Routes with mixed rules
 router.use(verifyJWT);
