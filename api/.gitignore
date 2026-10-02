@@ -5,8 +5,8 @@ node_modules/
 # Personal Archives
 .docker_commands.md
 
-# AI and Agent
-AGENTS.md
-docs/api-conventions.md
-docs/foodstuff-context.md
-.opencode
+# # AI and Agent
+# AGENTS.md
+# docs/api-conventions.md
+# docs/foodstuff-context.md
+# .opencode
