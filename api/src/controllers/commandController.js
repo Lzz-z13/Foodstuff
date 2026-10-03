@@ -1,5 +1,6 @@
 const CommandService = require("../services/commandService");
 const validateCommand = require("../validations/validateCommand");
+const validateCommandId = require("../validations/validateCommandId");
 const validateTableId = require("../validations/validateTableId");
 const validateQrCodeToken = require("../validations/validateQrCodeToken");
 const validateSessionToken = require("../validations/validateSessionToken");
@@ -57,6 +58,24 @@ module.exports = class CommandController {
           table_id: result.table_id,
           qr_code_id: result.qr_code_id,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async readCommandById(req, res, next) {
+    const { command_id } = req.params;
+
+    try {
+      validateCommandId(command_id);
+
+      const command = await CommandService.readCommandById(command_id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Comanda encontrada com sucesso.",
+        data: command,
       });
     } catch (error) {
       next(error);

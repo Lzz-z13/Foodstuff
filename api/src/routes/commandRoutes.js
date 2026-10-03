@@ -9,4 +9,10 @@ router.post(
   CommandController.createCommandByTable,
 );
 
+router.get(
+  "/commands/:command_id",
+  verifyRole("MANAGER", "WAITER", "CASHIER"),
+  CommandController.readCommandById,
+);
+
 module.exports = router;

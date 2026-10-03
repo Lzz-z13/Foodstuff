@@ -195,6 +195,50 @@ module.exports = class CommandService {
     }
   }
 
+  static async readCommandById(command_id) {
+    // The command is a historical record: an inactive table or QR Code must
+    // not prevent it from being read.
+    const query = `
+      SELECT
+        c.command_id,
+        c.customer_name,
+        c.status,
+        c.opened_at,
+        c.closed_at,
+        c.table_id,
+        c.qr_code_id,
+        c.opened_by,
+        c.closed_by,
+        tbl.number AS table_number
+      FROM commands c
+      INNER JOIN tables tbl ON tbl.table_id = c.table_id
+      WHERE c.command_id = ?
+      LIMIT 1
+    `;
+
+    try {
+      const [commands] = await connect.execute(query, [command_id]);
+
+      if (commands.length === 0) {
+        throw {
+          status: 404,
+          message: "Comanda não encontrada.",
+        };
+      }
+
+      return commands[0];
+    } catch (error) {
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao buscar a comanda.",
+      };
+    }
+  }
+
   static async readCommandBySession(session_token) {
     const query = `
       SELECT
