@@ -1,5 +1,6 @@
 const UserService = require("../services/userService");
 const validateUser = require("../validations/validateUser");
+const validateUserId = require("../validations/validateUserId");
 
 const {
   isValidEmail,
@@ -154,6 +155,7 @@ module.exports = class UserController {
     const jwt_user_id = req.user.id;
     const { user_id } = req.params;
     try {
+      validateUserId(user_id);
       await UserService.deleteUserById(user_id, jwt_user_id);
       return res.status(200).json({
         error: false,

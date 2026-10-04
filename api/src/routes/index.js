@@ -1,6 +1,7 @@
 const router = require("express").Router();
 
 const verifyJWT = require("../middlewares/verifyJWT");
+const verifyActiveUser = require("../middlewares/verifyActiveUser");
 const verifyFirstLogin = require("../middlewares/verifyFirstLogin");
 
 const healthRoutes = require("./healthRoutes");
@@ -28,6 +29,7 @@ router.get(
 
 // Routes with mixed rules
 router.use(verifyJWT);
+router.use(verifyActiveUser);
 router.use("/users", userRoutes);
 
 // Protected block FirstLogin routes

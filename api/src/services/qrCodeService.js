@@ -37,6 +37,7 @@ module.exports = class QrCodeService {
         WHERE table_id = ?
           AND is_active = 1
         LIMIT 1
+        FOR UPDATE
       `;
 
       const [tableResult] = await connection.execute(tableQuery, [table_id]);

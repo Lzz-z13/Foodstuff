@@ -26,6 +26,8 @@ describe("PATCH /tables/:table_id", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.error).toBe(false);
+    expect(res.body.data.table_id).toBe(tableId);
+    expect(typeof res.body.data.table_id).toBe("number");
 
     const [tables] = await connect.execute(
       "SELECT number FROM tables WHERE table_id = ?",
@@ -116,6 +118,20 @@ describe("PATCH /tables/:table_id", () => {
         .send(body);
 
       expect(res.status).toBe(400);
+    }
+  });
+
+  test("retorna 400 para table_id malformado", async () => {
+    const invalidIds = ["abc", "0", "-1", "1.5", "%20"];
+
+    for (const tableId of invalidIds) {
+      const res = await request(app)
+        .patch(`${BASE}/tables/${tableId}`)
+        .set("Authorization", managerToken())
+        .send({ number: 22 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("O ID da mesa é inválido.");
     }
   });
 
