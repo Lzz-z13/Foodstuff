@@ -99,4 +99,22 @@ module.exports = class CommandController {
       next(error);
     }
   }
+
+  static async readCommandsByTable(req, res, next) {
+    const { table_id } = req.params;
+
+    try {
+      validateTableId(table_id);
+
+      const commands = await CommandService.readCommandsByTable(table_id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Comandas buscadas com sucesso.",
+        data: commands,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 };
