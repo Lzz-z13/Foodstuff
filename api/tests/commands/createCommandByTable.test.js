@@ -454,7 +454,7 @@ describe("POST /tables/:table_id/commands", () => {
     expect(commands[0].total).toBe(0);
   });
 
-  test("faz rollback e retorna 404 quando o usuário responsável não existe", async () => {
+  test("retorna 403 para token de usuário inexistente e não cria nada", async () => {
     const tableId = await insertTable({ number: 18 });
 
     const unknownWaiterToken = tokenFor({
@@ -468,7 +468,7 @@ describe("POST /tables/:table_id/commands", () => {
       .set("Authorization", unknownWaiterToken)
       .send({ customer_name: "José" });
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(403);
 
     const [commands] = await connect.execute(
       "SELECT COUNT(*) AS total FROM commands",

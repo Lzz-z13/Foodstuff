@@ -282,7 +282,7 @@ describe("DELETE /qr-codes/:qr_code_id", () => {
     expect(logs[0].total).toBe(1);
   });
 
-  test("faz rollback e retorna 404 quando o usuário responsável não existe", async () => {
+  test("retorna 403 para token de usuário inexistente e não cria nada", async () => {
     const tableId = await insertTable({ number: 12 });
     const qrCodeId = await insertQrCode({ table_id: tableId, position: 1 });
 
@@ -296,9 +296,10 @@ describe("DELETE /qr-codes/:qr_code_id", () => {
       .delete(`${BASE}/qr-codes/${qrCodeId}`)
       .set("Authorization", unknownManagerToken);
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(403);
 
-    // Nada foi alterado e nenhum log foi criado pela transação revertida
+    // O token aponta para um usuário que não existe no banco: o middleware
+    // verifyActiveUser barra antes de qualquer escrita.
     const [qrCodes] = await connect.execute(
       "SELECT is_active FROM qr_codes WHERE qr_code_id = ?",
       [qrCodeId],

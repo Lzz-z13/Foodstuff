@@ -1,5 +1,6 @@
 const TableService = require("../services/tableService");
 const validateTable = require("../validations/validateTable");
+const validateTableId = require("../validations/validateTableId");
 
 module.exports = class TableController {
   static async createTable(req, res, next) {
@@ -39,6 +40,7 @@ module.exports = class TableController {
     const { number } = req.body;
 
     try {
+      validateTableId(table_id);
       validateTable(req.body, true);
 
       const result = await TableService.updateTable(
@@ -62,6 +64,7 @@ module.exports = class TableController {
     const { table_id } = req.params;
 
     try {
+      validateTableId(table_id);
       const result = await TableService.deleteTable(table_id, jwt_user_id);
 
       return res.status(200).json({

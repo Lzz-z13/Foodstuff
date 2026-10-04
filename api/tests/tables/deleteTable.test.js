@@ -56,11 +56,12 @@ describe("DELETE /tables/:table_id", () => {
     expect(res.status).toBe(200);
     expect(res.body.error).toBe(false);
     expect(res.body.data).toMatchObject({
-      table_id: String(tableId),
+      table_id: tableId,
       qr_codes_deactivated: 2,
       commands_cancelled: 1,
       orders_cancelled: 3,
     });
+    expect(typeof res.body.data.table_id).toBe("number");
 
     // Mesa em soft delete, registro preservado
     const [tables] = await connect.execute(
@@ -193,6 +194,19 @@ describe("DELETE /tables/:table_id", () => {
       .set("Authorization", managerToken());
 
     expect(res.status).toBe(404);
+  });
+
+  test("retorna 400 para table_id malformado", async () => {
+    const invalidIds = ["abc", "0", "-1", "1.5", "%20"];
+
+    for (const tableId of invalidIds) {
+      const res = await request(app)
+        .delete(`${BASE}/tables/${tableId}`)
+        .set("Authorization", managerToken());
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("O ID da mesa é inválido.");
+    }
   });
 
   test("retorna 403 para WAITER", async () => {

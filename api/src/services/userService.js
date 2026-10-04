@@ -428,7 +428,7 @@ module.exports = class UserService {
   }
 
   static async deleteOwnUserAccount(jwt_user_id) {
-    const userQuery = `SELECT name FROM users WHERE user_id = ? AND is_active = 1 LIMIT 1`;
+    const userQuery = `SELECT name, role FROM users WHERE user_id = ? AND is_active = 1 LIMIT 1`;
     const deleteQuery = `UPDATE users SET is_active = 0 WHERE user_id = ? AND is_active = 1`;
 
     const connection = await connect.getConnection();
@@ -440,6 +440,28 @@ module.exports = class UserService {
         throw { status: 404, message: "Usuário não encontrado." };
       }
       const name = userResult[0].name;
+
+      // O sistema não pode ficar sem nenhum MANAGER ativo. O FOR UPDATE trava
+      // todos os gerentes ativos na mesma ordem em transações concorrentes,
+      // serializando a verificação.
+      if (userResult[0].role === "MANAGER") {
+        const [managers] = await connection.execute(
+          `SELECT user_id
+           FROM users
+           WHERE role = 'MANAGER'
+             AND is_active = 1
+           ORDER BY user_id
+           FOR UPDATE`,
+        );
+
+        if (managers.length === 1 && managers[0].user_id === jwt_user_id) {
+          throw {
+            status: 409,
+            message:
+              "Não é possível desativar o último gerente ativo do sistema.",
+          };
+        }
+      }
 
       await connection.execute(deleteQuery, [jwt_user_id]);
 
@@ -472,7 +494,7 @@ module.exports = class UserService {
     }
 
     const userQuery = `
-      SELECT user_id, name
+      SELECT user_id, name, role
       FROM users
       WHERE user_id IN (?, ?)
         AND is_active = 1
@@ -512,6 +534,26 @@ module.exports = class UserService {
 
       const target_name = targetUser.name;
       const user_name = responsibleUser.name;
+
+      // Mesma regra do /me: não permitir que o sistema fique sem MANAGER ativo.
+      if (targetUser.role === "MANAGER") {
+        const [managers] = await connection.execute(
+          `SELECT user_id
+           FROM users
+           WHERE role = 'MANAGER'
+             AND is_active = 1
+           ORDER BY user_id
+           FOR UPDATE`,
+        );
+
+        if (managers.length === 1 && managers[0].user_id === user_id) {
+          throw {
+            status: 409,
+            message:
+              "Não é possível desativar o último gerente ativo do sistema.",
+          };
+        }
+      }
 
       await connection.execute(deleteQuery, [user_id]);
 

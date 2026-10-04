@@ -140,7 +140,7 @@ describe("POST /qr-codes/token/:token/commands", () => {
     expect(commands[0].total).toBe(0);
   });
 
-  test("retorna 404 para QR Code inativo e faz rollback (sem comanda e sem audit log)", async () => {
+  test("retorna 404 para QR Code inativo sem criar comanda nem audit log", async () => {
     const tableId = await insertTable({ number: 7 });
     const qrCodeId = await insertQrCode({
       table_id: tableId,
@@ -166,7 +166,7 @@ describe("POST /qr-codes/token/:token/commands", () => {
     expect(logs[0].total).toBe(0);
   });
 
-  test("retorna 404 para mesa inativa e faz rollback", async () => {
+  test("retorna 404 para mesa inativa sem criar comanda nem audit log", async () => {
     const tableId = await insertTable({ number: 8, is_active: 0 });
     const qrCodeId = await insertQrCode({ table_id: tableId, position: 1 });
     const token = await tokenOfQrCode(qrCodeId);
