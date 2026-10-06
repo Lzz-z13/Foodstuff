@@ -6,6 +6,11 @@ const verifyFirstLogin = require("../middlewares/verifyFirstLogin");
 const UserController = require("../controllers/userController");
 
 // Logged user
+router.get(
+  "/me",
+  UserController.readCurrentUser
+);
+
 router.patch(
   "/me/password",
   UserController.updateUserPassword
