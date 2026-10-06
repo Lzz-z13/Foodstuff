@@ -52,20 +52,6 @@ module.exports = class UserController {
     }
   }
 
-  static async readCurrentUser(req, res, next) {
-    try {
-      const user = await UserService.readCurrentUser(req.user.id);
-
-      return res.status(200).json({
-        error: false,
-        message: "Usuário buscado com sucesso.",
-        data: user,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
   static async updateUserCredentials(req, res, next) {
     const jwt_user_id = req.user.id;
     if (req.body.email) {

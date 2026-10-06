@@ -26,11 +26,6 @@ export default function Header({ navigation }) {
     navigation.replace("Login");
   }
 
-  function handleOpenProfile() {
-    setMenuAberto(false);
-    navigation.navigate("PerfilGarcom");
-  }
-
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -58,21 +53,6 @@ export default function Header({ navigation }) {
 
         {menuAberto && (
           <View style={styles.dropdown}>
-            <TouchableOpacity
-              style={styles.dropdownItem}
-              onPress={handleOpenProfile}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="person-outline"
-                size={17}
-                color={COLORS.textDark}
-              />
-
-              <Text style={styles.dropdownProfile}>
-                Meu perfil
-              </Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={handleLogout}
@@ -163,12 +143,6 @@ const styles = StyleSheet.create({
   dropdownLogout: {
     fontSize: 13,
     color: "#EF4444",
-    fontWeight: "600",
-  },
-
-  dropdownProfile: {
-    fontSize: 13,
-    color: COLORS.textDark,
     fontWeight: "600",
   },
 });

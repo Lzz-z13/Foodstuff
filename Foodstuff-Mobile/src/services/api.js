@@ -21,9 +21,6 @@ api.interceptors.request.use(async (config) => {
 const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
   postUser: (user) => api.post("/users", user),
-  getCurrentUser: () => api.get("/users/me"),
-  patchUserCredentials: (user) => api.patch("/users/me", user),
-  patchUserPassword: (passwords) => api.patch("/users/me/password", passwords),
 };
 
 export default sheets;
