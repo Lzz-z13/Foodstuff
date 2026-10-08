@@ -27,6 +27,7 @@ const TABS = [
 const ROUTES = {
   Dashboard: "Dashboard",
   Users: "Cadastro",
+  Config: "contaAdmin",
 };
 
 export default function Navbar({
