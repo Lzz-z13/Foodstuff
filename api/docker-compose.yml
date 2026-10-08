@@ -9,6 +9,14 @@ services: # Containers
     volumes:
       - .:/usr/app 
       - /usr/app/node_modules
+
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    
     depends_on:
       db:
         condition: service_healthy
