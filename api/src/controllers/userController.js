@@ -10,6 +10,8 @@ const { normalizePhone } = require("../utils/validators/phoneValidator");
 
 module.exports = class UserController {
   static async createUser(req, res, next) {
+    console.log("BODY RECEBIDO:", req.body);
+    
     const jwt_user_id = req.user.id;
 
     req.body.email = normalizeEmail(req.body.email || "");
