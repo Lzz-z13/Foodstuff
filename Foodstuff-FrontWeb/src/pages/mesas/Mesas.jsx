@@ -145,11 +145,7 @@ export default function Mesas() {
       return;
     }
 
-    const maiorNumero = mesas.reduce(
-      (maior, mesa) => Math.max(maior, Number(mesa.numero) || 0),
-      0,
-    );
-    const numero = maiorNumero + 1;
+    const numero = mesas.length + 1;
 
     try {
       setSalvando(true);
