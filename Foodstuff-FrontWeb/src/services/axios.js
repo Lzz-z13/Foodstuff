@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://10.89.240.58:5000/api/foodstuff",
+  baseURL: "http://{IP}:5000/api/foodstuff",
   headers: {
     accept: "application/json",
   },
@@ -26,6 +26,9 @@ api.interceptors.request.use(
 const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
   postUser: (user) => api.post("/users", user),
+  postTable: (table) => api.post("/tables", table),
+  getAllTables: () => api.get("/tables"),
+  deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
 };
 
 export default sheets;
