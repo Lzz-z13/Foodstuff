@@ -45,12 +45,20 @@ export default function Login() {
         localStorage.setItem("user", JSON.stringify(response.data.data.user));
       }
 
+      const loggedUser = response.data.data.user;
+      const precisaTrocarSenha = Number(loggedUser?.first_login) === 1;
+
       setSnackbar({
-        message: response.data.message || "Login realizado com sucesso!",
-        type: "success",
+        message: precisaTrocarSenha
+          ? "Primeiro acesso: troque sua senha para continuar."
+          : response.data.message || "Login realizado com sucesso!",
+        type: precisaTrocarSenha ? "warning" : "success",
       });
 
-      setTimeout(() => navigate("/home"), 1000);
+      setTimeout(
+        () => navigate(precisaTrocarSenha ? "/minha-conta" : "/home"),
+        1000,
+      );
     } catch (error) {
       setSnackbar({
         message:

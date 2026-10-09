@@ -29,6 +29,8 @@ const sheets = {
   postTable: (table) => api.post("/tables", table),
   getAllTables: () => api.get("/tables"),
   deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
+  patchMe: (data) => api.patch("/users/me", data),
+  patchMePassword: (data) => api.patch("/users/me/password", data),
 };
 
 export default sheets;
