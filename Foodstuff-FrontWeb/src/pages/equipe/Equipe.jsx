@@ -116,8 +116,14 @@ export default function Equipe() {
       );
       setSnackbar({ message: "Usuário atualizado com sucesso.", type: "success" });
     } catch (error) {
+      const status = error?.response?.status;
+      const mensagem =
+        error?.response?.data?.message ||
+        (status === 404
+          ? "Rota não encontrada no servidor. Reinicie a API para carregar o novo endpoint."
+          : "Erro ao atualizar o usuário.");
       setSnackbar({
-        message: error?.response?.data?.message || "Erro ao atualizar o usuário.",
+        message: status ? `Erro ${status}: ${mensagem}` : mensagem,
         type: "error",
       });
     } finally {
