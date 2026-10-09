@@ -171,9 +171,21 @@ export default function SideBar() {
 
           {menuAberto && (
             <div className="absolute right-2 bottom-[75px] left-2 z-50 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+              <Link
+                to="/minha-conta"
+                onClick={() => {
+                  setMenuAberto(false);
+                  setAberta(false);
+                }}
+                className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-100"
+              >
+                <Settings size={16} />
+                <span className="ml-2">Minha Conta</span>
+              </Link>
+
               <button
                 type="button"
-                className="flex w-full cursor-pointer rounded-lg px-3 py-2 text-left text-xs text-red-500 hover:bg-red-100"
+                className="mt-1 flex w-full cursor-pointer rounded-lg px-3 py-2 text-left text-xs text-red-500 hover:bg-red-100"
                 onClick={() => {
                   localStorage.removeItem("token");
                   localStorage.removeItem("user");

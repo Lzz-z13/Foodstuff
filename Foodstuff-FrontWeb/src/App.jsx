@@ -7,6 +7,7 @@ import RecupSenha from "./pages/recupSenha/RecupSenha";
 import CadastroFuncionario from "./pages/cadastro/CadastroFuncionario";
 import Home from "./pages/home/Home";
 import Mesas from "./pages/mesas/Mesas";
+import MinhaConta from "./pages/minhaConta/MinhaConta";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
@@ -24,6 +25,7 @@ function App() {
           <Route element={<DefaultLayout />}>
             <Route path="/home" element={<Home />} />
             <Route path="/mesas" element={<Mesas />} />
+            <Route path="/minha-conta" element={<MinhaConta />} />
           </Route>
           <Route path="/cadastro" element={<CadastroFuncionario />} />
         </Route>
