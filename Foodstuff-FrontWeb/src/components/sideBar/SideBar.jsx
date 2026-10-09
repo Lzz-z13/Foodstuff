@@ -140,11 +140,6 @@ export default function SideBar() {
             <span>Equipe</span>
           </Link>
 
-          <Link to="/configs" onClick={fechar} className={LINK_BASE}>
-            <Settings size={16} />
-            <span>Configs do Restaurante</span>
-          </Link>
-
           <Link to="/cadastro" onClick={fechar} className={`${LINK_BASE} mt-2`}>
             <UserRoundPlus size={16} />
             <span>Cadastrar Usuário</span>
