@@ -4,10 +4,16 @@ const validateUserId = require("../validations/validateUserId");
 
 const {
   isValidEmail,
+  hasAllowedDomain,
   normalizeEmail,
 } = require("../utils/validators/emailValidator");
 
-const { normalizePhone } = require("../utils/validators/phoneValidator");
+const {
+  isValidPhone,
+  normalizePhone,
+} = require("../utils/validators/phoneValidator");
+
+const { isValidUserName } = require("../utils/validators/userValidator");
 
 module.exports = class UserController {
   static async createUser(req, res, next) {
@@ -71,6 +77,68 @@ module.exports = class UserController {
         phone,
         jwt_user_id
       );
+      return res.status(200).json({
+        error: false,
+        message: "Usuário atualizado com sucesso.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateUserById(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { user_id } = req.params;
+
+    if (req.body.email) {
+      req.body.email = normalizeEmail(req.body.email);
+    }
+    if (req.body.phone) {
+      req.body.phone = normalizePhone(req.body.phone);
+    }
+    const { name, email, phone, role } = req.body;
+
+    try {
+      validateUserId(user_id);
+
+      if (!name && !email && !phone && !role) {
+        throw {
+          status: 400,
+          message: "Nenhum campo fornecido para atualizar.",
+        };
+      }
+
+      if (name && !isValidUserName(name)) {
+        throw {
+          status: 400,
+          message: "O nome deve ter entre 1 e 100 caracteres.",
+        };
+      }
+
+      if (email) {
+        if (!isValidEmail(email)) {
+          throw { status: 400, message: "Email inválido." };
+        }
+        if (!hasAllowedDomain(email)) {
+          throw { status: 400, message: "Domínio de email não permitido." };
+        }
+      }
+
+      if (phone && !isValidPhone(phone)) {
+        throw { status: 400, message: "Telefone inválido." };
+      }
+
+      if (role && !["MANAGER", "WAITER", "KITCHEN", "CASHIER"].includes(role)) {
+        throw { status: 400, message: "Cargo de usuário inválido." };
+      }
+
+      await UserService.updateUserById(user_id, jwt_user_id, {
+        name,
+        email,
+        phone,
+        role,
+      });
+
       return res.status(200).json({
         error: false,
         message: "Usuário atualizado com sucesso.",

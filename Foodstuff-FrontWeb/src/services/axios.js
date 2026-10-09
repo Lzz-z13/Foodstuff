@@ -31,6 +31,8 @@ const sheets = {
   deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
   patchMe: (data) => api.patch("/users/me", data),
   patchMePassword: (data) => api.patch("/users/me/password", data),
+  getAllUsers: () => api.get("/users"),
+  patchUserById: (userId, data) => api.patch(`/users/${userId}`, data),
 };
 
 export default sheets;
