@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Clock, Loader2, MoreVertical, Plus, Table2, Trash2, Users } from "lucide-react";
+import {
+  Clock,
+  Loader2,
+  MoreVertical,
+  Plus,
+  Table2,
+  Trash2,
+  Users,
+} from "lucide-react";
 
 import Snackbar from "../../components/snackBar/SnackBar";
 import api from "../../services/axios";
@@ -116,21 +124,19 @@ export default function Mesas() {
   }, [isManager]);
 
   const mesasFiltradas =
-    filtro === "todas"
-      ? mesas
-      : mesas.filter((m) => m.status === filtro);
+    filtro === "todas" ? mesas : mesas.filter((m) => m.status === filtro);
 
   const totalMesas = mesas.length;
-  const mesasOcupadas = mesas.filter(
-    (m) => m.status === "ocupada",
-  ).length;
+  const mesasOcupadas = mesas.filter((m) => m.status === "ocupada").length;
   const mesasLivres = mesas.filter((m) => m.status === "livre").length;
 
-  const temposMin = mesas.map((m) => {
-    const match =
-      typeof m.tempo === "string" ? m.tempo.match(/(\d+)\s*min/) : null;
-    return match ? Number(match[1]) : null;
-  }).filter((n) => n !== null);
+  const temposMin = mesas
+    .map((m) => {
+      const match =
+        typeof m.tempo === "string" ? m.tempo.match(/(\d+)\s*min/) : null;
+      return match ? Number(match[1]) : null;
+    })
+    .filter((n) => n !== null);
   const tempoMedio =
     temposMin.length > 0
       ? `${Math.round(temposMin.reduce((soma, n) => soma + n, 0) / temposMin.length)} min`
@@ -254,7 +260,8 @@ export default function Mesas() {
 
       {!isManager && (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-800">
-          Acesso restrito. Apenas gerentes podem visualizar, criar e excluir mesas.
+          Acesso restrito. Apenas gerentes podem visualizar, criar e excluir
+          mesas.
         </div>
       )}
 
