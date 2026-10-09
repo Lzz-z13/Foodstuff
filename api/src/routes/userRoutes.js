@@ -36,10 +36,10 @@ router.get(
   UserController.readAllUsers
 );
 
-// router.patch(
-//   "/:user_id",
-//   UserController.updateUser
-// );
+router.patch(
+  "/:user_id",
+  UserController.updateUserById
+);
 
 router.delete(
   "/:user_id",

@@ -280,6 +280,103 @@ module.exports = class UserService {
     }
   }
 
+  static async updateUserById(user_id, jwt_user_id, { name, email, phone, role }) {
+    if (user_id === jwt_user_id) {
+      throw {
+        status: 400,
+        message: "Para atualizar sua própria conta, utilize a rota /me.",
+      };
+    }
+
+    const updates = [];
+    const values = [];
+
+    if (name) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (email) {
+      updates.push("email = ?");
+      values.push(email);
+    }
+    if (phone) {
+      updates.push("phone = ?");
+      values.push(phone);
+    }
+    if (role) {
+      updates.push("role = ?");
+      values.push(role);
+    }
+
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [targetResult] = await connection.execute(
+        `SELECT name, role
+         FROM users
+         WHERE user_id = ?
+           AND is_active = 1
+         LIMIT 1`,
+        [user_id],
+      );
+
+      if (targetResult.length === 0) {
+        throw { status: 404, message: "Usuário não encontrado." };
+      }
+
+      // Mesma regra do delete: o sistema não pode ficar sem MANAGER ativo.
+      if (role && role !== "MANAGER" && targetResult[0].role === "MANAGER") {
+        const [managers] = await connection.execute(
+          `SELECT user_id
+           FROM users
+           WHERE role = 'MANAGER'
+             AND is_active = 1
+           ORDER BY user_id
+           FOR UPDATE`,
+        );
+
+        if (managers.length === 1 && managers[0].user_id === user_id) {
+          throw {
+            status: 409,
+            message:
+              "Não é possível remover o cargo do último gerente ativo do sistema.",
+          };
+        }
+      }
+
+      values.push(user_id);
+      await connection.execute(
+        `UPDATE users
+         SET ${updates.join(", ")}
+         WHERE user_id = ?
+           AND is_active = 1`,
+        values,
+      );
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "users",
+        user_id,
+        `Usuário ${targetResult[0].name} atualizado.`,
+      );
+
+      await connection.commit();
+      return;
+    } catch (error) {
+      await connection.rollback();
+      if (error.status) throw error;
+      if (error.code === "ER_DUP_ENTRY") {
+        throw { status: 409, message: "Telefone ou email já registrado." };
+      }
+      throw { status: 500, message: "Erro interno do servidor." };
+    } finally {
+      connection.release();
+    }
+  }
+
   static async updateUserPassword(jwt_user_id, current_password, new_password) {
     const connection = await connect.getConnection();
     try {
