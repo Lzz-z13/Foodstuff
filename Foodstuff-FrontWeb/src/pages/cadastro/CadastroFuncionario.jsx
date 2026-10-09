@@ -14,7 +14,12 @@ import SideBar from "../../components/sideBar/SideBar";
 import api from "../../services/axios";
 import Snackbar from "../../components/snackBar/SnackBar";
 
-const cargos = ["WAITER", "KITCHEN", "CASHIER", "MANAGER"];
+const cargos = [
+  { valor: "WAITER", label: "Garçom" },
+  { valor: "KITCHEN", label: "Cozinha" },
+  { valor: "CASHIER", label: "Caixa" },
+  { valor: "MANAGER", label: "Gerente" },
+];
 
 export default function CadastroFuncionario() {
   const [form, setForm] = useState({
@@ -77,7 +82,7 @@ export default function CadastroFuncionario() {
         nome: "",
         email: "",
         telefone: "",
-        cargo: "Garçom",
+        cargo: "WAITER",
       });
     } catch (error) {
       setSnackbar({
@@ -96,7 +101,7 @@ export default function CadastroFuncionario() {
     <>
       <SideBar userName={user.name} userEmail={user.email}/>
       
-      <div className="md:ml-[163px]">
+      <div className="md:ml-[10px]">
         {snackbar && (
           <Snackbar
             isOpen={true}
@@ -108,8 +113,6 @@ export default function CadastroFuncionario() {
         <div className="cadastro-layout">
           <main className="cadastro-main">
             <div className="top-actions">
-              <Bell />
-              <CircleHelp />
               <CircleUserRound className="profile-dot" />
             </div>
 
@@ -118,6 +121,8 @@ export default function CadastroFuncionario() {
                 <div className="heading-icon">
                   <UserRoundPlus />
                 </div>
+
+                <span className="heading-kicker">Novo acesso</span>
 
                 <h1>Cadastre um funcionário</h1>
 
@@ -158,15 +163,20 @@ export default function CadastroFuncionario() {
                 <div className="cargo">
                   <label>Cargo</label>
 
+                  <p className="cargo-hint">
+                    Selecione a função que esse funcionário terá no sistema.
+                  </p>
+
                   <div className="roles">
-                    {cargos.map((c) => (
+                    {cargos.map((cargo) => (
                       <button
                         type="button"
-                        key={c}
-                        className={form.cargo === c ? "selected" : ""}
-                        onClick={() => alterar("cargo", c)}
+                        key={cargo.valor}
+                        aria-pressed={form.cargo === cargo.valor}
+                        className={form.cargo === cargo.valor ? "selected" : ""}
+                        onClick={() => alterar("cargo", cargo.valor)}
                       >
-                        {c}
+                        {cargo.label}
                       </button>
                     ))}
                   </div>
