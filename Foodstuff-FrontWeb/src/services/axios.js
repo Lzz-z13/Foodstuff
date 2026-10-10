@@ -25,6 +25,12 @@ api.interceptors.request.use(
 
 const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
+  postPasswordResetRequest: (data) =>
+    api.post("/auth/password-reset/request", data),
+  postPasswordResetVerify: (data) =>
+    api.post("/auth/password-reset/verify", data),
+  postPasswordResetConfirm: (data) =>
+    api.post("/auth/password-reset/confirm", data),
   postUser: (user) => api.post("/users", user),
   postTable: (table) => api.post("/tables", table),
   getAllTables: () => api.get("/tables"),
