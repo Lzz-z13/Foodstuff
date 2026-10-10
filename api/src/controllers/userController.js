@@ -1,4 +1,5 @@
 const UserService = require("../services/userService");
+const PasswordResetService = require("../services/passwordResetService");
 const validateUser = require("../validations/validateUser");
 const validateUserId = require("../validations/validateUserId");
 
@@ -228,6 +229,117 @@ module.exports = class UserController {
       return res.status(200).json({
         error: false,
         message: "Usuário desativado com sucesso.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async requestPasswordReset(req, res, next) {
+    req.body.email = normalizeEmail(req.body.email || "");
+
+    const { email } = req.body;
+
+    try {
+      if (!email) {
+        throw {
+          status: 400,
+          message: "Todos os campos devem ser preenchidos.",
+        };
+      }
+
+      if (!isValidEmail(email)) {
+        throw {
+          status: 400,
+          message: "Email inválido.",
+        };
+      }
+
+      const result = await PasswordResetService.requestPasswordReset(email);
+
+      return res.status(200).json({
+        error: false,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async verifyPasswordReset(req, res, next) {
+    req.body.email = normalizeEmail(req.body.email || "");
+
+    const { email, otp } = req.body;
+
+    try {
+      if (!email || !otp) {
+        throw {
+          status: 400,
+          message: "Todos os campos devem ser preenchidos.",
+        };
+      }
+
+      if (!isValidEmail(email)) {
+        throw {
+          status: 400,
+          message: "Email inválido.",
+        };
+      }
+
+      // Formato inválido recebe o mesmo erro genérico do código incorreto,
+      // para não criar um oráculo de enumeração.
+      if (!/^\d{6}$/.test(String(otp))) {
+        throw {
+          status: 400,
+          message: "Código inválido ou expirado.",
+        };
+      }
+
+      const result = await PasswordResetService.verifyPasswordReset(
+        email,
+        String(otp),
+      );
+
+      if (result.flow === "first_login") {
+        return res.status(200).json({
+          error: false,
+          message:
+            "Código verificado. Uma nova senha temporária foi enviada para o seu email. Efetue login e altere a senha.",
+          flow: "first_login",
+          next: "login",
+        });
+      }
+
+      return res.status(200).json({
+        error: false,
+        message:
+          "Código verificado. Defina uma nova senha para concluir a recuperação.",
+        flow: "reset_password",
+        next: "new_password",
+        resetToken: result.resetToken,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async confirmPasswordReset(req, res, next) {
+    // Aceita snake_case (padrão do projeto) e camelCase (contrato da tarefa).
+    const resetToken = req.body.reset_token || req.body.resetToken;
+    const newPassword = req.body.new_password || req.body.newPassword;
+    const confirmPassword =
+      req.body.confirm_password || req.body.confirmPassword;
+
+    try {
+      const result = await PasswordResetService.confirmPasswordReset(
+        resetToken,
+        newPassword,
+        confirmPassword,
+      );
+
+      return res.status(200).json({
+        error: false,
+        message: result.message,
       });
     } catch (error) {
       next(error);

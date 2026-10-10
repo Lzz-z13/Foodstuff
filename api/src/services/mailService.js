@@ -88,4 +88,107 @@ function templateEmail(nome, email, senha) {
   `;
 }
 
-module.exports = { sendEmail, passGenerator, templateEmail };
+function templateOtpEmail(nome, otp) {
+  return `
+    <div style="
+    background-color: #2957A4;
+    padding: 40px 0;
+    font-family: Arial, sans-serif;
+  ">
+    <div style="
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    ">
+
+      <h2 style="color: #2957A4; margin-bottom: 20px;">
+        Olá, ${nome}!
+      </h2>
+
+      <p style="color: #333; font-size: 16px;">
+        Você solicitou a recuperação da sua senha de acesso ao sistema.
+      </p>
+
+      <p style="color: #333; font-size: 14px;">
+        Utilize o código abaixo para continuar. Ele é válido por 5 minutos:
+      </p>
+
+      <div style="
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      ">
+        <p style="margin: 5px 0; font-size: 32px; letter-spacing: 8px;"><strong>${otp}</strong></p>
+      </div>
+
+      <p style="color: #555; font-size: 14px;">
+        ⚠️ Se você não solicitou essa recuperação, apenas ignore este email. Nenhuma alteração será feita na sua conta.
+      </p>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+
+      <p style="font-size: 12px; color: #999;">
+        ESTE É UM EMAIL AUTOMÁTICO, NÃO RESPONDA.
+      </p>
+
+    </div>
+  </div>
+  `;
+}
+
+function templateResendCredentials(nome, email, senha) {
+  return `
+    <div style="
+    background-color: #2957A4;
+    padding: 40px 0;
+    font-family: Arial, sans-serif;
+  ">
+    <div style="
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    ">
+
+      <h2 style="color: #2957A4; margin-bottom: 20px;">
+        Olá, ${nome}!
+      </h2>
+
+      <p style="color: #333; font-size: 16px;">
+        Conforme solicitado, uma nova senha temporária foi gerada para o seu acesso.
+      </p>
+
+      <div style="
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      ">
+        <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+        <p style="margin: 5px 0;"><strong>Senha temporária:</strong> ${senha}</p>
+      </div>
+
+      <p style="color: #555; font-size: 14px;">
+        ⚠️ Efetue login com essa senha e altere-a em seguida: no seu primeiro acesso, a troca de senha é obrigatória por segurança.
+      </p>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+
+      <p style="font-size: 12px; color: #999;">
+        ESTE É UM EMAIL AUTOMÁTICO, NÃO RESPONDA.
+      </p>
+
+    </div>
+  </div>
+  `;
+}
+
+module.exports = { sendEmail, passGenerator, templateEmail, templateOtpEmail, templateResendCredentials };
