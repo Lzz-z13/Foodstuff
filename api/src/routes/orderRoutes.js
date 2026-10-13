@@ -9,4 +9,16 @@ router.post(
   OrderController.createOrder,
 );
 
+router.get(
+  "/orders",
+  verifyRole("MANAGER", "WAITER", "KITCHEN", "CASHIER"),
+  OrderController.readAllOrders,
+);
+
+router.get(
+  "/orders/:order_id",
+  verifyRole("MANAGER", "WAITER", "KITCHEN", "CASHIER"),
+  OrderController.readOrderById,
+);
+
 module.exports = router;
