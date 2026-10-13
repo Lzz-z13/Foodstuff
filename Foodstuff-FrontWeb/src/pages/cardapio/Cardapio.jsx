@@ -14,6 +14,18 @@ import {
 import api from "../../services/axios";
 import Snackbar from "../../components/snackBar/SnackBar";
 import ProductModal from "./ProductModal";
+import CategoryModal from "./CategoryModal";
+
+const CATEGORIAS_PADRAO = [
+  { name: "Entradas", description: "Porções, bruschettas e entradas" },
+  { name: "Pizzas", description: "Pizzas tradicionais e especiais" },
+  { name: "Massas", description: "Massas artesanais e molhos" },
+  { name: "Pratos Principais", description: "Pratos principais da casa" },
+  { name: "Lanches", description: "Burgers, lanches e sanduíches" },
+  { name: "Saladas", description: "Saladas frescas" },
+  { name: "Bebidas", description: "Refrigerantes, sucos e sodas" },
+  { name: "Sobremesas", description: "Doces e sobremesas" },
+];
 
 function getStoredUser() {
   try {
@@ -75,6 +87,17 @@ export default function Cardapio() {
   const [salvando, setSalvando] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
   const [deletandoId, setDeletandoId] = useState(null);
+
+  const [categoriaModalAberto, setCategoriaModalAberto] = useState(false);
+  const [categoriaEditando, setCategoriaEditando] = useState(null);
+  const [salvandoCategoria, setSalvandoCategoria] = useState(false);
+  const [deletandoCategoria, setDeletandoCategoria] = useState(false);
+  const [populandoCategorias, setPopulandoCategorias] = useState(false);
+
+  async function recarregarCategorias() {
+    const res = await api.getAllCategories();
+    setCategorias(getListFromResponse(res));
+  }
 
   async function carregarTudo() {
     try {
@@ -271,6 +294,115 @@ export default function Cardapio() {
     }
   }
 
+  function abrirNovaCategoria() {
+    if (!isManager) {
+      setSnackbar({
+        message: "Apenas gerentes podem criar categorias.",
+        type: "warning",
+      });
+      return;
+    }
+    setCategoriaEditando(null);
+    setCategoriaModalAberto(true);
+  }
+
+  async function handleSalvarCategoria(form) {
+    try {
+      setSalvandoCategoria(true);
+
+      if (categoriaEditando) {
+        const res = await api.patchCategory(
+          categoriaEditando.category_id,
+          form,
+        );
+        setSnackbar({
+          message: res?.data?.message || "Categoria atualizada com sucesso.",
+          type: "success",
+        });
+      } else {
+        const res = await api.postCategory(form);
+        setSnackbar({
+          message: res?.data?.message || "Categoria criada com sucesso.",
+          type: "success",
+        });
+      }
+
+      setCategoriaModalAberto(false);
+      setCategoriaEditando(null);
+      await recarregarCategorias();
+    } catch (error) {
+      setSnackbar({
+        message: getApiMessage(error, "Erro ao salvar categoria."),
+        type: "error",
+      });
+    } finally {
+      setSalvandoCategoria(false);
+    }
+  }
+
+  async function handleExcluirCategoria() {
+    if (!categoriaEditando) return;
+
+    const confirmar = window.confirm(
+      `Deseja realmente desativar a categoria "${categoriaEditando.name}"?`,
+    );
+    if (!confirmar) return;
+
+    try {
+      setDeletandoCategoria(true);
+      const res = await api.deleteCategory(categoriaEditando.category_id);
+      setCategoriaModalAberto(false);
+      setCategoriaEditando(null);
+      setFiltroCategoria("TODOS");
+      await recarregarCategorias();
+      setSnackbar({
+        message: res?.data?.message || "Categoria desativada com sucesso.",
+        type: "success",
+      });
+    } catch (error) {
+      setSnackbar({
+        message: getApiMessage(error, "Erro ao desativar categoria."),
+        type: "error",
+      });
+    } finally {
+      setDeletandoCategoria(false);
+    }
+  }
+
+  async function handlePopularPadrao() {
+    if (!isManager || populandoCategorias) return;
+
+    try {
+      setPopulandoCategorias(true);
+      let criadas = 0;
+
+      for (const cat of CATEGORIAS_PADRAO) {
+        try {
+          await api.postCategory(cat);
+          criadas += 1;
+        } catch (error) {
+          if (error?.response?.status !== 409) throw error;
+        }
+      }
+
+      await recarregarCategorias();
+      setSnackbar({
+        message:
+          criadas > 0
+            ? `${criadas} categorias padrão cadastradas.`
+            : "Categorias padrão já existiam.",
+        type: "success",
+      });
+    } catch (error) {
+      setSnackbar({
+        message: getApiMessage(error, "Erro ao popular categorias."),
+        type: "error",
+      });
+    } finally {
+      setPopulandoCategorias(false);
+    }
+  }
+
   return (
     <div className="min-h-full">
       {snackbar && (
@@ -390,6 +522,57 @@ export default function Cardapio() {
           </button>
         ))}
 
+        {isManager && (
+          <>
+            <button
+              type="button"
+              onClick={abrirNovaCategoria}
+              title="Nova categoria"
+              className="flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-slate-300 bg-white px-4 py-1.5 text-[13px] font-medium text-slate-500 transition hover:border-[#ff5a47] hover:text-[#ff5a47]"
+            >
+              <Plus size={14} />
+              Categoria
+            </button>
+
+            {filtroCategoria !== "TODOS" && (
+              <button
+                type="button"
+                title="Editar categoria filtrada"
+                onClick={() => {
+                  const atual = categorias.find(
+                    (c) => String(c.category_id) === String(filtroCategoria),
+                  );
+                  if (atual) {
+                    setCategoriaEditando(atual);
+                    setCategoriaModalAberto(true);
+                  }
+                }}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white text-slate-500 ring-1 ring-slate-200 transition hover:bg-slate-50"
+              >
+                <Pencil size={13} />
+              </button>
+            )}
+
+            {categorias.length === 0 && (
+              <button
+                type="button"
+                onClick={handlePopularPadrao}
+                disabled={populandoCategorias}
+                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-slate-900 px-4 py-1.5 text-[12px] font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+              >
+                {populandoCategorias ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <LayoutGrid size={13} />
+                )}
+                {populandoCategorias
+                  ? "Populando..."
+                  : "Popular categorias padrão"}
+              </button>
+            )}
+          </>
+        )}
+
         <div className="relative ml-auto w-full sm:w-72">
           <Search
             size={15}
@@ -419,18 +602,37 @@ export default function Cardapio() {
             </p>
             <p className="max-w-sm text-[12px] text-slate-400">
               {categorias.length === 0
-                ? "Cadastre categorias e produtos para montar o cardápio do cliente e do garçom."
+                ? "Use o botão Popular categorias padrão ou crie uma categoria para montar o cardápio."
                 : "Ajuste o filtro ou a busca, ou cadastre um novo item."}
             </p>
             {isManager && (
-              <button
-                type="button"
-                onClick={abrirCriacao}
-                className="mt-2 flex cursor-pointer items-center gap-2 rounded-xl bg-[#ff5a47] px-4 py-2 text-[12px] font-semibold text-white hover:brightness-95"
-              >
-                <Plus size={14} />
-                Adicionar Novo Item
-              </button>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                {categorias.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePopularPadrao}
+                    disabled={populandoCategorias}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-[12px] font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+                  >
+                    {populandoCategorias ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <LayoutGrid size={14} />
+                    )}
+                    {populandoCategorias
+                      ? "Populando..."
+                      : "Popular categorias padrão"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={abrirCriacao}
+                  className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#ff5a47] px-4 py-2 text-[12px] font-semibold text-white hover:brightness-95"
+                >
+                  <Plus size={14} />
+                  Adicionar Novo Item
+                </button>
+              </div>
             )}
           </div>
         ) : (
@@ -556,6 +758,21 @@ export default function Cardapio() {
             setEditando(null);
           }}
           onSubmit={handleSalvar}
+          onOpenCategoryModal={abrirNovaCategoria}
+        />
+      )}
+
+      {categoriaModalAberto && (
+        <CategoryModal
+          initialData={categoriaEditando}
+          salvando={salvandoCategoria}
+          deletando={deletandoCategoria}
+          onClose={() => {
+            setCategoriaModalAberto(false);
+            setCategoriaEditando(null);
+          }}
+          onSubmit={handleSalvarCategoria}
+          onDelete={categoriaEditando ? handleExcluirCategoria : undefined}
         />
       )}
     </div>

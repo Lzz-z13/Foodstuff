@@ -32,6 +32,7 @@ export default function ProductModal({
   salvando,
   onClose,
   onSubmit,
+  onOpenCategoryModal,
 }) {
   const editando = Boolean(initialData?.product_id);
   const [form, setForm] = useState(() => toForm(initialData));
@@ -146,9 +147,18 @@ export default function ProductModal({
             />
           </label>
 
-          <label className="block sm:col-span-1">
-            <span className="mb-1 block text-[12px] font-semibold text-slate-700">
+          <div className="block sm:col-span-1">
+            <span className="mb-1 flex items-center justify-between text-[12px] font-semibold text-slate-700">
               Categoria *
+              {onOpenCategoryModal && (
+                <button
+                  type="button"
+                  onClick={onOpenCategoryModal}
+                  className="cursor-pointer text-[11px] font-semibold text-[#ff5a47] hover:underline"
+                >
+                  + Nova
+                </button>
+              )}
             </span>
             <select
               value={form.category_id}
@@ -162,7 +172,7 @@ export default function ProductModal({
                 </option>
               ))}
             </select>
-          </label>
+          </div>
 
           <label className="block">
             <span className="mb-1 block text-[12px] font-semibold text-slate-700">
