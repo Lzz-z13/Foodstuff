@@ -11,6 +11,8 @@ const tableRoutes = require("./tableRoutes")
 const qrCodeRoutes = require("./qrCodeRoutes");
 const commandRoutes = require("./commandRoutes");
 const orderRoutes = require("./orderRoutes");
+const productRoutes = require("./productRoutes");
+const categoryRoutes = require("./categoryRoutes");
 const logRoutes = require("./logRoutes");
 const QrCodeController = require("../controllers/qrCodeController");
 const CommandController = require("../controllers/commandController");
@@ -36,6 +38,8 @@ router.use("/users", userRoutes);
 // Protected block FirstLogin routes
 router.use(verifyFirstLogin);
 router.use("/tables", tableRoutes);
+router.use("/products", productRoutes);
+router.use("/categories", categoryRoutes);
 router.use("/", qrCodeRoutes);
 router.use("/", commandRoutes);
 router.use("/", orderRoutes);

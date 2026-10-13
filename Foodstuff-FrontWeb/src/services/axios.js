@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://192.168.100.46:5000/api/foodstuff",
+  baseURL: "http://[IP]:5000/api/foodstuff",
   headers: {
     accept: "application/json",
   },
@@ -41,6 +41,16 @@ const sheets = {
   patchUserById: (userId, data) => api.patch(`/users/${userId}`, data),
   getAllOrders: () => api.get("/orders"),
   getOrderById: (orderId) => api.get(`/orders/${orderId}`),
+  getAllProducts: (params) => api.get("/products", { params }),
+  getProductById: (productId) => api.get(`/products/${productId}`),
+  postProduct: (data) => api.post("/products", data),
+  patchProduct: (productId, data) =>
+    api.patch(`/products/${productId}`, data),
+  patchProductAvailability: (productId, is_available) =>
+    api.patch(`/products/${productId}/availability`, { is_available }),
+  deleteProduct: (productId) => api.delete(`/products/${productId}`),
+  getAllCategories: () => api.get("/categories"),
+  postCategory: (data) => api.post("/categories", data),
 };
 
 export default sheets;

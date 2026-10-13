@@ -1,5 +1,6 @@
 -- Schema foodstuff
 CREATE DATABASE IF NOT EXISTS foodstuff;
+
 USE foodstuff;
 
 -- 1. USERS
@@ -244,5 +245,23 @@ CREATE TABLE
 
 -- First insert (just for development):
 -- password: admin
-INSERT INTO users (user_id, name, email, phone, password, role, first_login) values
-("1c869085-e414-4b18-8f8f-1ca8181c1033", "admin_first_user", "admin@admin.com", "11999551188", "$2b$10$YS0iwI4iNnnmwyVy8WatdOEgOPWWohkEFixRvKfEKXYlE7OPLmgP.", "MANAGER", 0);
+INSERT INTO
+    users (
+        user_id,
+        name,
+        email,
+        phone,
+        password,
+        role,
+        first_login
+    )
+values
+    (
+        "1c869085-e414-4b18-8f8f-1ca8181c1033",
+        "admin_first_user",
+        "admin@admin.com",
+        "11999551188",
+        "$2b$10$YS0iwI4iNnnmwyVy8WatdOEgOPWWohkEFixRvKfEKXYlE7OPLmgP.",
+        "MANAGER",
+        0
+    );
