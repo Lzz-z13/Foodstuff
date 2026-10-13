@@ -644,12 +644,15 @@ export default function Cardapio() {
                   key={p.product_id}
                   className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="h-44 w-full overflow-hidden bg-slate-100">
+                  <div
+                    className="h-44 w-full overflow-hidden bg-slate-100 cursor-pointer"
+                    onClick={() => abrirEdicao(p)}
+                  >
                     {p.image ? (
                       <img
                         src={p.image}
                         alt={p.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover "
                         loading="lazy"
                         onError={(e) => {
                           e.currentTarget.style.display = "none";
