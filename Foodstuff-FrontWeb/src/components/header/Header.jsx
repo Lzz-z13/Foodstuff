@@ -8,7 +8,7 @@ export default function Header({ onDateClick }) {
       {/* pl-12 = espaço pro botão flutuante da sidebar (fixed left-4) */}
       <div className="min-w-0 pl-12">
         <h1 className="truncate text-[22px] font-bold text-slate-900">
-          Bom dia, {user.name ?? "Usuário"}
+          Bem-vindo, {user.name ?? "Usuário"}
         </h1>
 
         <p className="mt-1 hidden text-sm text-slate-500 sm:block">
