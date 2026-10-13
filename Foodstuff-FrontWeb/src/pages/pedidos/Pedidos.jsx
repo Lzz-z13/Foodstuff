@@ -367,7 +367,6 @@ export default function Pedidos() {
                 </span>
               </div>
               <p className="mt-2 text-2xl font-bold text-slate-900">{stats.hoje}</p>
-              <p className="mt-1 text-[11px] font-medium text-green-600">+12% em relação a ontem</p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -378,7 +377,6 @@ export default function Pedidos() {
                 </span>
               </div>
               <p className="mt-2 text-2xl font-bold text-slate-900">{stats.emPreparo}</p>
-              <p className="mt-1 text-[11px] font-medium text-green-600">Tempo médio: 18 min</p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -389,7 +387,6 @@ export default function Pedidos() {
                 </span>
               </div>
               <p className="mt-2 text-2xl font-bold text-slate-900">{formatarMoeda(stats.ticketMedio)}</p>
-              <p className="mt-1 text-[11px] font-medium text-green-600">Foco em adicionais</p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -400,7 +397,6 @@ export default function Pedidos() {
                 </span>
               </div>
               <p className="mt-2 text-2xl font-bold text-slate-900">{formatarMoeda(stats.faturamento)}</p>
-              <p className="mt-1 text-[11px] font-medium text-green-600">Meta diária 85% batida</p>
             </div>
           </div>
 
