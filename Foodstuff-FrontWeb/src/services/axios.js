@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://{IP}:5000/api/foodstuff",
+  baseURL: "http://192.168.100.46:5000/api/foodstuff",
   headers: {
     accept: "application/json",
   },
@@ -39,6 +39,8 @@ const sheets = {
   patchMePassword: (data) => api.patch("/users/me/password", data),
   getAllUsers: () => api.get("/users"),
   patchUserById: (userId, data) => api.patch(`/users/${userId}`, data),
+  getAllOrders: () => api.get("/orders"),
+  getOrderById: (orderId) => api.get(`/orders/${orderId}`),
 };
 
 export default sheets;

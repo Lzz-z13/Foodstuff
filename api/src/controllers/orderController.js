@@ -1,6 +1,7 @@
 const OrderService = require("../services/orderService");
 const validateCommandId = require("../validations/validateCommandId");
 const validateOrder = require("../validations/validateOrder");
+const validateOrderId = require("../validations/validateOrderId");
 
 module.exports = class OrderController {
   static async createOrder(req, res, next) {
@@ -24,6 +25,38 @@ module.exports = class OrderController {
         data: {
           order_id: result.order_id,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async readAllOrders(req, res, next) {
+    try {
+      const orders = await OrderService.readAllOrders();
+
+      return res.status(200).json({
+        error: false,
+        message: "Pedidos buscados com sucesso.",
+        data: orders,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async readOrderById(req, res, next) {
+    const { order_id } = req.params;
+
+    try {
+      validateOrderId(order_id);
+
+      const order = await OrderService.readOrderById(order_id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Pedido encontrado com sucesso.",
+        data: order,
       });
     } catch (error) {
       next(error);

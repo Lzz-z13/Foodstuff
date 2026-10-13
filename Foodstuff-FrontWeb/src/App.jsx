@@ -9,6 +9,7 @@ import Home from "./pages/home/Home";
 import Mesas from "./pages/mesas/Mesas";
 import MinhaConta from "./pages/minhaConta/MinhaConta";
 import Equipe from "./pages/equipe/Equipe";
+import Pedidos from "./pages/pedidos/Pedidos";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
@@ -28,6 +29,7 @@ function App() {
             <Route path="/mesas" element={<Mesas />} />
             <Route path="/minha-conta" element={<MinhaConta />} />
             <Route path="/equipe" element={<Equipe />} />
+            <Route path="/pedidos" element={<Pedidos />} />
           </Route>
           <Route path="/cadastro" element={<CadastroFuncionario />} />
         </Route>

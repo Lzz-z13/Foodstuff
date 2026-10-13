@@ -59,8 +59,18 @@ function isValidItems(items) {
   return true;
 }
 
+function isValidOrderId(order_id) {
+  if (process.env.SKIP_VALIDATORS === "true") return true;
+
+  // req.params chega sempre como string
+  const id = Number(order_id);
+
+  return Number.isInteger(id) && id > 0;
+}
+
 module.exports = {
   isValidItems,
+  isValidOrderId,
   isValidProductId,
   isValidQuantity,
   isValidObservation,
