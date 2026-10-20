@@ -265,3 +265,91 @@ values
         "MANAGER",
         0
     );
+
+-- Seed de desenvolvimento: mesas, comandas, pedidos, itens e pagamentos
+-- Execute apenas em ambiente de desenvolvimento (docker-entrypoint-initdb.d roda no primeiro up)
+
+-- Mesas (1 a 8)
+INSERT INTO tables (number, is_active) VALUES
+(1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1);
+
+-- Comandas (command_id 1 a 8)
+INSERT INTO commands (customer_name, session_token, status, table_id, opened_by) VALUES
+('João Silva', 'token-joao-1', 'OPEN', 1, '1c869085-e414-4b18-8f8f-1ca8181c1033'),
+('Maria Santos', 'token-maria-1', 'CLOSED', 2, '1c869085-e414-4b18-8f8f-1ca8181c1033'),
+('Pedro Oliveira', 'token-pedro-1', 'PAID', 3, '1c869085-e414-4b18-8f8f-1ca8181c1033'),
+('Ana Costa', 'token-ana-1', 'PAID', 4, '1c869085-e414-4b18-8f8f-1ca8181c1033'),
+('Carlos Lima', 'token-carlos-1', 'OPEN', 5, '1c869085-e414-4b18-8f8f-1ca8181c1033'),
+('Fernanda Rocha', 'token-fernanda-1', 'PAID', 6, '1c869085-e414-4b18-8f8f-1ca8181c1033'),
+('Lucas Alves', 'token-lucas-1', 'CLOSED', 7, '1c869085-e414-4b18-8f8f-1ca8181c1033'),
+('Juliana Pereira', 'token-juliana-1', 'PAID', 8, '1c869085-e414-4b18-8f8f-1ca8181c1033');
+
+-- Pedidos (order_id 1 a 8)
+INSERT INTO orders (created_by, origin, status, command_id) VALUES
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'WAITER', 'DELIVERED', 1),
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'CUSTOMER', 'PREPARING', 2),
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'WAITER', 'DELIVERED', 3),
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'CUSTOMER', 'READY', 4),
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'WAITER', 'PENDING', 5),
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'CUSTOMER', 'DELIVERED', 6),
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'WAITER', 'CANCELLED', 7),
+('1c869085-e414-4b18-8f8f-1ca8181c1033', 'CUSTOMER', 'DELIVERED', 8);
+
+-- Itens dos pedidos (produtos existentes: 1=Burguer, 3=Coca)
+-- Pedido 1 (João): 2x Burguer + 1x Coca
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(2, 20.00, 1, 1),
+(1, 10.00, 1, 3);
+
+-- Pedido 2 (Maria): 1x Burguer + 2x Coca
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(1, 20.00, 2, 1),
+(2, 10.00, 2, 3);
+
+-- Pedido 3 (Pedro): 3x Burguer
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(3, 20.00, 3, 1);
+
+-- Pedido 4 (Ana): 1x Coca
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(1, 10.00, 4, 3);
+
+-- Pedido 5 (Carlos): 1x Burguer
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(1, 20.00, 5, 1);
+
+-- Pedido 6 (Fernanda): 2x Burguer + 2x Coca
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(2, 20.00, 6, 1),
+(2, 10.00, 6, 3);
+
+-- Pedido 7 (Lucas - CANCELLED): 1x Burguer (não conta no faturamento)
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(1, 20.00, 7, 1);
+
+-- Pedido 8 (Juliana): 1x Burguer + 1x Coca
+INSERT INTO order_items (quantity, unit_price, order_id, product_id) VALUES
+(1, 20.00, 8, 1),
+(1, 10.00, 8, 3);
+
+-- Pagamentos (apenas comandas PAID: 3, 4, 6, 8)
+-- Comanda 3 (Pedro): 60.00 (3x Burguer)
+INSERT INTO payments (value, method, status, command_id) VALUES
+(60.00, 'PIX', 'PAID', 3);
+
+-- Comanda 4 (Ana): 10.00 (1x Coca)
+INSERT INTO payments (value, method, status, command_id) VALUES
+(10.00, 'CASH', 'PAID', 4);
+
+-- Comanda 6 (Fernanda): 60.00 (2x Burguer + 2x Coca) - split
+INSERT INTO payments (value, method, status, command_id) VALUES
+(40.00, 'CREDIT_CARD', 'PAID', 6),
+(20.00, 'PIX', 'PAID', 6);
+
+-- Comanda 8 (Juliana): 30.00 (1x Burguer + 1x Coca)
+INSERT INTO payments (value, method, status, command_id) VALUES
+(30.00, 'DEBIT_CARD', 'PAID', 8);
+
+-- Fechar comandas pagas (closed_at usa NOW() no momento do insert)
+UPDATE commands SET status='PAID', closed_at=NOW(), closed_by='1c869085-e414-4b18-8f8f-1ca8181c1033' WHERE command_id IN (3,4,6,8);
+UPDATE commands SET status='CLOSED', closed_at=NOW(), closed_by='1c869085-e414-4b18-8f8f-1ca8181c1033' WHERE command_id IN (2,7);
