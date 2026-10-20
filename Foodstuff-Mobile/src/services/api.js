@@ -22,10 +22,33 @@ const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
   postUser: (user) => api.post("/users", user),
 
-  getUser: () => api.get("/users/me"),
+  getUser: async () => {
+    const storedUser = await SecureStore.getItemAsync("user");
 
-  updateUser: (user) =>
-    api.patch("/users/me", user),
+    if (!storedUser) {
+      throw new Error("Usuário não encontrado no armazenamento local.");
+    }
+
+    const parsedUser = JSON.parse(storedUser);
+
+    return {
+      data: {
+        data: parsedUser,
+      },
+    };
+  },
+
+  updateUser: async (user) => {
+    const response = await api.patch("/users/me", user);
+
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        data: response.data?.data ?? user,
+      },
+    };
+  },
 
   updatePassword: (data) =>
     api.patch("/users/me/password", data),

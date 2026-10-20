@@ -41,8 +41,7 @@ export default function ContaAdmin({ navigation }) {
   const carregarUsuario = async () => {
     try {
       const response = await api.getUser();
-
-      const usuario = response.data.data;
+      const usuario = response.data?.data ?? JSON.parse(await SecureStore.getItemAsync("user") ?? "{}");
 
       setNome(usuario.name || "");
       setEmail(usuario.email || "");
@@ -79,7 +78,11 @@ export default function ContaAdmin({ navigation }) {
         phone: telefone,
       });
 
-      const usuarioAtualizado = response.data.data;
+      const usuarioAtualizado = response.data?.data ?? {
+        name: nome,
+        email: email,
+        phone: telefone,
+      };
 
       await SecureStore.setItemAsync(
         "user",

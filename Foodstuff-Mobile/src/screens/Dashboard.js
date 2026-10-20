@@ -7,12 +7,27 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 
 import Header from "../components/header/Header";
 import Navbar from "../components/navbar/Navbar";
+
+import StatCard from "../components/statCard/StatCard";
+import WeeklyRevenueChart from "../components/weeklyrevenuechart/WeeklyRevenueChart";
+import CategoryChart from "../components/categorychart/CategoryChart";
+import BestSellingChart from "../components/bestsellingchart/BestSellingChart";
+import RecentOrders from "../components/recentorders/RecentOrders";
+
+import {
+  dashboardStats,
+  weeklyRevenue,
+  categoryData,
+  bestSelling,
+  recentOrders,
+} from "../components/dashboardData/DashboardData";
 
 const COLORS = {
   primary: "#FF6B2C",
@@ -46,36 +61,85 @@ export default function Dashboard({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
+
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={COLORS.card}
+      />
 
       {/* HEADER */}
       <Header navigation={navigation} />
 
-      {/* CONTEÚDO */}
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.greetingRow}>
-          <View>
-            <Text style={styles.greetingTitle}>Bom dia, {userName}</Text>
 
-            <Text style={styles.greetingSubtitle}>Desempenho hoje.</Text>
+        {/* SAUDAÇÃO */}
+        <View style={styles.greetingRow}>
+
+          <View style={styles.greetingText}>
+            <Text style={styles.greetingTitle}>
+              Bom dia, {userName}
+            </Text>
+
+            <Text style={styles.greetingSubtitle}>
+              Desempenho de hoje.
+            </Text>
           </View>
 
-          <TouchableOpacity style={styles.calendarButton}>
+          <TouchableOpacity
+            style={styles.calendarButton}
+            activeOpacity={0.7}
+          >
             <Ionicons
               name="calendar-outline"
               size={18}
               color={COLORS.textDark}
             />
           </TouchableOpacity>
+
         </View>
+
+        {/* ESTATÍSTICAS */}
+        <View style={styles.statsGrid}>
+          {dashboardStats.map((item) => (
+            <StatCard
+              key={item.title}
+              {...item}
+            />
+          ))}
+        </View>
+
+        {/* GRÁFICO DE FATURAMENTO */}
+        <WeeklyRevenueChart
+          data={weeklyRevenue}
+        />
+
+        {/* GRÁFICO DE CATEGORIAS */}
+        <CategoryChart
+          data={categoryData}
+        />
+
+        {/* MAIS VENDIDOS */}
+        <BestSellingChart
+          data={bestSelling}
+        />
+
+        {/* PEDIDOS RECENTES */}
+        <RecentOrders
+          orders={recentOrders}
+        />
+
       </ScrollView>
 
-      {/* FOOTER */}
-      <Navbar navigation={navigation} activeTab="Dashboard" />
+      {/* NAVBAR */}
+      <Navbar
+        navigation={navigation}
+        activeTab="Dashboard"
+      />
+
     </SafeAreaView>
   );
 }
@@ -91,35 +155,47 @@ const styles = StyleSheet.create({
   },
 
   contentContainer: {
-    padding: 16,
-    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingTop: 18,
   },
 
   greetingRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
   },
 
+  greetingText: {
+    flex: 1,
+  },
+
   greetingTitle: {
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "800",
     color: COLORS.textDark,
   },
 
   greetingSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textGray,
-    marginTop: 2,
+    marginTop: 3,
   },
 
   calendarButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.border,
     backgroundColor: COLORS.card,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 14,
   },
 });
