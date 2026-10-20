@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://[IP]:5000/api/foodstuff",
+  baseURL: "http://localhost:5000/api/foodstuff",
   headers: {
     accept: "application/json",
   },
@@ -32,15 +32,18 @@ const sheets = {
   postPasswordResetConfirm: (data) =>
     api.post("/auth/password-reset/confirm", data),
   postUser: (user) => api.post("/users", user),
-  postTable: (table) => api.post("/tables", table),
-  getAllTables: () => api.get("/tables"),
-  deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
   patchMe: (data) => api.patch("/users/me", data),
   patchMePassword: (data) => api.patch("/users/me/password", data),
   getAllUsers: () => api.get("/users"),
   patchUserById: (userId, data) => api.patch(`/users/${userId}`, data),
+
+  postTable: (table) => api.post("/tables", table),
+  getAllTables: () => api.get("/tables"),
+  deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
+
   getAllOrders: () => api.get("/orders"),
   getOrderById: (orderId) => api.get(`/orders/${orderId}`),
+
   getAllProducts: (params) => api.get("/products", { params }),
   getProductById: (productId) => api.get(`/products/${productId}`),
   postProduct: (data) => api.post("/products", data),
@@ -49,8 +52,12 @@ const sheets = {
   patchProductAvailability: (productId, is_available) =>
     api.patch(`/products/${productId}/availability`, { is_available }),
   deleteProduct: (productId) => api.delete(`/products/${productId}`),
+  
   getAllCategories: () => api.get("/categories"),
   postCategory: (data) => api.post("/categories", data),
+  patchCategory: (categoryId, data) =>
+    api.patch(`/categories/${categoryId}`, data),
+  deleteCategory: (categoryId) => api.delete(`/categories/${categoryId}`),
 };
 
 export default sheets;
