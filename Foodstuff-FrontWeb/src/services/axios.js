@@ -58,6 +58,14 @@ const sheets = {
   patchCategory: (categoryId, data) =>
     api.patch(`/categories/${categoryId}`, data),
   deleteCategory: (categoryId) => api.delete(`/categories/${categoryId}`),
+
+  // Dashboard
+  getDashboard: () => api.get("/dashboard"),
+  getDashboardResumo: () => api.get("/dashboard/resumo"),
+  getDashboardFaturamentoSemanal: () => api.get("/dashboard/faturamento-semanal"),
+  getDashboardPedidosPorCategoria: () => api.get("/dashboard/pedidos-por-categoria"),
+  getDashboardMaisVendidos: (limit) => api.get("/dashboard/mais-vendidos", { params: { limit } }),
+  getDashboardPedidosRecentes: (limit) => api.get("/dashboard/pedidos-recentes", { params: { limit } }),
 };
 
 export default sheets;
