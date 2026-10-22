@@ -201,15 +201,6 @@ export default function Cozinha() {
         </div>
       </header>
 
-      {/* Stats */}
-      <KitchenHeader
-        orders={orders}
-        onRefresh={handleRefresh}
-        autoRefresh={autoRefresh}
-        onAutoRefreshToggle={handleAutoRefreshToggle}
-        refreshing={refreshing}
-      />
-
       {/* Board */}
       <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
         <KitchenKanban

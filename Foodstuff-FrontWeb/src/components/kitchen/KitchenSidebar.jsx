@@ -1,10 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChefHat, LogOut, Settings, X, Menu, UtensilsCrossed } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { lerUsuario } from "../../services/auth";
 
 export default function KitchenSidebar() {
+  const location = useLocation();
   const [aberta, setAberta] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
   const [user, setUser] = useState(null);
@@ -74,7 +75,8 @@ export default function KitchenSidebar() {
           <Link
             to="/cozinha"
             onClick={fechar}
-            className="flex items-center gap-3 rounded-xl bg-[#FFF0EC] px-3 py-2.5 text-[13.5px] font-bold text-[#FF5F38] transition hover:bg-[#FFE6DF]"
+            aria-current={location.pathname === "/cozinha" ? "page" : undefined}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-bold transition ${location.pathname === "/cozinha" ? "bg-[#FFF0EC] text-[#FF5F38]" : "text-slate-600 hover:bg-slate-100"}`}
           >
             <ChefHat size={17} />
             Tela da Cozinha

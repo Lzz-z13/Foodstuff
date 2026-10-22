@@ -46,9 +46,18 @@ function App() {
             </Route>
           </Route>
 
-          {/* Minha Conta - todos os roles (necessário no primeiro acesso) */}
-          <Route element={<RoleRoute allowedRoles={["KITCHEN", "MANAGER", "WAITER", "CASHIER"]} />}>
-            <Route path="/minha-conta" element={<MinhaConta />} />
+          {/* Minha Conta da cozinha compartilha a sidebar com o workflow. */}
+          <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
+            <Route element={<KitchenLayout />}>
+              <Route path="/minha-conta" element={<MinhaConta />} />
+            </Route>
+          </Route>
+
+          {/* Minha Conta dos demais cargos usa o layout administrativo. */}
+          <Route element={<RoleRoute allowedRoles={["MANAGER", "WAITER", "CASHIER"]} />}>
+            <Route element={<DefaultLayout />}>
+              <Route path="/minha-conta" element={<MinhaConta />} />
+            </Route>
           </Route>
 
           {/* Cadastro de usuário - somente ADMIN */}
