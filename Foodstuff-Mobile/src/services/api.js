@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const api = axios.create({
-  baseURL: "http://10.89.240.28:5000/api/foodstuff",
+  baseURL: "http://10.89.240.104:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },
@@ -52,6 +52,58 @@ const sheets = {
 
   updatePassword: (data) =>
     api.patch("/users/me/password", data),
+
+  // Dashboard
+  getDashboard: () =>
+    api.get("/dashboard"),
+
+  getDashboardResumo: () =>
+    api.get("/dashboard/resumo"),
+
+  getFaturamentoSemanal: () =>
+    api.get("/dashboard/faturamento-semanal"),
+
+  getPedidosPorCategoria: () =>
+    api.get("/dashboard/pedidos-por-categoria"),
+
+  getMaisVendidos: (limit = 5) =>
+    api.get(`/dashboard/mais-vendidos?limit=${limit}`),
+
+  getPedidosRecentes: (limit = 5) =>
+    api.get(`/dashboard/pedidos-recentes?limit=${limit}`),
+
+  // Produtos
+  getProducts: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.category_id) query.append("category_id", params.category_id);
+    if (params.search)      query.append("search", params.search);
+    if (params.is_available !== undefined) query.append("is_available", params.is_available);
+    if (params.include_inactive) query.append("include_inactive", "1");
+    const qs = query.toString();
+    return api.get(`/products${qs ? `?${qs}` : ""}`);
+  },
+
+  getProductById: (product_id) =>
+    api.get(`/products/${product_id}`),
+
+  createProduct: (data) =>
+    api.post("/products", data),
+
+  updateProduct: (product_id, data) =>
+    api.patch(`/products/${product_id}`, data),
+
+  updateProductAvailability: (product_id, is_available) =>
+    api.patch(`/products/${product_id}/availability`, { is_available }),
+
+  deleteProduct: (product_id) =>
+    api.delete(`/products/${product_id}`),
+
+  // Categorias
+  getCategories: () =>
+    api.get("/categories"),
+
+  createCategory: (data) =>
+    api.post("/categories", data),
 };
 
 export default sheets;
