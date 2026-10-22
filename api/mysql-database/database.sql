@@ -314,13 +314,13 @@ VALUES ('Brownie Demo', 'Brownie de chocolate.', 12.00, 5.00, 1, @demo_desserts)
 SET @demo_brownie = LAST_INSERT_ID();
 
 INSERT INTO tables (number, is_active) VALUES
-(901, 1), (902, 1), (903, 1), (904, 1), (905, 1), (906, 1);
-SET @demo_table_1 = (SELECT table_id FROM tables WHERE number = 901);
-SET @demo_table_2 = (SELECT table_id FROM tables WHERE number = 902);
-SET @demo_table_3 = (SELECT table_id FROM tables WHERE number = 903);
-SET @demo_table_4 = (SELECT table_id FROM tables WHERE number = 904);
-SET @demo_table_5 = (SELECT table_id FROM tables WHERE number = 905);
-SET @demo_table_6 = (SELECT table_id FROM tables WHERE number = 906);
+(01, 1), (02, 1), (03, 1), (04, 1), (05, 1), (06, 1);
+SET @demo_table_1 = (SELECT table_id FROM tables WHERE number = 01);
+SET @demo_table_2 = (SELECT table_id FROM tables WHERE number = 02);
+SET @demo_table_3 = (SELECT table_id FROM tables WHERE number = 03);
+SET @demo_table_4 = (SELECT table_id FROM tables WHERE number = 04);
+SET @demo_table_5 = (SELECT table_id FROM tables WHERE number = 05);
+SET @demo_table_6 = (SELECT table_id FROM tables WHERE number = 06);
 
 -- Dois pontos de acesso por mesa. Tokens diferentes para cada posição.
 INSERT INTO qr_codes (token, position, table_id) VALUES
