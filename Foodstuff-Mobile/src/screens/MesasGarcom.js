@@ -1,13 +1,17 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import LogoutButton from "../components/header/LogoutButton";
 import NavbarGarcom from "../components/navbar/NavbarGarcom";
 
 export default function MesasGarcom({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mesas</Text>
-        <Text style={styles.subtitle}>Visualização das mesas disponíveis</Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Mesas</Text>
+          <Text style={styles.subtitle}>Visualização das mesas disponíveis</Text>
+        </View>
+        <LogoutButton navigation={navigation} />
       </View>
 
       <View style={styles.cardGrid}>
@@ -37,10 +41,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FF",
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
     paddingHorizontal: 20,
     paddingTop: 52,
     paddingBottom: 16,
     backgroundColor: "#FFFFFF",
+  },
+  headerText: {
+    flex: 1,
   },
   title: {
     fontSize: 24,
