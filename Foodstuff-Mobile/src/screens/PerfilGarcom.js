@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import api from '../services/api';
-import Navbar from '../components/navbar/Navbar';
+import LogoutButton from '../components/header/LogoutButton';
+import NavbarGarcom from '../components/navbar/NavbarGarcom';
 
 const LARANJA = '#FF5A1F';
 const LARANJA_CLARO = '#FFB59A';
@@ -204,6 +205,7 @@ export default function PerfilGarcom({ navigation }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" />
+
       <View style={styles.header}>
         <TouchableOpacity
           onPress={cancelar}
@@ -213,8 +215,10 @@ export default function PerfilGarcom({ navigation }) {
         >
           <Ionicons name="arrow-back" size={18} color="#fff" />
         </TouchableOpacity>
+
         <Text style={styles.headerTitulo}>Minha Conta</Text>
-        <View style={styles.espacadorHeader} />
+
+        <LogoutButton navigation={navigation} style={styles.logoutButton} />
       </View>
 
       {carregandoPerfil ? (
@@ -366,7 +370,7 @@ export default function PerfilGarcom({ navigation }) {
           </View>
         </ScrollView>
       )}
-      <Navbar navigation={navigation} activeTab="Perfil" />
+      <NavbarGarcom navigation={navigation} activeTab="Perfil" />
     </SafeAreaView>
   );
 }
@@ -377,8 +381,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   headerTitulo: {
     flex: 1,
@@ -387,7 +396,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111',
   },
-  espacadorHeader: { width: 28 },
   voltar: {
     width: 28,
     height: 28,
@@ -395,6 +403,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logoutButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
   },
 
   estado: {
