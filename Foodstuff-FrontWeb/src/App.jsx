@@ -17,7 +17,7 @@ import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 import RoleRoute from "./components/protectedRoute/RoleRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
-import KitchenLayout from "./components/kitchenLayout/KitchenLayout";
+import KitchenLayout from "./components/kitchen/KitchenLayout";
 
 function App() {
   return (
@@ -29,24 +29,14 @@ function App() {
 
         {/* Protegidas - exige token */}
         <Route element={<ProtectedRoute />}>
-
-          {/* ========================= */}
           {/* COZINHA */}
-          {/* ========================= */}
-
           <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
             <Route element={<KitchenLayout />}>
               <Route path="/cozinha" element={<Cozinha />} />
-              <Route path="/minha-conta" element={<MinhaConta />} />
+              <Route path="/minha-conta" element={<MinhaConta/>}/>
             </Route>
           </Route>
-
-          {/* ========================= */}
-          {/* LAYOUT PADRÃO */}
-          {/* ========================= */}
-
           <Route element={<DefaultLayout />}>
-
             {/* Administração */}
             <Route element={<RoleRoute allowedRoles={["MANAGER"]} />}>
               <Route path="/home" element={<Home />} />
@@ -54,23 +44,17 @@ function App() {
               <Route path="/equipe" element={<Equipe />} />
               <Route path="/pedidos" element={<Pedidos />} />
               <Route path="/cardapio" element={<Cardapio />} />
-              <Route
-                path="/cadastro"
-                element={<CadastroFuncionario />}
-              />
+              <Route path="/cadastro" element={<CadastroFuncionario />} />
             </Route>
 
             {/* Minha Conta - cargos que usam o layout padrão */}
             <Route
               element={
-                <RoleRoute
-                  allowedRoles={["MANAGER", "WAITER", "CASHIER"]}
-                />
+                <RoleRoute allowedRoles={["MANAGER", "KITCHEN", "CASHIER"]} />
               }
             >
               <Route path="/minha-conta" element={<MinhaConta />} />
             </Route>
-
           </Route>
         </Route>
 
