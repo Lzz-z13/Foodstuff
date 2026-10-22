@@ -12,10 +12,12 @@ import Equipe from "./pages/equipe/Equipe";
 import Pedidos from "./pages/pedidos/Pedidos";
 import Cardapio from "./pages/cardapio/Cardapio";
 import Cozinha from "./pages/cozinha/Cozinha";
+
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 import RoleRoute from "./components/protectedRoute/RoleRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
+import KitchenLayout from "./components/kitchenLayout/KitchenLayout";
 
 function App() {
   return (
@@ -27,29 +29,52 @@ function App() {
 
         {/* Protegidas - exige token */}
         <Route element={<ProtectedRoute />}>
-          <Route element={<DefaultLayout />}>
-            {/* Todas as páginas internas compartilham a sidebar permanente. */}
-            <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
-              <Route path="/cozinha" element={<Cozinha />} />
-            </Route>
 
-            {/* Administração e atendimento */}
+          {/* ========================= */}
+          {/* COZINHA */}
+          {/* ========================= */}
+
+          <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
+            <Route element={<KitchenLayout />}>
+              <Route path="/cozinha" element={<Cozinha />} />
+              <Route path="/minha-conta" element={<MinhaConta />} />
+            </Route>
+          </Route>
+
+          {/* ========================= */}
+          {/* LAYOUT PADRÃO */}
+          {/* ========================= */}
+
+          <Route element={<DefaultLayout />}>
+
+            {/* Administração */}
             <Route element={<RoleRoute allowedRoles={["MANAGER"]} />}>
               <Route path="/home" element={<Home />} />
               <Route path="/mesas" element={<Mesas />} />
               <Route path="/equipe" element={<Equipe />} />
               <Route path="/pedidos" element={<Pedidos />} />
               <Route path="/cardapio" element={<Cardapio />} />
-              <Route path="/cadastro" element={<CadastroFuncionario />} />
+              <Route
+                path="/cadastro"
+                element={<CadastroFuncionario />}
+              />
             </Route>
 
-            {/* Minha Conta - todos os cargos (necessário no primeiro acesso) */}
-            <Route element={<RoleRoute allowedRoles={["KITCHEN", "MANAGER", "WAITER", "CASHIER"]} />}>
+            {/* Minha Conta - cargos que usam o layout padrão */}
+            <Route
+              element={
+                <RoleRoute
+                  allowedRoles={["MANAGER", "WAITER", "CASHIER"]}
+                />
+              }
+            >
               <Route path="/minha-conta" element={<MinhaConta />} />
             </Route>
+
           </Route>
         </Route>
 
+        {/* 404 */}
         <Route path="*" element={<Pg404 />} />
       </Routes>
     </BrowserRouter>
