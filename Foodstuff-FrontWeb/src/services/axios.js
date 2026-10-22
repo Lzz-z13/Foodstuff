@@ -43,7 +43,6 @@ const sheets = {
 
   getAllOrders: () => api.get("/orders"),
   getOrderById: (orderId) => api.get(`/orders/${orderId}`),
-
   getAllProducts: (params) => api.get("/products", { params }),
   getProductById: (productId) => api.get(`/products/${productId}`),
   postProduct: (data) => api.post("/products", data),
@@ -58,6 +57,10 @@ const sheets = {
   patchCategory: (categoryId, data) =>
     api.patch(`/categories/${categoryId}`, data),
   deleteCategory: (categoryId) => api.delete(`/categories/${categoryId}`),
+
+  // Orders - Kitchen
+  patchOrderStatus: (orderId, status) =>
+    api.patch(`/orders/${orderId}/status`, { status }),
 
   // Dashboard
   getDashboard: () => api.get("/dashboard"),

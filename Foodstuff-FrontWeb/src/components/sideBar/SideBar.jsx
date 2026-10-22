@@ -1,18 +1,6 @@
-import { Link } from "react-router-dom";
-import {
-  House,
-  ScrollText,
-  HandPlatter,
-  Table2,
-  UsersRound,
-  Settings,
-  UserRoundPlus,
-  ForkKnife,
-  LogOut,
-  Menu,
-  X,
-} from "lucide-react";
+import { ChefHat, Circle, Clock, X, Menu, LogOut, Settings, UserRoundPlus, UsersRound, Table2, HandPlatter, ScrollText, House, ForkKnife, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const LINK_BASE = `
   flex items-center gap-2
@@ -27,9 +15,9 @@ const LINK_BASE = `
 `;
 
 export default function SideBar() {
-  // Drawer começa FECHADO — a tela fica livre, sem sidebar fixa
   const [aberta, setAberta] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user") ?? "null") ?? {};
 
   const fechar = () => {
@@ -37,7 +25,6 @@ export default function SideBar() {
     setMenuAberto(false);
   };
 
-  // ESC fecha + trava scroll do fundo enquanto aberta
   useEffect(() => {
     if (!aberta) return;
 
@@ -54,6 +41,8 @@ export default function SideBar() {
       document.body.style.overflow = overflowAnterior;
     };
   }, [aberta]);
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <>
@@ -80,17 +69,9 @@ export default function SideBar() {
       )}
 
       {/* DRAWER — sobrepõe a tela, não empurra conteúdo */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-50
-          flex w-[260px] max-w-[85vw] flex-col
-          border-r border-gray-200 bg-white shadow-2xl
-          transition-transform duration-300 ease-in-out
-          ${aberta ? "translate-x-0" : "pointer-events-none -translate-x-full"}
-        `}
-      >
+      <aside className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out transform pointer-events-auto -translate-x-full lg:translate-x-0 lg:static lg:z-auto lg:shadow-none lg:border-r">
         {/* LOGO + FECHAR */}
-        <div className="flex h-14 items-center gap-2 px-3">
+        <div className="flex h-14 items-center gap-2 px-3 border-b border-gray-200">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#ff5a47] text-white">
             <ForkKnife size={15} />
           </span>
@@ -107,7 +88,7 @@ export default function SideBar() {
             type="button"
             onClick={fechar}
             aria-label="Fechar menu"
-            className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+            className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 lg:hidden"
           >
             <X size={17} />
           </button>
@@ -115,39 +96,44 @@ export default function SideBar() {
 
         {/* MENU */}
         <nav className="mt-5 flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-2">
-          <Link to="/home" onClick={fechar} className={LINK_BASE}>
+          <Link to="/home" onClick={fechar} className={`${LINK_BASE} ${isActive('/home') ? 'bg-[#ff5a47] text-white' : ''}`}>
             <House size={16} />
             <span>Dashboard</span>
           </Link>
 
-          <Link to="/pedidos" onClick={fechar} className={LINK_BASE}>
+          <Link to="/pedidos" onClick={fechar} className={`${LINK_BASE} ${isActive('/pedidos') ? 'bg-[#ff5a47] text-white' : ''}`}>
             <ScrollText size={16} />
             <span>Pedidos</span>
           </Link>
 
-          <Link to="/cardapio" onClick={fechar} className={LINK_BASE}>
+          <Link to="/cozinha" onClick={fechar} className={`${LINK_BASE} ${isActive('/cozinha') ? 'bg-[#ff5a47] text-white' : ''}`}>
+            <ChefHat size={16} />
+            <span>Cozinha</span>
+          </Link>
+
+          <Link to="/cardapio" onClick={fechar} className={`${LINK_BASE} ${isActive('/cardapio') ? 'bg-[#ff5a47] text-white' : ''}`}>
             <HandPlatter size={16} />
             <span>Cardápio</span>
           </Link>
 
-          <Link to="/mesas" onClick={fechar} className={LINK_BASE}>
+          <Link to="/mesas" onClick={fechar} className={`${LINK_BASE} ${isActive('/mesas') ? 'bg-[#ff5a47] text-white' : ''}`}>
             <Table2 size={16} />
             <span>Mesas</span>
           </Link>
 
-          <Link to="/equipe" onClick={fechar} className={LINK_BASE}>
+          <Link to="/equipe" onClick={fechar} className={`${LINK_BASE} ${isActive('/equipe') ? 'bg-[#ff5a47] text-white' : ''}`}>
             <UsersRound size={16} />
             <span>Equipe</span>
           </Link>
 
-          <Link to="/cadastro" onClick={fechar} className={`${LINK_BASE} mt-2`}>
+          <Link to="/cadastro" onClick={fechar} className={`${LINK_BASE} mt-2 ${isActive('/cadastro') ? 'bg-[#ff5a47] text-white' : ''}`}>
             <UserRoundPlus size={16} />
             <span>Cadastrar Usuário</span>
           </Link>
         </nav>
 
         {/* USUÁRIO */}
-        <div className="relative border-gray-100 px-3 py-4">
+        <div className="relative border-gray-100 px-3 py-4 border-t">
           <button
             type="button"
             onClick={() => setMenuAberto(!menuAberto)}

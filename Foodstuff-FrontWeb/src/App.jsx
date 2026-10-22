@@ -11,6 +11,7 @@ import MinhaConta from "./pages/minhaConta/MinhaConta";
 import Equipe from "./pages/equipe/Equipe";
 import Pedidos from "./pages/pedidos/Pedidos";
 import Cardapio from "./pages/cardapio/Cardapio";
+import Cozinha from "./pages/cozinha/Cozinha";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
@@ -33,6 +34,7 @@ function App() {
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/cardapio" element={<Cardapio />} />
           </Route>
+          <Route path="/cozinha" element={<Cozinha />} />
           <Route path="/cadastro" element={<CadastroFuncionario />} />
         </Route>
 
