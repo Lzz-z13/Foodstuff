@@ -92,13 +92,11 @@ export default function CadastroFuncionario() {
     }
   };
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
   return (
-    <>
-      <SideBar userName={user.name} userEmail={user.email}/>
+    <div className="flex min-h-screen bg-gray-100">
+      <SideBar />
       
-      <div className="md:ml-[10px]">
+      <div className="min-w-0 flex-1">
         {snackbar && (
           <Snackbar
             isOpen={true}
@@ -190,7 +188,7 @@ export default function CadastroFuncionario() {
           </main>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

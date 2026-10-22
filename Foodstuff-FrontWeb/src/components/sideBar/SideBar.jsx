@@ -1,13 +1,13 @@
-import { ChefHat, Circle, Clock, X, Menu, LogOut, Settings, UserRoundPlus, UsersRound, Table2, HandPlatter, ScrollText, House, ForkKnife, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { X, Menu, LogOut, Settings, UserRoundPlus, UsersRound, Table2, HandPlatter, ScrollText, House, ForkKnife } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { lerUsuario } from "../../services/auth";
 
 const LINK_BASE = `
   flex items-center gap-2
   rounded-lg
   px-2.5 py-2.5
   text-[13px]
-  text-gray-600
   whitespace-nowrap
   transition
   hover:bg-[#ff5a47]
@@ -17,8 +17,11 @@ const LINK_BASE = `
 export default function SideBar() {
   const [aberta, setAberta] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
+  const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 64rem)").matches);
+  const abrirRef = useRef(null);
+  const painelRef = useRef(null);
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("user") ?? "null") ?? {};
+  const user = lerUsuario() ?? {};
 
   const fechar = () => {
     setAberta(false);
@@ -26,50 +29,92 @@ export default function SideBar() {
   };
 
   useEffect(() => {
-    if (!aberta) return;
+    const media = window.matchMedia("(min-width: 64rem)");
+    function aoRedimensionar(event) {
+      setDesktop(event.matches);
+      setAberta(false);
+      setMenuAberto(false);
+    }
+    media.addEventListener("change", aoRedimensionar);
+    return () => media.removeEventListener("change", aoRedimensionar);
+  }, []);
 
-    function aoPressionarEsc(e) {
-      if (e.key === "Escape") fechar();
+  useEffect(() => {
+    if (!aberta || desktop) return;
+
+    const painel = painelRef.current;
+    const botaoAbrir = abrirRef.current;
+    const focaveis = () => [...painel.querySelectorAll("a[href], button")];
+    focaveis()[0]?.focus();
+
+    function aoPressionarTecla(event) {
+      if (event.key === "Escape") fechar();
+      if (event.key === "Tab") {
+        const elementos = focaveis();
+        const primeiro = elementos[0];
+        const ultimo = elementos[elementos.length - 1];
+        if (event.shiftKey && document.activeElement === primeiro) {
+          event.preventDefault();
+          ultimo?.focus();
+        } else if (!event.shiftKey && document.activeElement === ultimo) {
+          event.preventDefault();
+          primeiro?.focus();
+        }
+      }
     }
 
-    document.addEventListener("keydown", aoPressionarEsc);
+    document.addEventListener("keydown", aoPressionarTecla);
     const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", aoPressionarEsc);
+      document.removeEventListener("keydown", aoPressionarTecla);
       document.body.style.overflow = overflowAnterior;
+      if (!window.matchMedia("(min-width: 64rem)").matches) botaoAbrir?.focus();
     };
-  }, [aberta]);
+  }, [aberta, desktop]);
 
   const isActive = (path) => location.pathname === path;
 
   return (
     <>
-      {/* BOTÃOZINHO — o único jeito de acionar a sidebar */}
-      {!aberta && (
+      {/* Acionador do menu em telas menores */}
+      {!desktop && (
         <button
           type="button"
           onClick={() => setAberta(true)}
           aria-label="Abrir menu"
-          className="fixed top-4 left-4 z-40 flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+          ref={abrirRef}
+          hidden={aberta}
+          aria-controls="sidebar-admin"
+          aria-expanded={aberta}
+          className="fixed top-4 left-4 z-40 flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
         >
           <Menu size={20} />
         </button>
       )}
 
       {/* BACKDROP — escurece a tela e fecha ao clicar */}
-      {aberta && (
+      {aberta && !desktop && (
         <button
           type="button"
           aria-label="Fechar menu"
           onClick={fechar}
-          className="fixed inset-0 z-50 cursor-pointer bg-black/50"
+          tabIndex={-1}
+          className="fixed inset-0 z-40 cursor-pointer bg-black/50 lg:hidden"
         />
       )}
 
-      {/* DRAWER — sobrepõe a tela, não empurra conteúdo */}
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out transform pointer-events-auto -translate-x-full lg:translate-x-0 lg:static lg:z-auto lg:shadow-none lg:border-r">
+      {/* Fixa no desktop; sobreposta ao conteúdo no celular */}
+      <aside
+        id="sidebar-admin"
+        ref={painelRef}
+        aria-label="Menu principal"
+        role={aberta && !desktop ? "dialog" : undefined}
+        aria-modal={aberta && !desktop ? true : undefined}
+        inert={!desktop && !aberta}
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 max-w-[85vw] shrink-0 flex-col border-r border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:z-30 lg:translate-x-0 lg:shadow-none ${aberta ? "translate-x-0" : "-translate-x-full"}`}
+      >
         {/* LOGO + FECHAR */}
         <div className="flex h-14 items-center gap-2 px-3 border-b border-gray-200">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#ff5a47] text-white">
@@ -96,37 +141,32 @@ export default function SideBar() {
 
         {/* MENU */}
         <nav className="mt-5 flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-2">
-          <Link to="/home" onClick={fechar} className={`${LINK_BASE} ${isActive('/home') ? 'bg-[#ff5a47] text-white' : ''}`}>
+          <Link to="/home" onClick={fechar} className={`${LINK_BASE} ${isActive('/home') ? 'bg-[#ff5a47] text-white' : 'text-gray-600'}`}>
             <House size={16} />
             <span>Dashboard</span>
           </Link>
 
-          <Link to="/pedidos" onClick={fechar} className={`${LINK_BASE} ${isActive('/pedidos') ? 'bg-[#ff5a47] text-white' : ''}`}>
+          <Link to="/pedidos" onClick={fechar} className={`${LINK_BASE} ${isActive('/pedidos') ? 'bg-[#ff5a47] text-white' : 'text-gray-600'}`}>
             <ScrollText size={16} />
             <span>Pedidos</span>
           </Link>
 
-          <Link to="/cozinha" onClick={fechar} className={`${LINK_BASE} ${isActive('/cozinha') ? 'bg-[#ff5a47] text-white' : ''}`}>
-            <ChefHat size={16} />
-            <span>Cozinha</span>
-          </Link>
-
-          <Link to="/cardapio" onClick={fechar} className={`${LINK_BASE} ${isActive('/cardapio') ? 'bg-[#ff5a47] text-white' : ''}`}>
+          <Link to="/cardapio" onClick={fechar} className={`${LINK_BASE} ${isActive('/cardapio') ? 'bg-[#ff5a47] text-white' : 'text-gray-600'}`}>
             <HandPlatter size={16} />
             <span>Cardápio</span>
           </Link>
 
-          <Link to="/mesas" onClick={fechar} className={`${LINK_BASE} ${isActive('/mesas') ? 'bg-[#ff5a47] text-white' : ''}`}>
+          <Link to="/mesas" onClick={fechar} className={`${LINK_BASE} ${isActive('/mesas') ? 'bg-[#ff5a47] text-white' : 'text-gray-600'}`}>
             <Table2 size={16} />
             <span>Mesas</span>
           </Link>
 
-          <Link to="/equipe" onClick={fechar} className={`${LINK_BASE} ${isActive('/equipe') ? 'bg-[#ff5a47] text-white' : ''}`}>
+          <Link to="/equipe" onClick={fechar} className={`${LINK_BASE} ${isActive('/equipe') ? 'bg-[#ff5a47] text-white' : 'text-gray-600'}`}>
             <UsersRound size={16} />
             <span>Equipe</span>
           </Link>
 
-          <Link to="/cadastro" onClick={fechar} className={`${LINK_BASE} mt-2 ${isActive('/cadastro') ? 'bg-[#ff5a47] text-white' : ''}`}>
+          <Link to="/cadastro" onClick={fechar} className={`${LINK_BASE} mt-2 ${isActive('/cadastro') ? 'bg-[#ff5a47] text-white' : 'text-gray-600'}`}>
             <UserRoundPlus size={16} />
             <span>Cadastrar Usuário</span>
           </Link>
