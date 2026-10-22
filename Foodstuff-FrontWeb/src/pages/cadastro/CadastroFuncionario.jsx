@@ -7,7 +7,6 @@ import {
   Phone,
 } from "lucide-react";
 
-import SideBar from "../../components/sideBar/SideBar";
 import api from "../../services/axios";
 import Snackbar from "../../components/snackBar/SnackBar";
 
@@ -92,13 +91,8 @@ export default function CadastroFuncionario() {
     }
   };
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
   return (
-    <>
-      <SideBar userName={user.name} userEmail={user.email}/>
-      
-      <div className="md:ml-[10px]">
+      <div className="min-w-0">
         {snackbar && (
           <Snackbar
             isOpen={true}
@@ -190,7 +184,6 @@ export default function CadastroFuncionario() {
           </main>
         </div>
       </div>
-    </>
   );
 }
 

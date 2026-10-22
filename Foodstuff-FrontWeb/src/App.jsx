@@ -16,7 +16,6 @@ import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 import RoleRoute from "./components/protectedRoute/RoleRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
-import KitchenLayout from "./components/kitchen/KitchenLayout";
 
 function App() {
   return (
@@ -28,32 +27,26 @@ function App() {
 
         {/* Protegidas - exige token */}
         <Route element={<ProtectedRoute />}>
-          {/* Cozinha (KITCHEN e MANAGER) - layout próprio */}
-          <Route element={<RoleRoute allowedRoles={["KITCHEN", "MANAGER"]} />}>
-            <Route element={<KitchenLayout />}>
+          <Route element={<DefaultLayout />}>
+            {/* Todas as páginas internas compartilham a sidebar permanente. */}
+            <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
               <Route path="/cozinha" element={<Cozinha />} />
             </Route>
-          </Route>
 
-          {/* Admin/Outros - layout padrão */}
-          <Route element={<RoleRoute allowedRoles={["MANAGER", "WAITER", "CASHIER"]} />}>
-            <Route element={<DefaultLayout />}>
+            {/* Administração e atendimento */}
+            <Route element={<RoleRoute allowedRoles={["MANAGER"]} />}>
               <Route path="/home" element={<Home />} />
               <Route path="/mesas" element={<Mesas />} />
               <Route path="/equipe" element={<Equipe />} />
               <Route path="/pedidos" element={<Pedidos />} />
               <Route path="/cardapio" element={<Cardapio />} />
+              <Route path="/cadastro" element={<CadastroFuncionario />} />
             </Route>
-          </Route>
 
-          {/* Minha Conta - todos os roles (necessário no primeiro acesso) */}
-          <Route element={<RoleRoute allowedRoles={["KITCHEN", "MANAGER", "WAITER", "CASHIER"]} />}>
-            <Route path="/minha-conta" element={<MinhaConta />} />
-          </Route>
-
-          {/* Cadastro de usuário - somente ADMIN */}
-          <Route element={<RoleRoute allowedRoles={["MANAGER"]} />}>
-            <Route path="/cadastro" element={<CadastroFuncionario />} />
+            {/* Minha Conta - todos os cargos (necessário no primeiro acesso) */}
+            <Route element={<RoleRoute allowedRoles={["KITCHEN", "MANAGER", "WAITER", "CASHIER"]} />}>
+              <Route path="/minha-conta" element={<MinhaConta />} />
+            </Route>
           </Route>
         </Route>
 
