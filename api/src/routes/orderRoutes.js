@@ -21,4 +21,10 @@ router.get(
   OrderController.readOrderById,
 );
 
+router.patch(
+  "/orders/:order_id/status",
+  verifyRole("MANAGER", "KITCHEN"),
+  OrderController.updateOrderStatus,
+);
+
 module.exports = router;

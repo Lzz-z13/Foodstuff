@@ -17,52 +17,62 @@ import KanbanColumn from "./KanbanColumn";
 import api from "../../services/axios";
 import Snackbar from "../../components/snackBar/SnackBar";
 
+/**
+ * Transições permitidas na KDS.
+ * A cozinha pode voltar um passo para corrigir enganos.
+ */
 const VALID_TRANSITIONS = {
   PENDING: ["PREPARING"],
   PREPARING: ["PENDING", "READY"],
   READY: ["PREPARING", "DELIVERED"],
-  DELIVERED: [],
+  DELIVERED: ["READY"],
 };
 
-export default function KitchenKanban({ initialOrders = [], onStatusChange, loading = false }) {
+const STATUS_NAMES = {
+  PENDING: "Novos Pedidos",
+  PREPARING: "Em Preparo",
+  READY: "Prontos",
+  DELIVERED: "Entregues",
+};
+
+export default function KitchenKanban({
+  initialOrders = [],
+  onStatusChange,
+  loading = false,
+}) {
   const [orders, setOrders] = useState(initialOrders);
   const [snackbar, setSnackbar] = useState(null);
 
-  // Sensors for drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 6 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  // Update orders when initialOrders change
   useEffect(() => {
     setOrders(initialOrders);
   }, [initialOrders]);
 
-  // Update order status via API
   const updateOrderStatus = useCallback(
     async (orderId, newStatus) => {
       const order = orders.find((o) => o.order_id === orderId);
-      if (!order) return;
+      if (!order) return false;
 
       const currentStatus = order.status;
-      const allowed = VALID_TRANSITIONS[currentStatus] || [];
+      const allowed = VALID_TRANSITIONS[currentStatus] ?? [];
 
       if (!allowed.includes(newStatus)) {
         setSnackbar({
-          message: `Não é possível mover de ${currentStatus} para ${newStatus}`,
+          message: `Não é possível mover de "${STATUS_NAMES[currentStatus]}" para "${STATUS_NAMES[newStatus]}".`,
           type: "warning",
         });
         return false;
       }
 
-      // Optimistic update
+      // Atualização otimista
       setOrders((prev) =>
         prev.map((o) =>
           o.order_id === orderId ? { ...o, status: newStatus } : o
@@ -71,17 +81,20 @@ export default function KitchenKanban({ initialOrders = [], onStatusChange, load
 
       try {
         if (onStatusChange) {
-          await onStatusChange(orderId, newStatus);
+          const ok = await onStatusChange(orderId, newStatus);
+          if (ok === false) {
+            setOrders((prev) =>
+              prev.map((o) =>
+                o.order_id === orderId ? { ...o, status: currentStatus } : o
+              )
+            );
+            return false;
+          }
         } else {
           await api.patchOrderStatus(orderId, newStatus);
         }
-        setSnackbar({
-          message: `Pedido #${orderId} → ${newStatus}`,
-          type: "success",
-        });
         return true;
       } catch (error) {
-        // Rollback on error
         setOrders((prev) =>
           prev.map((o) =>
             o.order_id === orderId ? { ...o, status: currentStatus } : o
@@ -98,31 +111,30 @@ export default function KitchenKanban({ initialOrders = [], onStatusChange, load
     [orders, onStatusChange]
   );
 
-  // Handle drag end
   const handleDragEnd = useCallback(
     async (event) => {
       const { active, over } = event;
 
-      if (!over || active.id === over.id) return;
+      if (!over) return;
 
-      const targetStatus = over.id;
+      const targetStatus = String(over.id);
       const orderId = Number(active.id);
+
+      if (targetStatus === orderId) return;
 
       await updateOrderStatus(orderId, targetStatus);
     },
     [updateOrderStatus]
   );
 
-  // Group orders by status
-  const ordersByStatus = {
+  const byStatus = {
     PENDING: orders.filter((o) => o.status === "PENDING"),
     PREPARING: orders.filter((o) => o.status === "PREPARING"),
     READY: orders.filter((o) => o.status === "READY"),
-    DELIVERED: orders.filter((o) => o.status === "DELIVERED"),
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full">
       {snackbar && (
         <Snackbar
           isOpen={true}
@@ -141,50 +153,25 @@ export default function KitchenKanban({ initialOrders = [], onStatusChange, load
           items={orders.map((o) => o.order_id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex-1 p-6 lg:p-8">
-            <div className="flex gap-6 lg:gap-8 h-full min-h-0">
-              {/* Column: NOVOS PEDIDOS (PENDING) */}
-              <KanbanColumn
-                status="PENDING"
-                title="NOVOS PEDIDOS"
-                orders={ordersByStatus.PENDING}
-                onStatusChange={updateOrderStatus}
-                isLoading={loading}
-                columnColor="orange"
-                buttonColor="bg-[#FF5F38] hover:bg-[#FF5F38]/90"
-                buttonText="INICIAR PREPARO"
-                emptyIcon="inbox"
-                emptyText="Nenhum pedido novo"
-              />
-
-              {/* Column: EM PREPARO (PREPARING) */}
-              <KanbanColumn
-                status="PREPARING"
-                title="EM PREPARO"
-                orders={ordersByStatus.PREPARING}
-                onStatusChange={updateOrderStatus}
-                isLoading={loading}
-                columnColor="emerald"
-                buttonColor="bg-emerald-500 hover:bg-emerald-600"
-                buttonText="MARCAR PRONTO"
-                emptyIcon="chef"
-                emptyText="Nada no fogo"
-              />
-
-              {/* Column: PRONTOS (READY) */}
-              <KanbanColumn
-                status="READY"
-                title="PRONTOS PARA ENTREGA"
-                orders={ordersByStatus.READY}
-                onStatusChange={updateOrderStatus}
-                isLoading={loading}
-                columnColor="blue"
-                buttonColor="bg-white border border-[#FF5F38] text-gray-600 hover:bg-gray-50"
-                buttonText="ENTREGUE"
-                emptyIcon="check"
-                emptyText="Nenhum pedido pronto"
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-5">
+            <KanbanColumn
+              status="PENDING"
+              orders={byStatus.PENDING}
+              onStatusChange={updateOrderStatus}
+              isLoading={loading}
+            />
+            <KanbanColumn
+              status="PREPARING"
+              orders={byStatus.PREPARING}
+              onStatusChange={updateOrderStatus}
+              isLoading={loading}
+            />
+            <KanbanColumn
+              status="READY"
+              orders={byStatus.READY}
+              onStatusChange={updateOrderStatus}
+              isLoading={loading}
+            />
           </div>
         </SortableContext>
       </DndContext>

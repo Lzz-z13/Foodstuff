@@ -1,6 +1,17 @@
 const connect = require("../database/connect");
 const createLog = require("../utils/createLog");
 
+// Fluxo de preparo da cozinha.
+// Estados terminais (DELIVERED/CANCELLED) não avançam, mas podem voltar
+// um passo para permitir correção de engano na KDS.
+const ORDER_STATUS_TRANSITIONS = {
+  PENDING: ["PREPARING"],
+  PREPARING: ["PENDING", "READY"],
+  READY: ["PREPARING", "DELIVERED"],
+  DELIVERED: ["READY"],
+  CANCELLED: [],
+};
+
 module.exports = class OrderService {
   static async createOrder(command_id, items, jwt_user_id) {
     const connection = await connect.getConnection();
@@ -143,6 +154,104 @@ module.exports = class OrderService {
       throw {
         status: 500,
         message: "Erro ao criar o pedido.",
+      };
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async updateOrderStatus(order_id, status, jwt_user_id) {
+    const connection = await connect.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      const [orderResult] = await connection.execute(
+        `SELECT order_id, status FROM orders WHERE order_id = ? LIMIT 1 FOR UPDATE`,
+        [order_id],
+      );
+
+      if (orderResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Pedido não encontrado.",
+        };
+      }
+
+      const currentStatus = orderResult[0].status;
+
+      if (currentStatus === status) {
+        throw {
+          status: 400,
+          message: "O pedido já está neste status.",
+        };
+      }
+
+      const allowed = ORDER_STATUS_TRANSITIONS[currentStatus] ?? [];
+
+      if (!allowed.includes(status)) {
+        throw {
+          status: 400,
+          message: `Não é possível alterar o status de ${currentStatus} para ${status}.`,
+        };
+      }
+
+      // Cada status guarda o momento em que foi alcançado.
+      // Voltar um passo limpa o carimbo do passo seguinte.
+      let startedAt = null;
+      let finishedAt = null;
+
+      if (status === "PENDING") {
+        startedAt = null;
+        finishedAt = null;
+      } else if (status === "PREPARING") {
+        startedAt = "COALESCE(started_at, CURRENT_TIMESTAMP)";
+        finishedAt = null;
+      } else if (status === "READY") {
+        startedAt = "COALESCE(started_at, CURRENT_TIMESTAMP)";
+        finishedAt = "COALESCE(finished_at, CURRENT_TIMESTAMP)";
+      } else if (status === "DELIVERED") {
+        startedAt = "COALESCE(started_at, CURRENT_TIMESTAMP)";
+        finishedAt = "COALESCE(finished_at, CURRENT_TIMESTAMP)";
+      }
+
+      const updateQuery = `
+        UPDATE orders
+        SET status = ?,
+            started_at = ${startedAt === null ? "NULL" : startedAt},
+            finished_at = ${finishedAt === null ? "NULL" : finishedAt}
+        WHERE order_id = ?
+      `;
+
+      await connection.execute(updateQuery, [status, order_id]);
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "orders",
+        order_id,
+        `Status do pedido alterado de ${currentStatus} para ${status}`,
+        null,
+      );
+
+      await connection.commit();
+
+      return {
+        order_id: Number(order_id),
+        status,
+        previous_status: currentStatus,
+      };
+    } catch (error) {
+      await connection.rollback();
+
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao atualizar o status do pedido.",
       };
     } finally {
       connection.release();

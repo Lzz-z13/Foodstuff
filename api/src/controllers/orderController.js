@@ -2,6 +2,7 @@ const OrderService = require("../services/orderService");
 const validateCommandId = require("../validations/validateCommandId");
 const validateOrder = require("../validations/validateOrder");
 const validateOrderId = require("../validations/validateOrderId");
+const validateOrderStatus = require("../validations/validateOrderStatus");
 
 module.exports = class OrderController {
   static async createOrder(req, res, next) {
@@ -57,6 +58,31 @@ module.exports = class OrderController {
         error: false,
         message: "Pedido encontrado com sucesso.",
         data: order,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateOrderStatus(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { order_id } = req.params;
+    const { status } = req.body ?? {};
+
+    try {
+      validateOrderId(order_id);
+      validateOrderStatus(status);
+
+      const result = await OrderService.updateOrderStatus(
+        order_id,
+        status,
+        jwt_user_id,
+      );
+
+      return res.status(200).json({
+        error: false,
+        message: "Status do pedido atualizado com sucesso.",
+        data: result,
       });
     } catch (error) {
       next(error);
