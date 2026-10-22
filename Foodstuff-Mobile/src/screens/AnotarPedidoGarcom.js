@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,181 +6,140 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
-import api from '../services/api';
+import LogoutButton from '../components/header/LogoutButton';
 
-export default function PedidosKDS({ navigation }) {
-  const [pedidos, setPedidos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [atualizando, setAtualizando] = useState(false);
+const PRODUTOS = [
+  { id: 1, nome: 'Burger Clássico', preco: 28.9 },
+  { id: 2, nome: 'Batata Frita', preco: 16.5 },
+  { id: 3, nome: 'Refrigerante Lata', preco: 8.5 },
+  { id: 4, nome: 'Água Mineral', preco: 5.0 },
+  { id: 5, nome: 'Salada Caesar', preco: 22.0 },
+  { id: 6, nome: 'Café Expresso', preco: 7.5 },
+];
 
-  const carregarPedidos = async () => {
-    try {
-      const res = await api.get('/pedidos');
-      setPedidos(res.data);
-    } catch {
-      Alert.alert('Erro', 'Não foi possível carregar os pedidos.');
-    } finally {
-      setLoading(false);
-      setAtualizando(false);
-    }
-  };
+export default function AnotarPedidoGarcom({ route, navigation }) {
+  const pedidoId =
+    route?.params?.pedidoId ?? route?.params?.id ?? route?.params?.pedido?.id ?? '—';
+  const [itensSelecionados, setItensSelecionados] = useState([]);
 
-  useEffect(() => {
-    carregarPedidos();
-  }, []);
-
-  const alterarStatus = async (pedido, status) => {
-    try {
-      await api.patch(`/pedidos/${pedido.id}/status`, { status });
-      carregarPedidos();
-    } catch {
-      Alert.alert('Erro', 'Não foi possível atualizar o pedido.');
-    }
-  };
-
-  const novos = pedidos.filter((p) => p.status === 'PENDING');
-  const preparando = pedidos.filter((p) => p.status === 'PREPARING');
-  const prontos = pedidos.filter((p) => p.status === 'READY');
-
-  const statusTexto = {
-    PENDING: 'NOVO',
-    PREPARING: 'PREPARANDO',
-    READY: 'PRONTO',
-  };
-
-  const renderPedido = ({ item }) => (
-    <View style={s.card}>
-
-      <View style={s.cardTopo}>
-        <View>
-          <Text style={s.mesa}>
-            Mesa T-{item.mesa?.codigo || item.mesa_id}
-          </Text>
-
-          <Text style={s.info}>
-            Pedido #{item.id}
-          </Text>
-        </View>
-
-        <Text style={s.status}>
-          {statusTexto[item.status]}
-        </Text>
-      </View>
-
-      {item.itens?.map((produto, index) => (
-        <Text key={index} style={s.produto}>
-          <Text style={s.qtd}>
-            {produto.quantidade}x
-          </Text>{' '}
-          {produto.produto?.nome || produto.nome}
-        </Text>
-      ))}
-
-      {item.observacao && (
-        <View style={s.observacao}>
-          <Text style={s.obsTitulo}>OBSERVAÇÕES</Text>
-          <Text style={s.obsTexto}>
-            "{item.observacao}"
-          </Text>
-        </View>
-      )}
-
-      {item.status === 'PENDING' && (
-        <TouchableOpacity
-          style={s.btn}
-          onPress={() => alterarStatus(item, 'PREPARING')}
-        >
-          <Text style={s.btnTxt}>Aceitar Pedido</Text>
-        </TouchableOpacity>
-      )}
-
-      {item.status === 'PREPARING' && (
-        <TouchableOpacity
-          style={s.btnPronto}
-          onPress={() => alterarStatus(item, 'READY')}
-        >
-          <Text style={s.btnProntoTxt}>Marcar Pronto</Text>
-        </TouchableOpacity>
-      )}
-
-    </View>
+  const total = useMemo(
+    () =>
+      itensSelecionados.reduce(
+        (soma, item) => soma + item.preco * item.quantidade,
+        0,
+      ),
+    [itensSelecionados],
   );
 
+  const adicionarProduto = (produto) => {
+    setItensSelecionados((atual) => {
+      const itemExistente = atual.find((item) => item.id === produto.id);
+
+      if (itemExistente) {
+        return atual.map((item) =>
+          item.id === produto.id
+            ? { ...item, quantidade: item.quantidade + 1 }
+            : item,
+        );
+      }
+
+      return [...atual, { ...produto, quantidade: 1 }];
+    });
+  };
+
+  const removerProduto = (id) => {
+    setItensSelecionados((atual) =>
+      atual
+        .map((item) =>
+          item.id === id
+            ? { ...item, quantidade: item.quantidade - 1 }
+            : item,
+        )
+        .filter((item) => item.quantidade > 0),
+    );
+  };
+
+  const confirmarItens = () => {
+    if (!itensSelecionados.length) {
+      Alert.alert('Atenção', 'Selecione pelo menos um item antes de confirmar.');
+      return;
+    }
+
+    Alert.alert(
+      'Itens adicionados',
+      `Pedido #${pedidoId} foi atualizado com ${itensSelecionados.length} item(ns).`,
+    );
+    navigation.goBack();
+  };
+
   return (
-    <View style={s.container}>
-
-      <View style={s.header}>
-        <Text style={s.titulo}>🍴 Foodstuff KDS</Text>
-        <Text style={s.hora}>🕐 {new Date().toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.titulo}>Adicionar Itens</Text>
+        <LogoutButton navigation={navigation} />
       </View>
 
-      <View style={s.filtros}>
-
-        <View style={s.filtroAtivo}>
-          <Text style={s.filtroAtivoTxt}>Novos</Text>
-          <Text style={s.numeroAtivo}>{novos.length}</Text>
-        </View>
-
-        <View style={s.filtro}>
-          <Text>Preparando</Text>
-          <Text style={s.numero}>{preparando.length}</Text>
-        </View>
-
-        <View style={s.filtro}>
-          <Text>Prontos</Text>
-          <Text style={s.numero}>{prontos.length}</Text>
-        </View>
-
+      <View style={styles.pedidoInfo}>
+        <Text style={styles.pedidoTexto}>Pedido #{pedidoId}</Text>
+        <Text style={styles.pedidoSub}>Selecione os itens para incluir no pedido.</Text>
       </View>
 
-      {loading ? (
-        <ActivityIndicator
-          color="#EA5B25"
-          style={{ marginTop: 40 }}
-        />
-      ) : (
-        <FlatList
-          data={pedidos}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={s.lista}
-          refreshing={atualizando}
-          onRefresh={() => {
-            setAtualizando(true);
-            carregarPedidos();
-          }}
-          renderItem={renderPedido}
-        />
-      )}
+      <FlatList
+        data={PRODUTOS}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={styles.lista}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View>
+              <Text style={styles.nomeProduto}>{item.nome}</Text>
+              <Text style={styles.precoProduto}>
+                R$ {item.preco.toFixed(2).replace('.', ',')}
+              </Text>
+            </View>
 
-      <View style={s.menu}>
+            <TouchableOpacity
+              style={styles.botaoAdicionar}
+              onPress={() => adicionarProduto(item)}
+            >
+              <Text style={styles.botaoAdicionarTexto}>Adicionar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
 
-        <TouchableOpacity onPress={() => navigation.navigate('Mesas')}>
-          <Text>▦</Text>
-          <Text>Mesas</Text>
+      <View style={styles.resumo}>
+        <Text style={styles.resumoTitulo}>Resumo</Text>
+
+        {itensSelecionados.length === 0 ? (
+          <Text style={styles.vazio}>Nenhum item selecionado.</Text>
+        ) : (
+          itensSelecionados.map((item) => (
+            <View key={item.id} style={styles.itemResumo}>
+              <Text style={styles.itemResumoTexto}>
+                {item.quantidade}x {item.nome}
+              </Text>
+              <TouchableOpacity onPress={() => removerProduto(item.id)}>
+                <Text style={styles.removerTexto}>Remover</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+
+        <View style={styles.totalRow}>
+          <Text style={styles.totalTexto}>Total</Text>
+          <Text style={styles.totalValor}>R$ {total.toFixed(2).replace('.', ',')}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.botaoConfirmar} onPress={confirmarItens}>
+          <Text style={styles.botaoConfirmarTexto}>Confirmar itens</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity>
-          <Text style={s.ativo}>☷</Text>
-          <Text style={s.ativo}>Pedidos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate('Perfil')}>
-          <Text>♙</Text>
-          <Text>Perfil</Text>
-        </TouchableOpacity>
-
       </View>
-
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FF',
@@ -190,185 +149,146 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 45,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 48,
+    paddingBottom: 12,
     backgroundColor: '#fff',
   },
 
   titulo: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '800',
     color: '#111827',
   },
 
-  hora: {
-    color: '#6B7280',
-    fontSize: 11,
-  },
-
-  filtros: {
-    flexDirection: 'row',
-    gap: 6,
-    padding: 10,
+  pedidoInfo: {
     backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderColor: '#E5E7EB',
+    borderBottomColor: '#E5E7EB',
   },
 
-  filtro: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 7,
-    padding: 9,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 5,
-  },
-
-  filtroAtivo: {
-    flex: 1,
-    backgroundColor: '#EA5B25',
-    borderRadius: 7,
-    padding: 9,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 5,
-  },
-
-  filtroAtivoTxt: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-
-  numero: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 5,
-    borderRadius: 5,
-    fontSize: 11,
-  },
-
-  numeroAtivo: {
-    backgroundColor: '#fff',
-    color: '#EA5B25',
-    paddingHorizontal: 5,
-    borderRadius: 5,
-    fontSize: 11,
-  },
-
-  lista: {
-    padding: 10,
-    paddingBottom: 80,
-  },
-
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    elevation: 2,
-  },
-
-  cardTopo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-
-  mesa: {
+  pedidoTexto: {
     fontSize: 16,
     fontWeight: '700',
     color: '#111827',
   },
 
-  info: {
+  pedidoSub: {
     color: '#6B7280',
-    fontSize: 10,
-    marginTop: 2,
-  },
-
-  status: {
-    backgroundColor: '#FDE8E0',
-    color: '#EA5B25',
-    fontSize: 9,
-    fontWeight: '700',
-    padding: 5,
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-
-  produto: {
     fontSize: 12,
-    marginBottom: 5,
-    color: '#374151',
+    marginTop: 4,
   },
 
-  qtd: {
+  lista: {
+    padding: 16,
+    paddingBottom: 20,
+  },
+
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    elevation: 2,
+  },
+
+  nomeProduto: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  precoProduto: {
+    marginTop: 4,
     color: '#EA5B25',
     fontWeight: '700',
   },
 
-  observacao: {
-    borderWidth: 1,
-    borderColor: '#F5B942',
-    backgroundColor: '#FFFDF5',
-    borderRadius: 6,
-    padding: 8,
-    marginTop: 5,
-    marginBottom: 8,
-  },
-
-  obsTitulo: {
-    color: '#C38A00',
-    fontSize: 8,
-    fontWeight: '700',
-  },
-
-  obsTexto: {
-    fontSize: 10,
-    marginTop: 2,
-  },
-
-  btn: {
+  botaoAdicionar: {
     backgroundColor: '#EA5B25',
-    borderRadius: 7,
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 3,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
 
-  btnTxt: {
+  botaoAdicionarTexto: {
     color: '#fff',
     fontWeight: '700',
     fontSize: 12,
   },
 
-  btnPronto: {
-    borderWidth: 1,
-    borderColor: '#20B486',
-    borderRadius: 7,
-    paddingVertical: 10,
-    alignItems: 'center',
+  resumo: {
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    padding: 16,
   },
 
-  btnProntoTxt: {
-    fontWeight: '600',
+  resumoTitulo: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  vazio: {
+    marginTop: 8,
+    color: '#6B7280',
+  },
+
+  itemResumo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+
+  itemResumoTexto: {
+    color: '#374151',
+    fontSize: 13,
+  },
+
+  removerTexto: {
+    color: '#DC2626',
+    fontWeight: '700',
     fontSize: 12,
   },
 
-  menu: {
-    height: 65,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderColor: '#E5E7EB',
+  totalRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
 
-  ativo: {
-    color: '#EA5B25',
+  totalTexto: {
+    fontWeight: '700',
+    color: '#111827',
   },
+
+  totalValor: {
+    color: '#EA5B25',
+    fontWeight: '800',
+  },
+
+  botaoConfirmar: {
+    backgroundColor: '#EA5B25',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+
+  botaoConfirmarTexto: {
+    color: '#fff',
+    fontWeight: '800',
+  },
+
 });
