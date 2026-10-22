@@ -73,7 +73,6 @@ export default function KitchenSidebar() {
         </div>
 
         {/* Navegação */}
-        <nav className="flex-1 overflow-y-auto p-3">
           <Link
             to="/cozinha"
             onClick={fechar}
@@ -82,6 +81,7 @@ export default function KitchenSidebar() {
             <ChefHat size={17} />
             Tela da COZINHA
           </Link>
+        <nav className="flex-1 overflow-y-auto p-3">
 
           <p className="mt-6 mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-300">
             Em produção

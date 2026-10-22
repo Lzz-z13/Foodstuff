@@ -91,6 +91,9 @@ export function SidebarUserMenu({ user }) {
 export default function SideBar() {
   const location = useLocation();
   const user = lerUsuario() ?? {};
+  const links = user.role === "KITCHEN"
+    ? [{ path: "/cozinha", label: "Cozinha", icon: ForkKnife }]
+    : LINKS;
 
   return (
     <aside
@@ -108,7 +111,7 @@ export default function SideBar() {
       </div>
 
       <nav aria-label="Páginas do sistema" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-5">
-        {LINKS.filter(({ path }) => podeAcessar(path, user.role)).map(({ path, label, icon: Icon }) => {
+        {links.filter(({ path }) => podeAcessar(path, user.role)).map(({ path, label, icon: Icon }) => {
           const active = location.pathname === path;
           return (
             <Link
