@@ -29,7 +29,7 @@ function App() {
         {/* Protegidas - exige token */}
         <Route element={<ProtectedRoute />}>
           {/* Cozinha (KITCHEN e MANAGER) - layout próprio */}
-          <Route element={<RoleRoute allowedRoles={["KITCHEN", "MANAGER"]} />}>
+          <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
             <Route element={<KitchenLayout />}>
               <Route path="/cozinha" element={<Cozinha />} />
             </Route>
