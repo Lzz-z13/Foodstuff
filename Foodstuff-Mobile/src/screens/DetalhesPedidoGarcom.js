@@ -1,405 +1,412 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
-} from 'react-native';
-import api from '../services/api';
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import sheets from "../services/api";
 
-const brl = (v) =>
-  `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
-
-const hora = (data) =>
-  data
-    ? new Date(data).toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : 'Pendente';
+const brl = (valor) =>
+  `R$ ${Number(valor || 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
 
 export default function DetalhesPedido({ route, navigation }) {
-  const { id } = route.params;
+  const pedidoId =
+    route?.params?.pedidoId ?? route?.params?.id ?? route?.params?.pedido?.id;
+
   const [pedido, setPedido] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [solicitandoConta, setSolicitandoConta] = useState(false);
 
   useEffect(() => {
-    api
-      .get(`/pedidos/${id}`)
-      .then((res) => setPedido(res.data))
-      .catch(() =>
-        Alert.alert(
-          'Erro',
-          'Não foi possível carregar o pedido.'
-        )
-      );
-  }, [id]);
+    carregarPedido();
+  }, [pedidoId]);
 
-  const solicitarConta = async () => {
-    try {
-      await api.post(`/pedidos/${id}/conta`);
-
-      Alert.alert(
-        'Conta solicitada',
-        'O caixa foi avisado.'
-      );
-
-      navigation.goBack();
-    } catch {
-      Alert.alert(
-        'Erro',
-        'Falha ao solicitar a conta.'
-      );
+  async function carregarPedido() {
+    if (!pedidoId) {
+      setCarregando(false);
+      Alert.alert("Erro", "Não foi possível identificar o pedido.");
+      return;
     }
-  };
 
-  if (!pedido) {
+    try {
+      setCarregando(true);
+      const resposta = await sheets.getPedido(pedidoId);
+      setPedido(resposta.data?.pedido ?? resposta.data);
+    } catch (error) {
+      console.log("Erro ao carregar pedido:", error);
+      Alert.alert("Erro", "Não foi possível carregar os detalhes do pedido.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function solicitarConta() {
+    try {
+      setSolicitandoConta(true);
+      await sheets.postSolicitarConta(pedidoId);
+
+      Alert.alert("Sucesso", "Solicitação de conta enviada!");
+      carregarPedido();
+    } catch (error) {
+      console.log("Erro ao solicitar conta:", error);
+      Alert.alert(
+        "Erro",
+        error.response?.data?.message || "Não foi possível solicitar a conta.",
+      );
+    } finally {
+      setSolicitandoConta(false);
+    }
+  }
+
+  function adicionarItem() {
+    navigation.navigate("AnotarPedido", {
+      pedidoId,
+      pedido,
+    });
+  }
+
+  if (carregando) {
     return (
-      <ActivityIndicator
-        color="#EA5B25"
-        style={{ flex: 1 }}
-      />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B2C" />
+        <Text style={styles.loadingText}>Carregando pedido...</Text>
+      </View>
     );
   }
 
-  const etapas = [
-    {
-      n: 1,
-      nome: 'Recebido',
-      hora: pedido.recebido_em,
-    },
-    {
-      n: 2,
-      nome: 'Na Cozinha',
-      hora: pedido.cozinha_em,
-    },
-    {
-      n: 3,
-      nome: 'Pronto',
-      hora: pedido.pronto_em,
-    },
-  ];
+  if (!pedido) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Não foi possível encontrar este pedido.</Text>
 
-  const total = pedido.itens.reduce(
-    (soma, item) =>
-      soma + item.quantidade * item.preco,
-    0
-  );
+        <TouchableOpacity
+          style={styles.botaoVoltarErro}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.textoBotao}>Voltar para pedidos</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const itens = pedido.itens || pedido.items || [];
+
+  const total = itens.reduce((soma, item) => {
+    const quantidade = Number(item.quantidade || 1);
+    const preco = Number(
+      item.preco ??
+        item.preco_unitario ??
+        item.valor ??
+        item.preco_unitario_atual ??
+        0,
+    );
+
+    return soma + quantidade * preco;
+  }, 0);
 
   return (
-    <View style={s.container}>
+    <View style={styles.container}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.conteudo}>
+        <Text style={styles.titulo}>Detalhes do pedido</Text>
 
-      <ScrollView>
-
-        <View style={s.header}>
-          <View>
-            <Text style={s.titulo}>
-              Pedido #{pedido.id}
-            </Text>
-
-            <Text style={s.sub}>
-              Informações completas do envio
-            </Text>
-          </View>
-
-          <Text style={s.badge}>
-            Mesa {pedido.mesa?.codigo}
+        <View style={styles.card}>
+          <Text style={styles.label}>Pedido</Text>
+          <Text style={styles.valor}>
+            #{pedido.id ?? pedido.order_id ?? pedidoId}
           </Text>
+
+          <Text style={styles.label}>Mesa</Text>
+          <Text style={styles.valor}>
+            {pedido.mesa?.numero ??
+              pedido.mesa?.codigo ??
+              pedido.numero_mesa ??
+              pedido.mesa_numero ??
+              (typeof pedido.mesa === "object" && pedido.mesa !== null
+                ? pedido.mesa.codigo
+                : pedido.mesa) ??
+              "Não informada"}
+          </Text>
+
+          <Text style={styles.label}>Status</Text>
+          <Text style={styles.status}>{pedido.status ?? "Em andamento"}</Text>
         </View>
 
-        <Text style={s.secao}>
-          STATUS DO PREPARO
-        </Text>
+        <Text style={styles.subtitulo}>Itens do pedido</Text>
 
-        <View style={s.etapas}>
-          {etapas.map((item) => (
-            <View key={item.n} style={s.etapa}>
+        <View style={styles.card}>
+          {itens.length > 0 ? (
+            itens.map((item, index) => {
+              const quantidade = Number(item.quantidade || 1);
+              const preco = Number(
+                item.preco ??
+                  item.preco_unitario ??
+                  item.valor ??
+                  item.preco_unitario_atual ??
+                  0,
+              );
 
-              <View
-                style={[
-                  s.circulo,
-                  !item.hora && s.circuloPendente,
-                ]}
-              >
-                <Text style={s.circuloTxt}>
-                  {item.n}
-                </Text>
-              </View>
+              return (
+                <View
+                  key={item.id ?? item.id_produto ?? index}
+                  style={styles.item}
+                >
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemNome}>
+                      {item.nome ??
+                        item.nome_produto ??
+                        item.produto?.nome ??
+                        "Produto"}
+                    </Text>
 
-              <View>
-                <Text style={s.etapaNome}>
-                  {item.nome}
-                </Text>
+                    <Text style={styles.itemQuantidade}>
+                      Quantidade: {quantidade}
+                    </Text>
+                  </View>
 
-                <Text style={s.etapaHora}>
-                  {hora(item.hora)}
-                </Text>
-              </View>
-
-            </View>
-          ))}
-        </View>
-
-        {pedido.observacao && (
-          <View style={s.obs}>
-            <Text style={s.obsTit}>
-              INSTRUÇÕES ESPECIAIS
+                  <Text style={styles.itemPreco}>
+                    {brl(quantidade * preco)}
+                  </Text>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.vazio}>
+              Nenhum item encontrado neste pedido.
             </Text>
+          )}
 
-            <Text style={s.obsTxt}>
-              "{pedido.observacao}"
-            </Text>
-          </View>
-        )}
-
-        <Text style={s.secao}>
-          ITENS DO PEDIDO
-        </Text>
-
-        <View style={s.itens}>
-          {pedido.itens.map((item, index) => (
-            <View key={index} style={s.itemRow}>
-
-              <Text style={s.itemTxt}>
-                <Text style={s.qtd}>
-                  {item.quantidade}x{' '}
-                </Text>
-                {item.nome}
-              </Text>
-
-              <Text style={s.itemTxt}>
-                {brl(
-                  item.quantidade * item.preco
-                )}
-              </Text>
-
-            </View>
-          ))}
-
-          <View style={[s.itemRow, s.totalRow]}>
-            <Text style={s.totalLbl}>
-              Total do Pedido
-            </Text>
-
-            <Text style={s.totalVal}>
-              {brl(total)}
-            </Text>
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalLabel}>Total dos itens</Text>
+            <Text style={styles.totalValor}>{brl(total)}</Text>
           </View>
         </View>
-
       </ScrollView>
 
-      <View style={s.botoes}>
-
+      <View style={styles.botoesContainer}>
         <TouchableOpacity
-          style={[s.btn, s.btnOutline]}
-          onPress={() =>
-            navigation.navigate(
-              'AnotarPedido',
-              { mesa: pedido.mesa }
-            )
-          }
+          style={[styles.botao, styles.botaoVoltar]}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
         >
-          <Text style={s.btnOutlineTxt}>
-            Adicionar Item
-          </Text>
+          <Ionicons name="arrow-back-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.textoBotao}>Voltar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[s.btn, s.btnPrimario]}
+          style={[styles.botao, styles.botaoAdicionar]}
+          onPress={adicionarItem}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.textoBotao}>Adicionar item</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.botao, styles.botaoConta]}
           onPress={solicitarConta}
+          disabled={solicitandoConta}
+          activeOpacity={0.8}
         >
-          <Text style={s.btnPrimarioTxt}>
-            Solicitar Conta
-          </Text>
+          {solicitandoConta ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <Ionicons name="receipt-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.textoBotao}>Solicitar conta</Text>
+            </>
+          )}
         </TouchableOpacity>
-
       </View>
-
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FF',
+    backgroundColor: "#F5F6F8",
   },
 
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
-    backgroundColor: '#fff',
+  scroll: {
+    flex: 1,
+  },
+
+  conteudo: {
+    padding: 16,
+    paddingBottom: 20,
   },
 
   titulo: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
+    fontSize: 23,
+    fontWeight: "700",
+    color: "#1F2024",
+    marginBottom: 20,
   },
 
-  sub: {
-    color: '#6B7280',
-    marginTop: 2,
+  subtitulo: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#1F2024",
+    marginTop: 20,
+    marginBottom: 12,
   },
 
-  badge: {
-    backgroundColor: '#FDE8E0',
-    color: '#EA5B25',
-    fontWeight: '700',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-
-  secao: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#374151',
-    marginHorizontal: 20,
-    marginTop: 18,
-    marginBottom: 8,
-  },
-
-  etapas: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-
-  etapa: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-
-  circulo: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#EA5B25',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  circuloPendente: {
-    backgroundColor: '#9CA3AF',
-  },
-
-  circuloTxt: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 12,
-  },
-
-  etapaNome: {
-    fontWeight: '700',
-    fontSize: 12,
-    color: '#111827',
-  },
-
-  etapaHora: {
-    fontSize: 10,
-    color: '#6B7280',
-  },
-
-  obs: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#FBBF24',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 20,
-    marginTop: 16,
-  },
-
-  obsTit: {
-    color: '#D97706',
-    fontWeight: '800',
-    fontSize: 11,
-  },
-
-  obsTxt: {
-    color: '#374151',
-    marginTop: 2,
-  },
-
-  itens: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginHorizontal: 20,
-  },
-
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-
-  itemTxt: {
-    color: '#111827',
-  },
-
-  qtd: {
-    color: '#EA5B25',
-    fontWeight: '700',
-  },
-
-  totalRow: {
-    borderTopWidth: 1,
-    borderColor: '#E5E7EB',
-    marginTop: 8,
-    paddingTop: 10,
-  },
-
-  totalLbl: {
-    fontWeight: '800',
-    color: '#111827',
-  },
-
-  totalVal: {
-    fontWeight: '800',
-    color: '#EA5B25',
-    fontSize: 16,
-  },
-
-  botoes: {
-    flexDirection: 'row',
-    gap: 12,
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
     padding: 16,
-    backgroundColor: '#fff',
+    marginBottom: 8,
+    elevation: 2,
   },
 
-  btn: {
+  label: {
+    fontSize: 13,
+    color: "#777777",
+    marginTop: 8,
+  },
+
+  valor: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2024",
+    marginTop: 4,
+  },
+
+  status: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#FF6B2C",
+    marginTop: 4,
+  },
+
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ECEDF0",
+    gap: 8,
+  },
+
+  itemInfo: {
     flex: 1,
-    borderRadius: 8,
-    paddingVertical: 13,
-    alignItems: 'center',
   },
 
-  btnOutline: {
-    borderWidth: 1,
-    borderColor: '#EA5B25',
+  itemNome: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1F2024",
   },
 
-  btnOutlineTxt: {
-    color: '#EA5B25',
-    fontWeight: '700',
+  itemQuantidade: {
+    fontSize: 12,
+    color: "#777777",
+    marginTop: 4,
   },
 
-  btnPrimario: {
-    backgroundColor: '#EA5B25',
+  itemPreco: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1F2024",
   },
 
-  btnPrimarioTxt: {
-    color: '#fff',
-    fontWeight: '700',
+  vazio: {
+    fontSize: 14,
+    color: "#777777",
+    paddingVertical: 12,
+  },
+
+  totalContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#ECEDF0",
+  },
+
+  totalLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1F2024",
+  },
+
+  totalValor: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FF6B2C",
+  },
+
+  botoesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#ECEDF0",
+  },
+
+  botao: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 54,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+    paddingVertical: 6,
+    gap: 3,
+  },
+
+  botaoVoltar: {
+    backgroundColor: "#6B7280",
+  },
+
+  botaoAdicionar: {
+    backgroundColor: "#FF6B2C",
+  },
+
+  botaoConta: {
+    backgroundColor: "#16A34A",
+  },
+
+  textoBotao: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F5F6F8",
+    padding: 20,
+  },
+
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#777777",
+  },
+
+  botaoVoltarErro: {
+    backgroundColor: "#6B7280",
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 16,
   },
 });
