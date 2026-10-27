@@ -5,10 +5,10 @@ import { Platform } from "react-native";
 
 const getBaseUrl = () => {
   if (Platform.OS === "android") {
-    return "http://10.0.2.2:5000/api/foodstuff";
+    return "http://110.89.240.51:5000/api/foodstuff";
   }
 
-  return "http://10.89.240.6:5000/api/foodstuff";
+  return "http://10.89.240.51:5000/api/foodstuff";
 };
 
 const api = axios.create({

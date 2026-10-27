@@ -5,7 +5,6 @@
 
   const UserController = require("../controllers/userController");
 
-<<<<<<< HEAD
   // Logged user
   router.get(
     "/me",
@@ -16,13 +15,6 @@
     "/me/password",
     UserController.updateUserPassword
   );
-=======
-// Logged user
-router.patch(
-  "/me/password",
-  UserController.updateUserPassword
-);
->>>>>>> origin/main
 
   router.delete(
     "/me",
@@ -49,17 +41,10 @@ router.patch(
     UserController.readAllUsers
   );
 
-<<<<<<< HEAD
   // router.patch(
   //   "/:user_id",
   //   UserController.updateUser
   // );
-=======
-router.patch(
-  "/:user_id",
-  UserController.updateUserById
-);
->>>>>>> origin/main
 
   router.delete(
     "/:user_id",

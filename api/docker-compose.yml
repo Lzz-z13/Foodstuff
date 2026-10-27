@@ -4,6 +4,19 @@ services: # Containers
   app:
     restart: unless-stopped
     build: .
+    env_file:
+      - ./.env
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      SECRET: ${SECRET}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS}
+      SKIP_VALIDATORS: ${SKIP_VALIDATORS}
     ports:
       - "5000:5000" # Host : Container
     volumes:

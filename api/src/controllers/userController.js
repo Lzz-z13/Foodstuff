@@ -47,6 +47,22 @@ module.exports = class UserController {
     }
   }
 
+  static async readCurrentUser(req, res, next) {
+    const jwt_user_id = req.user.id;
+
+    try {
+      const user = await UserService.readCurrentUser(jwt_user_id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Usuário buscado com sucesso.",
+        data: user,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async readAllUsers(req, res, next) {
     try {
       const users = await UserService.readAllUsers();
