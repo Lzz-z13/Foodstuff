@@ -3,13 +3,12 @@ import { ChefHat, X, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { lerUsuario } from "../../services/auth";
-
 import { SidebarUserMenu } from "../sideBar/SideBar";
 
 export default function KitchenSidebar() {
   const location = useLocation();
-  const [aberta, setAberta] = useState(false);
 
+  const [aberta, setAberta] = useState(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -18,7 +17,6 @@ export default function KitchenSidebar() {
 
   const fechar = () => {
     setAberta(false);
-
   };
 
   return (
@@ -35,6 +33,7 @@ export default function KitchenSidebar() {
         </button>
       )}
 
+      {/* Overlay mobile */}
       {aberta && (
         <button
           type="button"
@@ -54,14 +53,17 @@ export default function KitchenSidebar() {
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FF5F38] shadow-[0_4px_12px_-2px_rgba(255,95,56,0.5)]">
             <ChefHat size={18} className="text-white" />
           </span>
+
           <div className="min-w-0 flex-1">
             <p className="truncate text-[15px] font-extrabold leading-tight tracking-tight text-slate-900">
               Foodstuff
             </p>
+
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Cozinha
             </p>
           </div>
+
           <button
             type="button"
             onClick={fechar}
@@ -73,26 +75,37 @@ export default function KitchenSidebar() {
         </div>
 
         {/* Navegação */}
+        <nav className="flex-1 overflow-y-auto p-3">
           <Link
             to="/cozinha"
             onClick={fechar}
-            className="flex items-center gap-3 rounded-xl bg-[#FFF0EC] px-3 py-2.5 text-[13.5px] font-bold text-[#FF5F38] transition hover:bg-[#FFE6DF]"
+            aria-current={
+              location.pathname === "/cozinha" ? "page" : undefined
+            }
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-bold transition ${
+              location.pathname === "/cozinha"
+                ? "bg-[#FFF0EC] text-[#FF5F38]"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
           >
             <ChefHat size={17} />
-            Tela da COZINHA
+            Cozinha
           </Link>
-        <nav className="flex-1 overflow-y-auto p-3">
 
           <p className="mt-6 mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-300">
             Em produção
           </p>
+
           <p className="px-3 text-[11.5px] leading-relaxed text-slate-400">
             Arraste os pedidos entre as colunas ou use os botões de ação para
-            advancing o preparo.
+            avançar o preparo.
           </p>
         </nav>
 
-        <SidebarUserMenu key={location.key} user={user ?? {}} />
+        <SidebarUserMenu
+          key={location.key}
+          user={user ?? {}}
+        />
       </aside>
     </>
   );

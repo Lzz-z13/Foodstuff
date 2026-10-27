@@ -17,7 +17,23 @@ const {
 const { isValidUserName } = require("../utils/validators/userValidator");
 
 module.exports = class UserController {
+  static async readCurrentUser(req, res, next) {
+    try {
+      const user = await UserService.readCurrentUser(req.user.id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Usuário buscado com sucesso.",
+        data: user,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createUser(req, res, next) {
+    console.log("BODY RECEBIDO:", req.body);
+    
     const jwt_user_id = req.user.id;
 
     req.body.email = normalizeEmail(req.body.email || "");
