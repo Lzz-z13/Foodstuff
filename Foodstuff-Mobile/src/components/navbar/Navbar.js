@@ -27,6 +27,7 @@ const TABS = [
 const ROUTES = {
   Dashboard: "Dashboard",
   Users: "Cadastro",
+  "Cardápio": "Cardapio",
   Config: "contaAdmin",
 };
 

@@ -13,6 +13,7 @@ import DetalhesPedidoGarcom from "./src/screens/DetalhesPedidoGarcom";
 import AnotarPedidoGarcom from "./src/screens/AnotarPedidoGarcom";
 import PerfilGarcom from "./src/screens/PerfilGarcom";
 import contaAdmin from "./src/screens/contaAdmin";
+import Cardapio from "./src/screens/Cardapio";
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,8 @@ export default function App() {
           <Stack.Screen name="PerfilGarcom" component={PerfilGarcom} />
 
           <Stack.Screen name="contaAdmin" component={contaAdmin} />
+          <Stack.Screen name="Cardapio" component={Cardapio} />
+          
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
