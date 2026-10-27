@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import sheets from "../services/api";
+import sheets from "../../services/api";
 
 const brl = (valor) =>
   `R$ ${Number(valor || 0)

@@ -13,16 +13,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 
-import Header from "../components/header/Header";
-import Navbar from "../components/navbar/Navbar";
+import Header from "../../components/header/Header";
+import Navbar from "../../components/navbar/Navbar";
 
-import StatCard from "../components/statCard/StatCard";
-import WeeklyRevenueChart from "../components/weeklyrevenuechart/WeeklyRevenueChart";
-import CategoryChart from "../components/categorychart/CategoryChart";
-import BestSellingChart from "../components/bestsellingchart/BestSellingChart";
-import RecentOrders from "../components/recentorders/RecentOrders";
+import StatCard from "../../components/statCard/StatCard";
+import WeeklyRevenueChart from "../../components/weeklyrevenuechart/WeeklyRevenueChart";
+import CategoryChart from "../../components/categorychart/CategoryChart";
+import BestSellingChart from "../../components/bestsellingchart/BestSellingChart";
+import RecentOrders from "../../components/recentorders/RecentOrders";
 
-import sheets from "../services/api";
+import sheets from "../../services/api";
 
 const COLORS = {
   primary: "#FF6B2C",

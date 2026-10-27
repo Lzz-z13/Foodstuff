@@ -13,9 +13,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 
-import Header from "../components/header/Header";
-import Navbar from "../components/navbar/Navbar";
-import api from "../services/api";
+import Header from "../../components/header/Header";
+import Navbar from "../../components/navbar/Navbar";
+import api from "../../services/api";
 
 export default function ContaAdmin({ navigation }) {
   // DADOS DO USUÁRIO

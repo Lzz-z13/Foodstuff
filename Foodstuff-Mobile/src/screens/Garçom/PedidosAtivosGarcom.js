@@ -9,9 +9,9 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import api from "../services/api";
-import LogoutButton from "../components/header/LogoutButton";
-import NavbarGarcom from "../components/navbar/NavbarGarcom";
+import api from "../../services/api";
+import LogoutButton from "../../components/header/LogoutButton";
+import NavbarGarcom from "../../components/navbar/NavbarGarcom";
 
 const FILTROS = [
   "Todos",

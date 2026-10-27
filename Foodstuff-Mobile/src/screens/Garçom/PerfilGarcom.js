@@ -13,9 +13,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
-import api from '../services/api';
-import LogoutButton from '../components/header/LogoutButton';
-import NavbarGarcom from '../components/navbar/NavbarGarcom';
+import api from '../../services/api';
+import LogoutButton from '../../components/header/LogoutButton';
+import NavbarGarcom from '../../components/navbar/NavbarGarcom';
 
 const LARANJA = '#FF5A1F';
 const LARANJA_CLARO = '#FFB59A';

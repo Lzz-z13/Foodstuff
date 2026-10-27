@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import LogoutButton from "../components/header/LogoutButton";
-import NavbarGarcom from "../components/navbar/NavbarGarcom";
+import LogoutButton from "../../components/header/LogoutButton";
+import NavbarGarcom from "../../components/navbar/NavbarGarcom";
 
 export default function MesasGarcom({ navigation }) {
   return (

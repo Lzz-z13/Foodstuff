@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import LogoutButton from '../components/header/LogoutButton';
+import LogoutButton from '../../components/header/LogoutButton';
 
 const PRODUTOS = [
   { id: 1, nome: 'Burger Clássico', preco: 28.9 },

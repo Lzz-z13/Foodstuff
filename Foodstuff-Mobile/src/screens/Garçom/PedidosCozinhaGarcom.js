@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import api from "../services/api";
+import api from "../../services/api";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState([]);

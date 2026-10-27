@@ -18,9 +18,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
-import Header from "../components/header/Header";
-import Navbar from "../components/navbar/Navbar";
-import sheets from "../services/api";
+import Header from "../../components/header/Header";
+import Navbar from "../../components/navbar/Navbar";
+import sheets from "../../services/api";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {

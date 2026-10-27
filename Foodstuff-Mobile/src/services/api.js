@@ -3,17 +3,8 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const getBaseUrl = () => {
-  if (Platform.OS === "android") {
-    return "http://10.0.2.2:5000/api/foodstuff";
-  }
-
-  return "http://10.89.240.6:5000/api/foodstuff";
-};
-
 const api = axios.create({
-  baseURL: "http://10.89.240.104:5000/api/foodstuff",
-  baseURL: getBaseUrl(),
+  baseURL: "http://[IP != COMMITAR IP]:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },
