@@ -16,6 +16,37 @@ const crypto = require("crypto");
 const SALT_ROUNDS = 10;
 
 module.exports = class UserService {
+  static async readCurrentUser(jwt_user_id) {
+    const query = `
+      SELECT
+        user_id,
+        name,
+        email,
+        phone,
+        role,
+        first_login,
+        is_active,
+        created_at
+      FROM users
+      WHERE user_id = ?
+        AND is_active = 1
+      LIMIT 1
+    `;
+
+    try {
+      const [users] = await connect.execute(query, [jwt_user_id]);
+
+      if (users.length === 0) {
+        throw { status: 404, message: "Usuário não encontrado." };
+      }
+
+      return users[0];
+    } catch (error) {
+      if (error.status) throw error;
+      throw { status: 500, message: "Erro interno do servidor." };
+    }
+  }
+
   static async createUser(name, email, role, phone, jwt_user_id) {
     const user_password = passGenerator(8);
     const hashed_password = await bcrypt.hash(user_password, SALT_ROUNDS);

@@ -1,10 +1,5 @@
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Info,
-  X,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from "lucide-react";
+import { useEffect } from "react";
 
 const snackbarTypes = {
   success: {
@@ -44,10 +39,24 @@ export default function Snackbar({
   message,
   type = "info",
   onClose,
+  duration = 3000,
 }) {
   const config = snackbarTypes[type] || snackbarTypes.info;
 
   const Icon = config.icon;
+
+  useEffect(() => {
+    // Se não houver uma função onClose passada, não ativa o timer
+    if (!onClose) return;
+
+    // Inicia o temporizador para fechar automaticamente
+    const timer = setTimeout(() => {
+      onClose();
+    }, duration);
+
+    // Função de limpeza (cleanup): limpa o timer se o componente desmontar antes do tempo
+    return () => clearTimeout(timer);
+  }, [onClose, duration, message]);
 
   return (
     <div
@@ -61,17 +70,12 @@ export default function Snackbar({
         shadow-lg
         ${config.bg}
         ${config.border}
+        
       `}
     >
-      <Icon
-        className={`h-5 w-5 shrink-0 ${config.iconColor}`}
-      />
+      <Icon className={`h-5 w-5 shrink-0 ${config.iconColor}`} />
 
-      <p
-        className={`flex-1 text-sm font-medium ${config.text}`}
-      >
-        {message}
-      </p>
+      <p className={`flex-1 text-sm font-medium ${config.text}`}>{message}</p>
 
       {onClose && (
         <button

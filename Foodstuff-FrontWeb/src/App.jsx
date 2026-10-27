@@ -18,6 +18,11 @@ import RoleRoute from "./components/protectedRoute/RoleRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
 import KitchenLayout from "./components/kitchen/KitchenLayout";
+import { getRole } from "./services/auth";
+
+function AccountLayout() {
+  return getRole() === "KITCHEN" ? <KitchenLayout /> : <DefaultLayout />;
+}
 
 function App() {
   return (
@@ -33,7 +38,6 @@ function App() {
           <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
             <Route element={<KitchenLayout />}>
               <Route path="/cozinha" element={<Cozinha />} />
-              <Route path="/minha-conta" element={<MinhaConta/>}/>
             </Route>
           </Route>
           <Route element={<DefaultLayout />}>
@@ -47,12 +51,11 @@ function App() {
               <Route path="/cadastro" element={<CadastroFuncionario />} />
             </Route>
 
-            {/* Minha Conta - cargos que usam o layout padrão */}
-            <Route
-              element={
-                <RoleRoute allowedRoles={["MANAGER", "KITCHEN", "CASHIER"]} />
-              }
-            >
+          </Route>
+
+          {/* Uma única rota de conta, com a sidebar do cargo conectado. */}
+          <Route element={<RoleRoute allowedRoles={["MANAGER", "KITCHEN", "CASHIER"]} />}>
+            <Route element={<AccountLayout />}>
               <Route path="/minha-conta" element={<MinhaConta />} />
             </Route>
           </Route>
