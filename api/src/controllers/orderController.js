@@ -16,7 +16,7 @@ module.exports = class OrderController {
 
       const result = await OrderService.createOrder(
         command_id,
-        req.body.items,
+        items,
         jwt_user_id,
       );
 
@@ -27,6 +27,15 @@ module.exports = class OrderController {
           order_id: result.order_id,
         },
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async readOrders(req, res, next) {
+    try {
+      const orders = await OrderService.readOrders();
+      return res.status(200).json(orders);
     } catch (error) {
       next(error);
     }
@@ -84,6 +93,20 @@ module.exports = class OrderController {
         message: "Status do pedido atualizado com sucesso.",
         data: result,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async requestAccount(req, res, next) {
+    const { order_id } = req.params;
+
+    try {
+      validateOrderId(order_id);
+
+      const result = await OrderService.requestAccount(order_id);
+
+      return res.status(200).json(result);
     } catch (error) {
       next(error);
     }

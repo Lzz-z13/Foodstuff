@@ -1,24 +1,33 @@
 const jwt = require("jsonwebtoken");
 
 function verifyJWT(req, res, next) {
-  const token = req.headers["authorization"];
+  const authHeader = req.headers["authorization"];
 
-  if (!token) {
+  if (!authHeader) {
     return res
       .status(401)
       .json({ auth: false, message: "Token não fornecido." });
   }
+
+  const token = authHeader.split(" ")[1];
 
   jwt.verify(token, process.env.SECRET, (err, decoded) => {
     if (err) {
       if (err.name === "TokenExpiredError") {
         return res
           .status(401)
-          .json({ auth: false, message: "Sessão encerrada, faça a autenticação novamente." });
+          .json({
+            auth: false,
+            message: "Sessão encerrada, faça a autenticação novamente.",
+          });
       }
+
       return res
         .status(403)
-        .json({ auth: false, message: "Falha na autenticação do token." });
+        .json({
+          auth: false,
+          message: "Falha na autenticação do token.",
+        });
     }
 
     req.user = decoded;
