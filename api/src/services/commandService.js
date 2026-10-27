@@ -195,6 +195,50 @@ module.exports = class CommandService {
     }
   }
 
+  static async readCommandById(command_id) {
+    // The command is a historical record: an inactive table or QR Code must
+    // not prevent it from being read.
+    const query = `
+      SELECT
+        c.command_id,
+        c.customer_name,
+        c.status,
+        c.opened_at,
+        c.closed_at,
+        c.table_id,
+        c.qr_code_id,
+        c.opened_by,
+        c.closed_by,
+        tbl.number AS table_number
+      FROM commands c
+      INNER JOIN tables tbl ON tbl.table_id = c.table_id
+      WHERE c.command_id = ?
+      LIMIT 1
+    `;
+
+    try {
+      const [commands] = await connect.execute(query, [command_id]);
+
+      if (commands.length === 0) {
+        throw {
+          status: 404,
+          message: "Comanda não encontrada.",
+        };
+      }
+
+      return commands[0];
+    } catch (error) {
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao buscar a comanda.",
+      };
+    }
+  }
+
   static async readCommandBySession(session_token) {
     const query = `
       SELECT
@@ -231,6 +275,61 @@ module.exports = class CommandService {
       throw {
         status: 500,
         message: "Erro ao buscar a comanda.",
+      };
+    }
+  }
+
+  static async readCommandsByTable(table_id) {
+    // The table exists (active or inactive) as long as the row is present:
+    // an inactive table is still historically readable.
+    const tableQuery = `
+      SELECT table_id
+      FROM tables
+      WHERE table_id = ?
+      LIMIT 1
+    `;
+
+    // Commands are historical records: all statuses are returned, without
+    // filtering by table.is_active or qr_codes.is_active.
+    const commandsQuery = `
+      SELECT
+        c.command_id,
+        c.customer_name,
+        c.status,
+        c.opened_at,
+        c.closed_at,
+        c.table_id,
+        c.qr_code_id,
+        c.opened_by,
+        c.closed_by,
+        tbl.number AS table_number
+      FROM commands c
+      INNER JOIN tables tbl ON tbl.table_id = c.table_id
+      WHERE c.table_id = ?
+      ORDER BY c.command_id ASC
+    `;
+
+    try {
+      const [tableResult] = await connect.execute(tableQuery, [table_id]);
+
+      if (tableResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Mesa não encontrada.",
+        };
+      }
+
+      const [commands] = await connect.execute(commandsQuery, [table_id]);
+
+      return commands;
+    } catch (error) {
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao buscar as comandas da mesa.",
       };
     }
   }

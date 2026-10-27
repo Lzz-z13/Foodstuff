@@ -7,9 +7,22 @@ const {
   isValidPhone,
 } = require("../utils/validators/phoneValidator");
 
-module.exports = function validateUser({ name, email, phone, role }, update) {
+const { isValidUserName } = require("../utils/validators/userValidator");
+
+module.exports = function validateUser(body, update) {
+  const { name, email, phone, role } = body;
+
+  // O cargo é controlado pelo MANAGER. Em PATCH /users/me qualquer presença do
+  // campo é recusada, independentemente do valor, para impedir autopromoção.
+  if (update && Object.hasOwn(body, "role")) {
+    throw {
+      status: 400,
+      message: "O cargo não pode ser alterado pelo próprio usuário.",
+    };
+  }
+
   if (update) {
-    if (!name && !email && !phone && !role) {
+    if (!name && !email && !phone) {
       throw {
         status: 400,
         message: "Nenhum campo fornecido para atualizar.",
@@ -22,6 +35,15 @@ module.exports = function validateUser({ name, email, phone, role }, update) {
         message: "Todos os campos devem ser preenchidos.",
       };
     }
+  }
+
+  // Só valida o nome quando a chave veio no corpo. Ausente continua tratado
+  // pelas regras de presença acima; presente e inválido é sempre erro.
+  if (Object.hasOwn(body, "name") && !isValidUserName(name)) {
+    throw {
+      status: 400,
+      message: "O nome deve ter entre 1 e 100 caracteres.",
+    };
   }
 
   if (email) {

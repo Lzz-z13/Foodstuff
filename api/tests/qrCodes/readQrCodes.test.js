@@ -119,6 +119,19 @@ describe("GET /tables/:table_id/qr-codes", () => {
     expect(res.status).toBe(404);
   });
 
+  test("retorna 400 para table_id malformado", async () => {
+    const invalidIds = ["abc", "0", "-1", "1.5", "%20"];
+
+    for (const tableId of invalidIds) {
+      const res = await request(app)
+        .get(`${BASE}/tables/${tableId}/qr-codes`)
+        .set("Authorization", managerToken());
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("O ID da mesa é inválido.");
+    }
+  });
+
   test("não retorna QR Codes de outra mesa", async () => {
     const tableA = await insertTable({ number: 6 });
     const tableB = await insertTable({ number: 7 });

@@ -1,3 +1,4 @@
+
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
@@ -30,21 +31,46 @@ api.interceptors.request.use(async (config) => {
 const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
   postUser: (user) => api.post("/users", user),
+
   getCurrentUser: () => api.get("/users/me"),
   patchUserCredentials: (user) => api.patch("/users/me", user),
-  patchUserPassword: (passwords) => api.patch("/users/me/password", passwords),
+  patchUserPassword: (passwords) =>
+    api.patch("/users/me/password", passwords),
 
-  // Buscar os pedidos salvos no banco
   getPedidos: () => api.get("/pedidos"),
-
-  // Buscar os detalhes de um pedido
   getPedido: (id) => api.get(`/pedidos/${id}`),
-
-  // Solicitar a conta do pedido
   postSolicitarConta: (id) => api.post(`/pedidos/${id}/conta`),
-
-  // Atualizar o status de um pedido
   patchPedidoStatus: (id, dados) => api.patch(`/pedidos/${id}`, dados),
+
+  getUser: async () => {
+    const storedUser = await SecureStore.getItemAsync("user");
+
+    if (!storedUser) {
+      throw new Error("Usuário não encontrado no armazenamento local.");
+    }
+
+    const parsedUser = JSON.parse(storedUser);
+
+    return {
+      data: {
+        data: parsedUser,
+      },
+    };
+  },
+
+  updateUser: async (user) => {
+    const response = await api.patch("/users/me", user);
+
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        data: response.data?.data ?? user,
+      },
+    };
+  },
+
+  updatePassword: (data) => api.patch("/users/me/password", data),
 };
 
 export default sheets;

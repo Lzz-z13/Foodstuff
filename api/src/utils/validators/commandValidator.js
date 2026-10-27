@@ -20,7 +20,17 @@ function isValidSessionToken(session_token) {
   return tokenRegex.test(session_token);
 }
 
+function isValidCommandId(command_id) {
+  if (process.env.SKIP_VALIDATORS === "true") return true;
+
+  // req.params chega sempre como string
+  const id = Number(command_id);
+
+  return Number.isInteger(id) && id > 0;
+}
+
 module.exports = {
   isValidCustomerName,
   isValidSessionToken,
+  isValidCommandId,
 };

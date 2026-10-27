@@ -12,6 +12,7 @@ import olhinho from "../../../assets/loginImages/olhinho.png";
 import olho_cerrado from "../../../assets/loginImages/olho_cerrado.png";
 
 import api from "../../services/axios";
+import { homePorRole } from "../../services/auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -45,12 +46,23 @@ export default function Login() {
         localStorage.setItem("user", JSON.stringify(response.data.data.user));
       }
 
+      const loggedUser = response.data.data.user;
+      const precisaTrocarSenha = Number(loggedUser?.first_login) === 1;
+
       setSnackbar({
-        message: response.data.message || "Login realizado com sucesso!",
-        type: "success",
+        message: precisaTrocarSenha
+          ? "Primeiro acesso: troque sua senha para continuar."
+          : response.data.message || "Login realizado com sucesso!",
+        type: precisaTrocarSenha ? "warning" : "success",
       });
 
-      setTimeout(() => navigate("/home"), 1000);
+      setTimeout(
+        () =>
+          navigate(
+            precisaTrocarSenha ? "/minha-conta" : homePorRole(loggedUser?.role)
+          ),
+        1000,
+      );
     } catch (error) {
       setSnackbar({
         message:

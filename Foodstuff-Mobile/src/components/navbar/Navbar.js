@@ -22,13 +22,12 @@ const TABS = [
   ["Mesas", "table-furniture", "mci"],
   ["Users", "account-outline", "mci"],
   ["Config", "settings-outline", "ion"],
-  ["Perfil", "person-outline", "ion"],
 ];
 
 const ROUTES = {
   Dashboard: "Dashboard",
   Users: "Cadastro",
-  Perfil: "PerfilGarcom",
+  Config: "contaAdmin",
 };
 
 export default function Navbar({

@@ -208,35 +208,6 @@ module.exports = class UserService {
     }
   }
 
-  static async readCurrentUser(jwt_user_id) {
-    const query = `
-      SELECT user_id, name, email, phone, role
-      FROM users
-      WHERE user_id = ?
-        AND is_active = 1
-      LIMIT 1
-    `;
-
-    try {
-      const [users] = await connect.execute(query, [jwt_user_id]);
-
-      if (users.length === 0) {
-        throw { status: 404, message: "Usuário não encontrado." };
-      }
-
-      return users[0];
-    } catch (error) {
-      if (error.status) {
-        throw error;
-      }
-
-      throw {
-        status: 500,
-        message: "Erro interno do servidor.",
-      };
-    }
-  }
-
   static async updateUserCredentials(name, email, phone, jwt_user_id) {
     const updates = [];
     const values = [];
@@ -298,6 +269,103 @@ module.exports = class UserService {
       return;
     } catch (error) {
       console.error(error);
+      await connection.rollback();
+      if (error.status) throw error;
+      if (error.code === "ER_DUP_ENTRY") {
+        throw { status: 409, message: "Telefone ou email já registrado." };
+      }
+      throw { status: 500, message: "Erro interno do servidor." };
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async updateUserById(user_id, jwt_user_id, { name, email, phone, role }) {
+    if (user_id === jwt_user_id) {
+      throw {
+        status: 400,
+        message: "Para atualizar sua própria conta, utilize a rota /me.",
+      };
+    }
+
+    const updates = [];
+    const values = [];
+
+    if (name) {
+      updates.push("name = ?");
+      values.push(name);
+    }
+    if (email) {
+      updates.push("email = ?");
+      values.push(email);
+    }
+    if (phone) {
+      updates.push("phone = ?");
+      values.push(phone);
+    }
+    if (role) {
+      updates.push("role = ?");
+      values.push(role);
+    }
+
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [targetResult] = await connection.execute(
+        `SELECT name, role
+         FROM users
+         WHERE user_id = ?
+           AND is_active = 1
+         LIMIT 1`,
+        [user_id],
+      );
+
+      if (targetResult.length === 0) {
+        throw { status: 404, message: "Usuário não encontrado." };
+      }
+
+      // Mesma regra do delete: o sistema não pode ficar sem MANAGER ativo.
+      if (role && role !== "MANAGER" && targetResult[0].role === "MANAGER") {
+        const [managers] = await connection.execute(
+          `SELECT user_id
+           FROM users
+           WHERE role = 'MANAGER'
+             AND is_active = 1
+           ORDER BY user_id
+           FOR UPDATE`,
+        );
+
+        if (managers.length === 1 && managers[0].user_id === user_id) {
+          throw {
+            status: 409,
+            message:
+              "Não é possível remover o cargo do último gerente ativo do sistema.",
+          };
+        }
+      }
+
+      values.push(user_id);
+      await connection.execute(
+        `UPDATE users
+         SET ${updates.join(", ")}
+         WHERE user_id = ?
+           AND is_active = 1`,
+        values,
+      );
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "users",
+        user_id,
+        `Usuário ${targetResult[0].name} atualizado.`,
+      );
+
+      await connection.commit();
+      return;
+    } catch (error) {
       await connection.rollback();
       if (error.status) throw error;
       if (error.code === "ER_DUP_ENTRY") {
@@ -457,7 +525,7 @@ module.exports = class UserService {
   }
 
   static async deleteOwnUserAccount(jwt_user_id) {
-    const userQuery = `SELECT name FROM users WHERE user_id = ? AND is_active = 1 LIMIT 1`;
+    const userQuery = `SELECT name, role FROM users WHERE user_id = ? AND is_active = 1 LIMIT 1`;
     const deleteQuery = `UPDATE users SET is_active = 0 WHERE user_id = ? AND is_active = 1`;
 
     const connection = await connect.getConnection();
@@ -469,6 +537,28 @@ module.exports = class UserService {
         throw { status: 404, message: "Usuário não encontrado." };
       }
       const name = userResult[0].name;
+
+      // O sistema não pode ficar sem nenhum MANAGER ativo. O FOR UPDATE trava
+      // todos os gerentes ativos na mesma ordem em transações concorrentes,
+      // serializando a verificação.
+      if (userResult[0].role === "MANAGER") {
+        const [managers] = await connection.execute(
+          `SELECT user_id
+           FROM users
+           WHERE role = 'MANAGER'
+             AND is_active = 1
+           ORDER BY user_id
+           FOR UPDATE`,
+        );
+
+        if (managers.length === 1 && managers[0].user_id === jwt_user_id) {
+          throw {
+            status: 409,
+            message:
+              "Não é possível desativar o último gerente ativo do sistema.",
+          };
+        }
+      }
 
       await connection.execute(deleteQuery, [jwt_user_id]);
 
@@ -501,7 +591,7 @@ module.exports = class UserService {
     }
 
     const userQuery = `
-      SELECT user_id, name
+      SELECT user_id, name, role
       FROM users
       WHERE user_id IN (?, ?)
         AND is_active = 1
@@ -541,6 +631,26 @@ module.exports = class UserService {
 
       const target_name = targetUser.name;
       const user_name = responsibleUser.name;
+
+      // Mesma regra do /me: não permitir que o sistema fique sem MANAGER ativo.
+      if (targetUser.role === "MANAGER") {
+        const [managers] = await connection.execute(
+          `SELECT user_id
+           FROM users
+           WHERE role = 'MANAGER'
+             AND is_active = 1
+           ORDER BY user_id
+           FOR UPDATE`,
+        );
+
+        if (managers.length === 1 && managers[0].user_id === user_id) {
+          throw {
+            status: 409,
+            message:
+              "Não é possível desativar o último gerente ativo do sistema.",
+          };
+        }
+      }
 
       await connection.execute(deleteQuery, [user_id]);
 

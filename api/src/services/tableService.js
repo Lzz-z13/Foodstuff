@@ -230,7 +230,7 @@ module.exports = class TableService {
 
       return {
         message: "Mesa atualizada com sucesso.",
-        table_id: table_id,
+        table_id: targetResult[0].table_id,
       };
     } catch (error) {
       await connection.rollback();
@@ -395,7 +395,7 @@ module.exports = class TableService {
 
       return {
         message: "Mesa desativada com sucesso.",
-        table_id: table_id,
+        table_id: tableResult[0].table_id,
         qr_codes_deactivated: qr_codes_deactivated,
         commands_cancelled: commands_cancelled,
         orders_cancelled: orders_cancelled,

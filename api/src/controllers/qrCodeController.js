@@ -2,6 +2,7 @@ const QrCodeService = require("../services/qrCodeService");
 const validateQrCode = require("../validations/validateQrCode");
 const validateQrCodeToken = require("../validations/validateQrCodeToken");
 const validateQrCodeId = require("../validations/validateQrCodeId");
+const validateTableId = require("../validations/validateTableId");
 
 module.exports = class QrCodeController {
   static async createQrCode(req, res, next) {
@@ -10,6 +11,7 @@ module.exports = class QrCodeController {
     const { position } = req.body;
 
     try {
+      validateTableId(table_id);
       validateQrCode(req.body);
 
       const result = await QrCodeService.createQrCode(
@@ -32,6 +34,7 @@ module.exports = class QrCodeController {
     const { table_id } = req.params;
 
     try {
+      validateTableId(table_id);
       const qrCodes = await QrCodeService.readQrCodesByTable(table_id);
 
       return res.status(200).json({

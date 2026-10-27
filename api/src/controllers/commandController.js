@@ -1,5 +1,6 @@
 const CommandService = require("../services/commandService");
 const validateCommand = require("../validations/validateCommand");
+const validateCommandId = require("../validations/validateCommandId");
 const validateTableId = require("../validations/validateTableId");
 const validateQrCodeToken = require("../validations/validateQrCodeToken");
 const validateSessionToken = require("../validations/validateSessionToken");
@@ -63,6 +64,24 @@ module.exports = class CommandController {
     }
   }
 
+  static async readCommandById(req, res, next) {
+    const { command_id } = req.params;
+
+    try {
+      validateCommandId(command_id);
+
+      const command = await CommandService.readCommandById(command_id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Comanda encontrada com sucesso.",
+        data: command,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async readCommandBySession(req, res, next) {
     const { session_token } = req.params;
 
@@ -75,6 +94,24 @@ module.exports = class CommandController {
         error: false,
         message: "Comanda encontrada com sucesso.",
         data: command,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async readCommandsByTable(req, res, next) {
+    const { table_id } = req.params;
+
+    try {
+      validateTableId(table_id);
+
+      const commands = await CommandService.readCommandsByTable(table_id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Comandas buscadas com sucesso.",
+        data: commands,
       });
     } catch (error) {
       next(error);

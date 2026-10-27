@@ -95,6 +95,55 @@ async function insertPayment({ command_id, value = 25, method = "PIX" }) {
   return result.insertId;
 }
 
+async function insertCategory({ name, description = null, is_active = 1 }) {
+  const finalName =
+    name ?? `Categoria ${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+  const [result] = await connect.execute(
+    "INSERT INTO categories (name, description, is_active) VALUES (?, ?, ?)",
+    [finalName, description, is_active],
+  );
+
+  return result.insertId;
+}
+
+async function insertProduct({
+  name = "Produto Teste",
+  description = "Descrição teste",
+  price = 10.5,
+  cost = null,
+  image = null,
+  requires_preparation = 1,
+  is_available = 1,
+  is_active = 1,
+  category_id,
+}) {
+  let finalCategoryId = category_id;
+
+  if (!finalCategoryId) {
+    finalCategoryId = await insertCategory({});
+  }
+
+  const [result] = await connect.execute(
+    `INSERT INTO products
+      (name, description, price, cost, image, requires_preparation, is_available, is_active, category_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      name,
+      description,
+      price,
+      cost,
+      image,
+      requires_preparation,
+      is_available,
+      is_active,
+      finalCategoryId,
+    ],
+  );
+
+  return result.insertId;
+}
+
 async function closeDb() {
   await connect.end();
 }
@@ -108,5 +157,7 @@ module.exports = {
   insertCommand,
   insertOrder,
   insertPayment,
+  insertCategory,
+  insertProduct,
   closeDb,
 };
