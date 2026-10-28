@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 const api = axios.create({
-  baseURL: "http://[IP != COMMITAR IP]:5000/api/foodstuff",
+  baseURL: "http://[SEU IP]:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },

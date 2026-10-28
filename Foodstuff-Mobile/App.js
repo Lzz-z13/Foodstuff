@@ -3,17 +3,19 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import Cadastro from "./src/screens/Cadastro";
+// ADMIN
+import Cadastro from "./src/screens/Adm/Cadastro";
 import Login from "./src/screens/Login";
-import Dashboard from "./src/screens/Dashboard";
+import Dashboard from "./src/screens/Adm/Dashboard";
+import contaAdmin from "./src/screens/Adm/contaAdmin";
+import Cardapio from "./src/screens/Adm/Cardapio";
 
-import PedidosAtivosGarcom from "./src/screens/PedidosAtivosGarcom";
-import MesasGarcom from "./src/screens/MesasGarcom";
-import DetalhesPedidoGarcom from "./src/screens/DetalhesPedidoGarcom";
-import AnotarPedidoGarcom from "./src/screens/AnotarPedidoGarcom";
-import PerfilGarcom from "./src/screens/PerfilGarcom";
-import contaAdmin from "./src/screens/contaAdmin";
-import Cardapio from "./src/screens/Cardapio";
+// GARÇOM
+import PedidosAtivosGarcom from "./src/screens/Garçom/PedidosAtivosGarcom";
+import MesasGarcom from "./src/screens/Garçom/MesasGarcom";
+import DetalhesPedidoGarcom from "./src/screens/Garçom/DetalhesPedidoGarcom";
+import AnotarPedidoGarcom from "./src/screens/Garçom/AnotarPedidoGarcom";
+import PerfilGarcom from "./src/screens/Garçom/PerfilGarcom";
 
 const Stack = createNativeStackNavigator();
 
