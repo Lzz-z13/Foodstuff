@@ -27,7 +27,13 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Foodstuff precisa acessar suas fotos para atualizar a foto de perfil."
+        }
+      ]
     ]
   }
 }
