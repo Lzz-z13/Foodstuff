@@ -24,6 +24,11 @@
   router.use(verifyFirstLogin);
 
   router.patch(
+    "/me/photo",
+    UserController.updateUserPhoto
+  );
+
+  router.patch(
     "/me",
     UserController.updateUserCredentials
   );

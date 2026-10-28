@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 const api = axios.create({
-  baseURL: "http://[SEU IP]:5000/api/foodstuff",
+  baseURL: "http://192.168.1.12:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },
@@ -26,6 +26,7 @@ const sheets = {
 
   getCurrentUser: () => api.get("/users/me"),
   patchUserCredentials: (user) => api.patch("/users/me", user),
+  patchUserPhoto: (photo) => api.patch("/users/me/photo", { photo }),
   patchUserPassword: (passwords) =>
     api.patch("/users/me/password", passwords),
 
@@ -33,37 +34,6 @@ const sheets = {
   getPedido: (id) => api.get(`/pedidos/${id}`),
   postSolicitarConta: (id) => api.post(`/pedidos/${id}/conta`),
   patchPedidoStatus: (id, dados) => api.patch(`/pedidos/${id}`, dados),
-
-  getUser: async () => {
-    const storedUser = await SecureStore.getItemAsync("user");
-
-    if (!storedUser) {
-      throw new Error("Usuário não encontrado no armazenamento local.");
-    }
-
-    const parsedUser = JSON.parse(storedUser);
-
-    return {
-      data: {
-        data: parsedUser,
-      },
-    };
-  },
-
-  updateUser: async (user) => {
-    const response = await api.patch("/users/me", user);
-
-    return {
-      ...response,
-      data: {
-        ...response.data,
-        data: response.data?.data ?? user,
-      },
-    };
-  },
-
-  updatePassword: (data) =>
-    api.patch("/users/me/password", data),
 
   // Dashboard
   getDashboard: () =>
@@ -116,7 +86,6 @@ const sheets = {
 
   createCategory: (data) =>
     api.post("/categories", data),
-  updatePassword: (data) => api.patch("/users/me/password", data),
 };
 
 export default sheets;
