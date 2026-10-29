@@ -19,7 +19,7 @@ api.interceptors.request.use(async (config) => {
 });
 
 const sheets = {
-  // Autenticação e usuários
+  // Authentication and users
   postLogin: (user) => api.post("/auth/login", user, { timeout: 15000 }),
   postUser: (user) => api.post("/users", user),
 
@@ -29,7 +29,7 @@ const sheets = {
   patchUserPassword: (passwords) =>
     api.patch("/users/me/password", passwords),
 
-  // Pedidos
+  // Orders
   getPedidos: () => api.get("/pedidos"),
   getPedido: (id) => api.get(`/pedidos/${id}`),
   postSolicitarConta: (id) => api.post(`/pedidos/${id}/conta`),
@@ -37,22 +37,15 @@ const sheets = {
 
   // Dashboard
   getDashboard: () => api.get("/dashboard"),
-
   getDashboardResumo: () => api.get("/dashboard/resumo"),
-
-  getFaturamentoSemanal: () =>
-    api.get("/dashboard/faturamento-semanal"),
-
-  getPedidosPorCategoria: () =>
-    api.get("/dashboard/pedidos-por-categoria"),
-
+  getFaturamentoSemanal: () => api.get("/dashboard/faturamento-semanal"),
+  getPedidosPorCategoria: () => api.get("/dashboard/pedidos-por-categoria"),
   getMaisVendidos: (limit = 5) =>
     api.get(`/dashboard/mais-vendidos?limit=${limit}`),
-
   getPedidosRecentes: (limit = 5) =>
     api.get(`/dashboard/pedidos-recentes?limit=${limit}`),
 
-  // Produtos
+  // Products
   getProducts: (params = {}) => {
     const query = new URLSearchParams();
 
@@ -73,30 +66,20 @@ const sheets = {
     }
 
     const qs = query.toString();
-
     return api.get(`/products${qs ? `?${qs}` : ""}`);
   },
 
-  getProductById: (product_id) =>
-    api.get(`/products/${product_id}`),
-
-  createProduct: (data) =>
-    api.post("/products", data),
-
+  getProductById: (product_id) => api.get(`/products/${product_id}`),
+  createProduct: (data) => api.post("/products", data),
   updateProduct: (product_id, data) =>
     api.patch(`/products/${product_id}`, data),
-
   updateProductAvailability: (product_id, is_available) =>
     api.patch(`/products/${product_id}/availability`, { is_available }),
+  deleteProduct: (product_id) => api.delete(`/products/${product_id}`),
 
-  deleteProduct: (product_id) =>
-    api.delete(`/products/${product_id}`),
-
-  // Categorias
+  // Categories
   getCategories: () => api.get("/categories"),
-
-  createCategory: (data) =>
-    api.post("/categories", data),
+  createCategory: (data) => api.post("/categories", data),
 };
 
 export default sheets;
