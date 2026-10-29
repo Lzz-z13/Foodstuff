@@ -25,6 +25,22 @@ const COLORS = {
   text: "#1C1C1E",
 };
 
+const getRoleRoute = (role) => {
+  const normalizedRole = String(role || "").toUpperCase();
+
+  switch (normalizedRole) {
+    case "WAITER":
+      return "Garcom";
+    case "MANAGER":
+      return "Dashboard";
+    case "KITCHEN":
+    case "CASHIER":
+      return "Dashboard";
+    default:
+      return "Dashboard";
+  }
+};
+
 export default function Login({ navigation }) {
   const [user, setUser] = useState({ email: "", password : "" });
   const [loading, setLoading] = useState(false);
@@ -43,18 +59,25 @@ export default function Login({ navigation }) {
     setLoading(true);
     try {
       const response = await api.postLogin(user);
-      await SecureStore.setItemAsync("token", response.data.data.token);
+      const loggedUser = response?.data?.data?.user;
+      const token = response?.data?.data?.token;
 
-      if (response.data.data.user) {
-        await SecureStore.setItemAsync(
-          "user",
-          JSON.stringify(response.data.data.user),
-        );
+      if (token) {
+        await SecureStore.setItemAsync("token", token);
       }
-      navigation.navigate("Dashboard");
+
+      if (loggedUser) {
+        await SecureStore.setItemAsync("user", JSON.stringify(loggedUser));
+      }
+
+      const nextRoute = getRoleRoute(loggedUser?.role);
+      navigation.replace(nextRoute);
     } catch (error) {
       const errorMsg =
-        error?.response?.data?.message || "Erro ao conectar ao servidor";
+        error?.response?.data?.message ||
+        (error?.code === "ECONNABORTED" || error?.code === "ETIMEDOUT"
+          ? "O servidor demorou para responder. Tente novamente."
+          : "Não foi possível conectar ao servidor. Verifique a conexão e tente novamente.");
       Alert.alert("Erro", errorMsg);
     } finally {
       setLoading(false);

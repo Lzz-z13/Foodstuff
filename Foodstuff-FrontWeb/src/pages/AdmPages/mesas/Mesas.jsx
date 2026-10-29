@@ -9,8 +9,8 @@ import {
   Users,
 } from "lucide-react";
 
-import Snackbar from "../../components/snackBar/SnackBar";
-import api from "../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
+import api from "../../../services/axios";
 
 const STATUS_STYLE = {
   livre: {

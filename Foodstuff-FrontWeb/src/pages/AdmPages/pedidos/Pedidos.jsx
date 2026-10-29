@@ -9,8 +9,8 @@ import {
   X,
 } from "lucide-react";
 
-import api from "../../services/axios";
-import Snackbar from "../../components/snackBar/SnackBar";
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
 
 /*
  * INTEGRAÇÃO COM A API
@@ -55,111 +55,6 @@ const STATUS_BADGE = {
   DELIVERED: "bg-green-50 text-green-600",
   CANCELLED: "bg-slate-100 text-slate-500",
 };
-
-// Mock idêntico ao da imagem, para demonstração até o GET existir.
-// const MOCK_ORDERS = [
-//   {
-//     order_id: 4093,
-//     table_number: 4,
-//     table_label: "Mesa T-04",
-//     origin: "CUSTOMER",
-//     origin_label: "Recebido via aplicativo de mesa às 20:05",
-//     status: "PREPARING",
-//     observations: "Sem cebola no burger e batata extra crocante.",
-//     created_at: "20:05",
-//     started_at: "20:08",
-//     finished_at: null,
-//     total: 50.0,
-//     items: [
-//       { quantity: 1, product_name: "Smash Burger Duplo", unit_price: 30.0, observation: null },
-//       { quantity: 1, product_name: "Batata Frita Rústica", unit_price: 20.0, observation: null },
-//     ],
-//   },
-//   {
-//     order_id: 4094,
-//     table_number: 1,
-//     table_label: "Mesa T-01",
-//     origin: "WAITER",
-//     origin_label: "Recebido pelo garçom às 20:12",
-//     status: "PENDING",
-//     observations: null,
-//     created_at: "20:12",
-//     started_at: null,
-//     finished_at: null,
-//     total: 94.0,
-//     items: [
-//       { quantity: 2, product_name: "Pizza Margherita", unit_price: 42.0, observation: null },
-//       { quantity: 1, product_name: "Refrigerante Lata", unit_price: 10.0, observation: null },
-//     ],
-//   },
-//   {
-//     order_id: 4095,
-//     table_number: 8,
-//     table_label: "Mesa T-08",
-//     origin: "CUSTOMER",
-//     origin_label: "Recebido via aplicativo de mesa às 19:58",
-//     status: "READY",
-//     observations: "Ponto da massa bem al dente.",
-//     created_at: "19:58",
-//     started_at: "20:02",
-//     finished_at: "20:15",
-//     total: 72.0,
-//     items: [
-//       { quantity: 1, product_name: "Nhoque al Tartufo", unit_price: 52.0, observation: null },
-//       { quantity: 1, product_name: "Água com gás", unit_price: 20.0, observation: null },
-//     ],
-//   },
-//   {
-//     order_id: 4096,
-//     table_number: 12,
-//     table_label: "Mesa T-12",
-//     origin: "WAITER",
-//     origin_label: "Recebido pelo garçom às 19:40",
-//     status: "DELIVERED",
-//     observations: null,
-//     created_at: "19:40",
-//     started_at: "19:45",
-//     finished_at: "20:05",
-//     total: 68.5,
-//     items: [
-//       { quantity: 1, product_name: "Parmegiana de Mignon", unit_price: 68.5, observation: "Sem queijo extra" },
-//     ],
-//   },
-//   {
-//     order_id: 4097,
-//     table_number: 14,
-//     table_label: "Mesa T-14",
-//     origin: "CUSTOMER",
-//     origin_label: "Recebido via aplicativo de mesa às 20:18",
-//     status: "PREPARING",
-//     observations: "Molho à parte.",
-//     created_at: "20:18",
-//     started_at: "20:20",
-//     finished_at: null,
-//     total: 54.9,
-//     items: [
-//       { quantity: 1, product_name: "Lasanha Bolonhesa", unit_price: 44.9, observation: null },
-//       { quantity: 1, product_name: "Suco Natural", unit_price: 10.0, observation: null },
-//     ],
-//   },
-//   {
-//     order_id: 4098,
-//     table_number: 2,
-//     table_label: "Mesa T-02",
-//     origin: "WAITER",
-//     origin_label: "Recebido pelo garçom às 19:32",
-//     status: "DELIVERED",
-//     observations: null,
-//     created_at: "19:32",
-//     started_at: "19:35",
-//     finished_at: "19:55",
-//     total: 89.0,
-//     items: [
-//       { quantity: 3, product_name: "Chopp Claro", unit_price: 18.0, observation: null },
-//       { quantity: 1, product_name: "Tábua de Frios", unit_price: 35.0, observation: null },
-//     ],
-//   },
-// ];
 
 function formatarMoeda(valor) {
   return Number(valor ?? 0).toLocaleString("pt-BR", {

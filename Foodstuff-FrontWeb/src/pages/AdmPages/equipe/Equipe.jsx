@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Search, UsersRound } from "lucide-react";
 
-import api from "../../services/axios";
-import Snackbar from "../../components/snackBar/SnackBar";
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
 
 const CARGOS = [
   { valor: "MANAGER", label: "Gerente" },

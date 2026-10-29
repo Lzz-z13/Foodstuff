@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 
 import api from "../../services/axios";
@@ -111,6 +111,8 @@ export default function Conta() {
   const [sessoes, setSessoes] = useState([]);
   const [salvandoDados, setSalvandoDados] = useState(false);
   const [salvandoSenha, setSalvandoSenha] = useState(false);
+  const [salvandoFoto, setSalvandoFoto] = useState(false);
+  const arquivoFotoRef = useRef(null);
   const [snackbar, setSnackbar] = useState(null);
 
   const cargoLabel = CARGO_LABELS[usuario.role] ?? "—";
@@ -171,6 +173,54 @@ export default function Conta() {
     },
   ];
 
+  async function alterarFoto(e) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!arquivo || salvandoFoto) return;
+
+    if (!["image/jpeg", "image/png"].includes(arquivo.type)) {
+      setSnackbar({
+        message: "Selecione uma imagem JPG ou PNG.",
+        type: "warning",
+      });
+      return;
+    }
+    if (arquivo.size > 2 * 1024 * 1024) {
+      setSnackbar({
+        message: "A foto deve ter no máximo 2 MB.",
+        type: "warning",
+      });
+      return;
+    }
+
+    setSalvandoFoto(true);
+    try {
+      const photo = await new Promise((resolve, reject) => {
+        const leitor = new FileReader();
+        leitor.onload = () => resolve(leitor.result);
+        leitor.onerror = () =>
+          reject(new Error("Não foi possível ler a imagem."));
+        leitor.onabort = () =>
+          reject(new Error("A leitura da imagem foi cancelada."));
+        leitor.readAsDataURL(arquivo);
+      });
+      const response = await api.patchMePhoto(photo);
+      const atualizado = { ...lerUsuario(), photo: response.data.data.photo };
+      setUsuario(atualizado);
+      localStorage.setItem("user", JSON.stringify(atualizado));
+      setSnackbar({ message: "Foto atualizada com sucesso.", type: "success" });
+    } catch (error) {
+      setSnackbar({
+        message:
+          error?.response?.data?.message ||
+          "Não foi possível atualizar a foto. Tente novamente.",
+        type: "error",
+      });
+    } finally {
+      setSalvandoFoto(false);
+    }
+  }
+
   async function salvarDados(e) {
     e.preventDefault();
 
@@ -181,7 +231,8 @@ export default function Conta() {
 
     if (nome && nome !== (usuario.name ?? "")) payload.name = nome;
     if (email && email !== (usuario.email ?? "")) payload.email = email;
-    if (telefone && telefone !== (usuario.phone ?? "")) payload.phone = telefone;
+    if (telefone && telefone !== (usuario.phone ?? ""))
+      payload.phone = telefone;
 
     if (Object.keys(payload).length === 0) {
       setSnackbar({ message: "Nenhuma alteração para salvar.", type: "info" });
@@ -192,10 +243,13 @@ export default function Conta() {
       setSalvandoDados(true);
       await api.patchMe(payload);
 
-      const atualizado = { ...usuario, ...payload };
+      const atualizado = { ...lerUsuario(), ...payload };
       localStorage.setItem("user", JSON.stringify(atualizado));
       setUsuario(atualizado);
-      setSnackbar({ message: "Dados atualizados com sucesso.", type: "success" });
+      setSnackbar({
+        message: "Dados atualizados com sucesso.",
+        type: "success",
+      });
     } catch (error) {
       setSnackbar({
         message:
@@ -211,12 +265,18 @@ export default function Conta() {
     e.preventDefault();
 
     if (!senha.atual || !senha.nova || !senha.confirmar) {
-      setSnackbar({ message: "Preencha todos os campos de senha.", type: "warning" });
+      setSnackbar({
+        message: "Preencha todos os campos de senha.",
+        type: "warning",
+      });
       return;
     }
 
     if (senha.nova !== senha.confirmar) {
-      setSnackbar({ message: "A nova senha e a confirmação não conferem.", type: "warning" });
+      setSnackbar({
+        message: "A nova senha e a confirmação não conferem.",
+        type: "warning",
+      });
       return;
     }
 
@@ -232,15 +292,17 @@ export default function Conta() {
       if (response?.data?.token) {
         localStorage.setItem("token", response.data.token);
       }
-      const atualizado = { ...usuario, first_login: 0 };
+      const atualizado = { ...lerUsuario(), first_login: 0 };
       localStorage.setItem("user", JSON.stringify(atualizado));
       setUsuario(atualizado);
       setSenha({ atual: "", nova: "", confirmar: "" });
-      setSnackbar({ message: "Senha atualizada com sucesso.", type: "success" });
+      setSnackbar({
+        message: "Senha atualizada com sucesso.",
+        type: "success",
+      });
     } catch (error) {
       setSnackbar({
-        message:
-          error?.response?.data?.message || "Erro ao atualizar a senha.",
+        message: error?.response?.data?.message || "Erro ao atualizar a senha.",
         type: "error",
       });
     } finally {
@@ -285,20 +347,50 @@ export default function Conta() {
               Dados Pessoais
             </h2>
             <div className="mt-4 flex items-center gap-4">
-              <span className="h-[68px] w-[68px] shrink-0 rounded-full bg-gray-300" />
+              {usuario.photo ? (
+                <img
+                  src={usuario.photo}
+                  alt="Foto de perfil"
+                  className="h-[68px] w-[68px] shrink-0 rounded-full bg-gray-300 object-cover cursor-pointer"
+                  onClick={() => arquivoFotoRef.current?.click()}
+                />
+              ) : (
+                <span
+                  role="img"
+                  aria-label="Sem foto de perfil"
+                  className="h-[68px] w-[68px] shrink-0 rounded-full bg-gray-300"
+                />
+              )}
               <div>
+                <input
+                  ref={arquivoFotoRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  aria-label="Selecionar foto de perfil"
+                  className="hidden"
+                  onChange={alterarFoto}
+                  disabled={salvandoFoto || primeiroAcesso}
+                />
                 <button
                   type="button"
-                  className="rounded-md bg-[#ff5a47] px-4 py-1.5 text-[12px] font-semibold text-white"
+                  onClick={() => arquivoFotoRef.current?.click()}
+                  disabled={salvandoFoto || primeiroAcesso}
+                  aria-busy={salvandoFoto}
+                  className="cursor-pointer rounded-md bg-[#ff5a47] px-4 py-1.5 text-[12px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Alterar Foto
+                  {salvandoFoto ? "Salvando foto..." : "Alterar Foto"}
                 </button>
                 <p className="mt-1.5 text-[10px] text-slate-400">
-                  JPG ou PNG de até 2MB
+                  {primeiroAcesso
+                    ? "Troque sua senha para alterar a foto."
+                    : "JPG ou PNG de até 2 MB. Salva automaticamente."}
                 </p>
               </div>
             </div>
-            <form onSubmit={salvarDados} className="mt-5 grid gap-4 sm:grid-cols-2">
+            <form
+              onSubmit={salvarDados}
+              className="mt-5 grid gap-4 sm:grid-cols-2"
+            >
               <Campo label="Nome Completo">
                 <input
                   value={dados.nome}
@@ -393,7 +485,7 @@ export default function Conta() {
                   type="submit"
                   disabled={salvandoSenha}
                   className="rounded-lg bg-[#ff5a47] px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm disabled:opacity-60 cursor-pointer"
->
+                >
                   {salvandoSenha ? "Atualizando..." : "Atualizar senha"}
                 </button>
               </div>

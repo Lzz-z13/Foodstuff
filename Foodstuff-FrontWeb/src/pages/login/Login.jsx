@@ -12,6 +12,7 @@ import olhinho from "../../../assets/loginImages/olhinho.png";
 import olho_cerrado from "../../../assets/loginImages/olho_cerrado.png";
 
 import api from "../../services/axios";
+import { homePorRole } from "../../services/auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -56,7 +57,10 @@ export default function Login() {
       });
 
       setTimeout(
-        () => navigate(precisaTrocarSenha ? "/minha-conta" : "/home"),
+        () =>
+          navigate(
+            precisaTrocarSenha ? "/minha-conta" : homePorRole(loggedUser?.role)
+          ),
         1000,
       );
     } catch (error) {

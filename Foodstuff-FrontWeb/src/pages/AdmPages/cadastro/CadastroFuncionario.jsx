@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   CircleUserRound,
   UserRoundPlus,
@@ -7,9 +7,8 @@ import {
   Phone,
 } from "lucide-react";
 
-import SideBar from "../../components/sideBar/SideBar";
-import api from "../../services/axios";
-import Snackbar from "../../components/snackBar/SnackBar";
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
 
 const cargos = [
   { valor: "WAITER", label: "Garçom" },
@@ -92,13 +91,8 @@ export default function CadastroFuncionario() {
     }
   };
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
   return (
-    <>
-      <SideBar userName={user.name} userEmail={user.email}/>
-      
-      <div className="md:ml-[10px]">
+      <div className="min-w-0">
         {snackbar && (
           <Snackbar
             isOpen={true}
@@ -109,9 +103,6 @@ export default function CadastroFuncionario() {
         )}
         <div className="relative flex min-h-screen overflow-hidden font-sans text-[#252930]">
           <main className="relative flex min-w-0 flex-1 items-center justify-center px-3 py-8 sm:px-6 sm:py-12">
-            <div className="absolute right-3 top-4 z-10 flex items-center gap-2 text-[#685a55] sm:right-7 sm:top-[18px] sm:gap-[18px]">
-              <CircleUserRound className="h-8 w-8 rounded-[14px] border border-[#ff5a434d] bg-white p-2 text-[#333] shadow-lg sm:h-[34px] sm:w-[34px]" strokeWidth={1.8} />
-            </div>
 
             <section className="relative z-[1] flex w-full max-w-[520px] flex-col gap-7 overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-b from-white/[0.94] to-[#fff6f3]/[0.96] px-[18px] pb-[22px] pt-[38px] shadow-[0_28px_70px_rgba(35,37,43,0.16),inset_0_1px_0_rgba(255,255,255,0.9)] sm:rounded-[28px] sm:px-[34px] sm:pb-9 sm:pt-[54px]">
               <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-[#ff5742] to-[#ff7a57]" />
@@ -190,7 +181,6 @@ export default function CadastroFuncionario() {
           </main>
         </div>
       </div>
-    </>
   );
 }
 

@@ -68,10 +68,27 @@ function isValidOrderId(order_id) {
   return Number.isInteger(id) && id > 0;
 }
 
+// Mesmos valores do ENUM orders.status (mysql-database/database.sql)
+const ORDER_STATUS = [
+  "PENDING",
+  "PREPARING",
+  "READY",
+  "DELIVERED",
+  "CANCELLED",
+];
+
+function isValidOrderStatus(status) {
+  if (process.env.SKIP_VALIDATORS === "true") return true;
+
+  return typeof status === "string" && ORDER_STATUS.includes(status);
+}
+
 module.exports = {
   isValidItems,
   isValidOrderId,
+  isValidOrderStatus,
   isValidProductId,
   isValidQuantity,
   isValidObservation,
+  ORDER_STATUS,
 };

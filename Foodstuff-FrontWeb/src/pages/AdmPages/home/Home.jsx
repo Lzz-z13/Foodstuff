@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -8,93 +9,40 @@ import {
   Tooltip,
   XAxis,
 } from "recharts";
-import { Clock, ScrollText, Table2, Users } from "lucide-react";
+import { Clock, Loader2, ScrollText, Table2, Users } from "lucide-react";
 
-const dashboardMock = {
-  resumo: {
-    faturamentoDia: 4280.5,
-    pedidosHoje: 112,
-    ticketMedio: 38.22,
-    avaliacaoMedia: 4.8,
-  },
-  faturamentoSemanal: [
-    { dia: "Seg", valor: 3120 },
-    { dia: "Ter", valor: 4060 },
-    { dia: "Qua", valor: 3580 },
-    { dia: "Qui", valor: 5480 },
-    { dia: "Sex", valor: 4350 },
-    { dia: "Sáb", valor: 5860 },
-    { dia: "Dom", valor: 6900 },
-  ],
-  pedidosPorCategoria: [
-    { nome: "Burgers", quantidade: 56, cor: "#FF5A3D" },
-    { nome: "Massas", quantidade: 31, cor: "#3B82F6" },
-    { nome: "Bebidas", quantidade: 25, cor: "#F59E0B" },
-  ],
-  maisVendidos: [
-    { nome: "Burger Duplo", quantidade: 94 },
-    { nome: "Batata Rústica", quantidade: 72 },
-    { nome: "Nhoque al Tartufo", quantidade: 51 },
-    { nome: "Soda Frutas Vermelhas", quantidade: 38 },
-    { nome: "Pizza Margherita", quantidade: 24 },
-  ],
-  pedidosRecentes: [
-    {
-      pedido: "#041",
-      mesa: "Mesa 12",
-      itens: "1x Burger Duplo, 1x Batata Rústica, 1x Soda Italiana",
-      valor: 81.8,
-      status: "Em Preparo",
-      hora: "12:31",
-    },
-    {
-      pedido: "#040",
-      mesa: "Mesa 08",
-      itens: "2x Nhoque al Tartufo, 1x Água Mineral",
-      valor: 122,
-      status: "Novo",
-      hora: "12:28",
-    },
-    {
-      pedido: "#039",
-      mesa: "Mesa 14",
-      itens: "1x Batata Rústica, 1x Soda Italiana",
-      valor: 38.9,
-      status: "Pronto",
-      hora: "12:15",
-    },
-    {
-      pedido: "#038",
-      mesa: "Mesa 03",
-      itens: "1x Pizza Margherita, 2x Coca-Cola",
-      valor: 56,
-      status: "Em Preparo",
-      hora: "12:02",
-    },
-  ],
-};
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
 
 const statusStyles = {
   "Em Preparo": "bg-amber-100 text-amber-700",
   Novo: "bg-blue-100 text-blue-700",
   Pronto: "bg-emerald-100 text-emerald-700",
+  Entregue: "bg-emerald-100 text-emerald-700",
+  Cancelado: "bg-red-100 text-red-700",
 };
 
-const formatarMoeda = (valor) =>
-  Number(valor).toLocaleString("pt-BR", {
+const COLORS = [
+  "#FF5A3D",
+  "#3B82F6",
+  "#F59E0B",
+  "#10B981",
+  "#8B5CF6",
+  "#EC4899",
+  "#06B6D4",
+  "#84CC16",
+];
+
+function formatarMoeda(valor) {
+  return Number(valor ?? 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
+}
 
-const totalFaturamentoSemanal = dashboardMock.faturamentoSemanal.reduce(
-  (total, dia) => total + dia.valor,
-  0,
-);
-
-const totalPedidosCategoria = dashboardMock.pedidosPorCategoria.reduce(
-  (total, categoria) => total + categoria.quantidade,
-  0,
-);
+function getApiMessage(error, fallback) {
+  return error?.response?.data?.message || fallback;
+}
 
 function CardResumo({
   titulo,
@@ -131,7 +79,12 @@ function CardResumo({
   );
 }
 
-function GraficoFaturamento() {
+function GraficoFaturamento({ faturamentoSemanal }) {
+  const totalFaturamentoSemanal = faturamentoSemanal.reduce(
+    (total, dia) => total + (dia.valor || 0),
+    0,
+  );
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70 xl:col-span-4">
       <div className="mb-5 flex items-center justify-between gap-3">
@@ -146,7 +99,7 @@ function GraficoFaturamento() {
       <div className="h-[185px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={dashboardMock.faturamentoSemanal}
+            data={faturamentoSemanal}
             margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
           >
             <XAxis
@@ -178,7 +131,25 @@ function GraficoFaturamento() {
   );
 }
 
-function GraficoCategorias() {
+function GraficoCategorias({ pedidosPorCategoria }) {
+  const totalPedidosCategoria = pedidosPorCategoria.reduce(
+    (total, categoria) => total + (categoria.quantidade || 0),
+    0,
+  );
+
+  if (pedidosPorCategoria.length === 0) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70 xl:col-span-4">
+        <h3 className="text-base font-bold text-slate-900">
+          Pedidos por Categoria
+        </h3>
+        <div className="mt-4 flex h-[188px] items-center justify-center text-slate-400">
+          Nenhum dado de categoria no período
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70 xl:col-span-4">
       <h3 className="text-base font-bold text-slate-900">
@@ -190,7 +161,7 @@ function GraficoCategorias() {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={dashboardMock.pedidosPorCategoria}
+                data={pedidosPorCategoria}
                 dataKey="quantidade"
                 nameKey="nome"
                 innerRadius="58%"
@@ -198,8 +169,8 @@ function GraficoCategorias() {
                 paddingAngle={2}
                 stroke="none"
               >
-                {dashboardMock.pedidosPorCategoria.map((categoria) => (
-                  <Cell key={categoria.nome} fill={categoria.cor} />
+                {pedidosPorCategoria.map((categoria, i) => (
+                  <Cell key={categoria.nome} fill={categoria.cor || COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip
@@ -223,10 +194,11 @@ function GraficoCategorias() {
         </div>
 
         <div className="space-y-3">
-          {dashboardMock.pedidosPorCategoria.map((categoria) => {
-            const percentual = Math.round(
-              (categoria.quantidade / totalPedidosCategoria) * 100,
-            );
+          {pedidosPorCategoria.map((categoria, i) => {
+            const percentual =
+              totalPedidosCategoria > 0
+                ? Math.round((categoria.quantidade / totalPedidosCategoria) * 100)
+                : 0;
 
             return (
               <div
@@ -235,7 +207,7 @@ function GraficoCategorias() {
               >
                 <span
                   className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: categoria.cor }}
+                  style={{ backgroundColor: categoria.cor || COLORS[i % COLORS.length] }}
                 />
                 <span>
                   {categoria.nome} ({percentual}%)
@@ -249,15 +221,26 @@ function GraficoCategorias() {
   );
 }
 
-function MaisVendidos() {
-  const maiorQuantidade = dashboardMock.maisVendidos[0].quantidade;
+function MaisVendidos({ maisVendidos }) {
+  const maiorQuantidade = maisVendidos.length > 0 ? maisVendidos[0].quantidade : 1;
+
+  if (maisVendidos.length === 0) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70 xl:col-span-4">
+        <h3 className="text-base font-bold text-slate-900">Mais Vendidos (Top 5)</h3>
+        <div className="mt-5 flex h-[120px] items-center justify-center text-slate-400">
+          Nenhum produto vendido no período
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70 xl:col-span-4">
       <h3 className="text-base font-bold text-slate-900">Mais Vendidos (Top 5)</h3>
 
       <div className="mt-5 space-y-4">
-        {dashboardMock.maisVendidos.map((produto) => (
+        {maisVendidos.map((produto) => (
           <div
             key={produto.nome}
             className="grid grid-cols-[minmax(0,1fr)_minmax(92px,1.25fr)_28px] items-center gap-3"
@@ -288,7 +271,18 @@ function MaisVendidos() {
   );
 }
 
-function PedidosRecentes() {
+function PedidosRecentes({ pedidosRecentes }) {
+  if (pedidosRecentes.length === 0) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+        <h3 className="text-base font-bold text-slate-900">Pedidos Recentes</h3>
+        <div className="mt-4 flex h-[120px] items-center justify-center text-slate-400">
+          Nenhum pedido recente
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
       <h3 className="text-base font-bold text-slate-900">Pedidos Recentes</h3>
@@ -306,7 +300,7 @@ function PedidosRecentes() {
             </tr>
           </thead>
           <tbody>
-            {dashboardMock.pedidosRecentes.map((pedido) => (
+            {pedidosRecentes.map((pedido) => (
               <tr
                 key={pedido.pedido}
                 className="border-t border-slate-100 text-slate-600"
@@ -326,7 +320,7 @@ function PedidosRecentes() {
                 </td>
                 <td className="px-4 py-4">
                   <span
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${statusStyles[pedido.status]}`}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${statusStyles[pedido.status] || "bg-slate-100 text-slate-700"}`}
                   >
                     {pedido.status}
                   </span>
@@ -342,49 +336,113 @@ function PedidosRecentes() {
 }
 
 export default function Home() {
-  const { resumo } = dashboardMock;
+  const [carregando, setCarregando] = useState(true);
+  const [snackbar, setSnackbar] = useState(null);
+  const [dashboard, setDashboard] = useState({
+    resumo: {
+      faturamentoDia: 0,
+      pedidosHoje: 0,
+      ticketMedio: 0,
+      avaliacaoMedia: null,
+    },
+    faturamentoSemanal: [],
+    pedidosPorCategoria: [],
+    maisVendidos: [],
+    pedidosRecentes: [],
+  });
+
+  async function carregarDashboard() {
+    try {
+      setCarregando(true);
+      const res = await api.getDashboard();
+      if (res?.data?.error === false) {
+        setDashboard(res.data.data);
+      } else {
+        throw new Error(res?.data?.message || "Erro ao carregar dashboard");
+      }
+    } catch (error) {
+      setSnackbar({
+        message: getApiMessage(error, "Erro ao carregar dashboard."),
+        type: "error",
+      });
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarDashboard();
+  }, []);
+
+  const { resumo, faturamentoSemanal, pedidosPorCategoria, maisVendidos, pedidosRecentes } = dashboard;
 
   return (
     <div className="min-w-0 space-y-6">
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <CardResumo
-          titulo="Faturamento do Dia"
-          valor={formatarMoeda(resumo.faturamentoDia)}
-          variacao="+12.3%"
-          contexto="vs ontem"
-          Icon={ScrollText}
+      {snackbar && (
+        <Snackbar
+          isOpen={true}
+          message={snackbar.message}
+          type={snackbar.type}
+          onClose={() => setSnackbar(null)}
         />
-        <CardResumo
-          titulo="Pedidos Hoje"
-          valor={resumo.pedidosHoje}
-          variacao="+8.5%"
-          contexto="vs ontem"
-          Icon={Users}
-        />
-        <CardResumo
-          titulo="Ticket Médio"
-          valor={formatarMoeda(resumo.ticketMedio)}
-          variacao="-2.1%"
-          contexto="vs semana passada"
-          Icon={Table2}
-          negativo
-        />
-        <CardResumo
-          titulo="Avaliação Média"
-          valor={`${resumo.avaliacaoMedia} / 5.0`}
-          variacao="+0.2"
-          contexto="esta semana"
-          Icon={Clock}
-        />
-      </section>
+      )}
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
-        <GraficoFaturamento />
-        <GraficoCategorias />
-        <MaisVendidos />
-      </section>
+      {carregando ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-pulse"
+            >
+              <div className="h-4 w-3/4 bg-slate-200 rounded" />
+              <div className="mt-5 h-8 w-1/2 bg-slate-200 rounded" />
+              <div className="mt-2 h-3 w-1/3 bg-slate-200 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <CardResumo
+              titulo="Faturamento do Dia"
+              valor={formatarMoeda(resumo.faturamentoDia)}
+              variacao="+0%"
+              contexto="vs ontem"
+              Icon={ScrollText}
+            />
+            <CardResumo
+              titulo="Pedidos Hoje"
+              valor={resumo.pedidosHoje}
+              variacao="+0%"
+              contexto="vs ontem"
+              Icon={Users}
+            />
+            <CardResumo
+              titulo="Ticket Médio"
+              valor={formatarMoeda(resumo.ticketMedio)}
+              variacao="+0%"
+              contexto="vs semana passada"
+              Icon={Table2}
+              negativo={false}
+            />
+            <CardResumo
+              titulo="Avaliação Média"
+              valor={resumo.avaliacaoMedia ? `${resumo.avaliacaoMedia} / 5.0` : "—"}
+              variacao="+0"
+              contexto="esta semana"
+              Icon={Clock}
+            />
+          </section>
 
-      <PedidosRecentes />
+          <section className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+            <GraficoFaturamento faturamentoSemanal={faturamentoSemanal} />
+            <GraficoCategorias pedidosPorCategoria={pedidosPorCategoria} />
+            <MaisVendidos maisVendidos={maisVendidos} />
+          </section>
+
+          <PedidosRecentes pedidosRecentes={pedidosRecentes} />
+        </>
+      )}
     </div>
   );
 }

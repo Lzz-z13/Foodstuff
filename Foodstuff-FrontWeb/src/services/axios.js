@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://[IP]:5000/api/foodstuff",
+  baseURL: "http://localhost:5000/api/foodstuff",
   headers: {
     accept: "application/json",
   },
@@ -11,7 +11,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
-      config.headers.Authorization = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     if (config.data instanceof FormData) {
@@ -32,13 +32,16 @@ const sheets = {
   postPasswordResetConfirm: (data) =>
     api.post("/auth/password-reset/confirm", data),
   postUser: (user) => api.post("/users", user),
-  postTable: (table) => api.post("/tables", table),
-  getAllTables: () => api.get("/tables"),
-  deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
   patchMe: (data) => api.patch("/users/me", data),
+  patchMePhoto: (photo) => api.patch("/users/me/photo", { photo }),
   patchMePassword: (data) => api.patch("/users/me/password", data),
   getAllUsers: () => api.get("/users"),
   patchUserById: (userId, data) => api.patch(`/users/${userId}`, data),
+
+  postTable: (table) => api.post("/tables", table),
+  getAllTables: () => api.get("/tables"),
+  deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
+
   getAllOrders: () => api.get("/orders"),
   getOrderById: (orderId) => api.get(`/orders/${orderId}`),
   getAllProducts: (params) => api.get("/products", { params }),
@@ -49,8 +52,24 @@ const sheets = {
   patchProductAvailability: (productId, is_available) =>
     api.patch(`/products/${productId}/availability`, { is_available }),
   deleteProduct: (productId) => api.delete(`/products/${productId}`),
+  
   getAllCategories: () => api.get("/categories"),
   postCategory: (data) => api.post("/categories", data),
+  patchCategory: (categoryId, data) =>
+    api.patch(`/categories/${categoryId}`, data),
+  deleteCategory: (categoryId) => api.delete(`/categories/${categoryId}`),
+
+  // Orders - Kitchen
+  patchOrderStatus: (orderId, status) =>
+    api.patch(`/orders/${orderId}/status`, { status }),
+
+  // Dashboard
+  getDashboard: () => api.get("/dashboard"),
+  getDashboardResumo: () => api.get("/dashboard/resumo"),
+  getDashboardFaturamentoSemanal: () => api.get("/dashboard/faturamento-semanal"),
+  getDashboardPedidosPorCategoria: () => api.get("/dashboard/pedidos-por-categoria"),
+  getDashboardMaisVendidos: (limit) => api.get("/dashboard/mais-vendidos", { params: { limit } }),
+  getDashboardPedidosRecentes: (limit) => api.get("/dashboard/pedidos-recentes", { params: { limit } }),
 };
 
 export default sheets;

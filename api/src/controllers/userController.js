@@ -2,6 +2,7 @@ const UserService = require("../services/userService");
 const PasswordResetService = require("../services/passwordResetService");
 const validateUser = require("../validations/validateUser");
 const validateUserId = require("../validations/validateUserId");
+const validateUserPhoto = require("../validations/validateUserPhoto");
 
 const {
   isValidEmail,
@@ -17,7 +18,23 @@ const {
 const { isValidUserName } = require("../utils/validators/userValidator");
 
 module.exports = class UserController {
+  static async readCurrentUser(req, res, next) {
+    try {
+      const user = await UserService.readCurrentUser(req.user.id);
+
+      return res.status(200).json({
+        error: false,
+        message: "Usuário buscado com sucesso.",
+        data: user,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createUser(req, res, next) {
+    console.log("BODY RECEBIDO:", req.body);
+    
     const jwt_user_id = req.user.id;
 
     req.body.email = normalizeEmail(req.body.email || "");
@@ -81,6 +98,35 @@ module.exports = class UserController {
       return res.status(200).json({
         error: false,
         message: "Usuário atualizado com sucesso.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateUserPhoto(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { photo } = req.body;
+
+    try {
+      const normalizedPhoto =
+        typeof photo === "string" ? photo.trim() || null : photo;
+
+      validateUserPhoto(normalizedPhoto);
+
+      const result = await UserService.updateUserPhoto(
+        normalizedPhoto,
+        jwt_user_id,
+      );
+
+      return res.status(200).json({
+        error: false,
+        message: result.photo
+          ? "Foto atualizada com sucesso."
+          : "Foto removida com sucesso.",
+        data: {
+          photo: result.photo,
+        },
       });
     } catch (error) {
       next(error);

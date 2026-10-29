@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
+  DeviceEventEmitter,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
+
+const USER_PHOTO_UPDATED = "userPhotoUpdated";
 
 const COLORS = {
   primary: "#FF6B2C",
@@ -17,6 +21,36 @@ const COLORS = {
 
 export default function Header({ navigation }) {
   const [menuAberto, setMenuAberto] = useState(false);
+  const [photo, setPhoto] = useState(null);
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarFoto() {
+      try {
+        const storedUser = await SecureStore.getItemAsync("user");
+        const user = storedUser ? JSON.parse(storedUser) : null;
+
+        if (ativo) {
+          setPhoto(user?.photo || null);
+        }
+      } catch (error) {
+        console.log("Erro ao carregar foto do header:", error);
+      }
+    }
+
+    carregarFoto();
+
+    const subscription = DeviceEventEmitter.addListener(
+      USER_PHOTO_UPDATED,
+      (novaFoto) => setPhoto(novaFoto || null),
+    );
+
+    return () => {
+      ativo = false;
+      subscription.remove();
+    };
+  }, []);
 
   async function handleLogout() {
     await SecureStore.deleteItemAsync("token");
@@ -44,11 +78,19 @@ export default function Header({ navigation }) {
           activeOpacity={0.7}
           onPress={() => setMenuAberto(!menuAberto)}
         >
-          <Ionicons
-            name="person-outline"
-            size={18}
-            color={COLORS.textDark}
-          />
+          {photo ? (
+            <Image
+              source={{ uri: photo }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons
+              name="person-outline"
+              size={18}
+              color={COLORS.textDark}
+            />
+          )}
         </TouchableOpacity>
 
         {menuAberto && (
@@ -110,6 +152,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#D9D9D9",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
 
   dropdown: {
