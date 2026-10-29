@@ -8,7 +8,6 @@ const api = axios.create({
   },
 });
 
-// Adds the authentication token to requests
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync("token");
 
