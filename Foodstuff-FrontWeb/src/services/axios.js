@@ -33,6 +33,7 @@ const sheets = {
     api.post("/auth/password-reset/confirm", data),
   postUser: (user) => api.post("/users", user),
   patchMe: (data) => api.patch("/users/me", data),
+  patchMePhoto: (photo) => api.patch("/users/me/photo", { photo }),
   patchMePassword: (data) => api.patch("/users/me/password", data),
   getAllUsers: () => api.get("/users"),
   patchUserById: (userId, data) => api.patch(`/users/${userId}`, data),
