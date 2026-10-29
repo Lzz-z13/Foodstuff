@@ -66,19 +66,25 @@ const sheets = {
     }
 
     const qs = query.toString();
+
     return api.get(`/products${qs ? `?${qs}` : ""}`);
   },
 
   getProductById: (product_id) => api.get(`/products/${product_id}`),
+
   createProduct: (data) => api.post("/products", data),
+
   updateProduct: (product_id, data) =>
     api.patch(`/products/${product_id}`, data),
+
   updateProductAvailability: (product_id, is_available) =>
     api.patch(`/products/${product_id}/availability`, { is_available }),
+
   deleteProduct: (product_id) => api.delete(`/products/${product_id}`),
 
   // Categories
   getCategories: () => api.get("/categories"),
+
   createCategory: (data) => api.post("/categories", data),
 };
 
