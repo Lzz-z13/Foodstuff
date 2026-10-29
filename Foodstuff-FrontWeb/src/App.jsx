@@ -18,9 +18,13 @@ import RoleRoute from "./components/protectedRoute/RoleRoute";
 
 import DefaultLayout from "./components/defaultLayout/DefaultLayout";
 import KitchenLayout from "./components/kitchen/KitchenLayout";
+import CashierLayout from "./components/cashier/CashierLayout";
+import Caixa from "./pages/CaixaPages/Caixa";
+import Pagamento from "./pages/CaixaPages/Pagamento";
 import { getRole } from "./services/auth";
 
 function AccountLayout() {
+  if (getRole() === "CASHIER") return <CashierLayout />;
   return getRole() === "KITCHEN" ? <KitchenLayout /> : <DefaultLayout />;
 }
 
@@ -34,6 +38,12 @@ function App() {
 
         {/* Protegidas - exige token */}
         <Route element={<ProtectedRoute />}>
+          <Route element={<RoleRoute allowedRoles={["CASHIER", "MANAGER"]} />}>
+            <Route element={<CashierLayout />}>
+              <Route path="/caixa" element={<Caixa />} />
+              <Route path="/caixa/comandas/:commandId/pagamento" element={<Pagamento />} />
+            </Route>
+          </Route>
           {/* COZINHA */}
           <Route element={<RoleRoute allowedRoles={["KITCHEN"]} />}>
             <Route element={<KitchenLayout />}>
