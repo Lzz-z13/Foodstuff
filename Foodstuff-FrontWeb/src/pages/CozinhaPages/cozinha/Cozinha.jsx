@@ -1,10 +1,10 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { ChefHat, Clock3 } from "lucide-react";
 
-import KitchenKanban from "../../components/kitchen/KitchenKanban";
-import api from "../../services/axios";
-import Snackbar from "../../components/snackBar/SnackBar";
-import { lerUsuario } from "../../services/auth";
+import KitchenKanban from "../../../components/kitchen/KitchenKanban";
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
+import { lerUsuario } from "../../../services/auth";
 
 function normalizarPedidos(payload) {
   const lista = Array.isArray(payload) ? payload : payload?.data ?? [];

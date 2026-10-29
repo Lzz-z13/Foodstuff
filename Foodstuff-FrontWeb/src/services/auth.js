@@ -34,15 +34,13 @@ export const ROTAS_POR_ROLE = {
   MANAGER: [
     "/home",
     "/pedidos",
-    "/cozinha",
     "/cardapio",
     "/mesas",
     "/equipe",
     "/cadastro",
     "/minha-conta",
   ],
-  WAITER: ["/home", "/pedidos", "/cardapio", "/mesas", "/minha-conta"],
-  CASHIER: ["/home", "/pedidos", "/mesas", "/minha-conta"],
+  CASHIER: ["/pedidos", "/mesas", "/minha-conta"],
 };
 
 export function podeAcessar(pathname, role) {
@@ -51,7 +49,7 @@ export function podeAcessar(pathname, role) {
   const permitidas = ROTAS_POR_ROLE[role];
   if (!permitidas) return false;
 
-  return permitidas.some((rota) =>
-    pathname === rota || pathname.startsWith(`${rota}/`)
+  return permitidas.some(
+    (rota) => pathname === rota || pathname.startsWith(`${rota}/`),
   );
 }

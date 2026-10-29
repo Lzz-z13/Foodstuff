@@ -11,8 +11,8 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 
-import api from "../../services/axios";
-import Snackbar from "../../components/snackBar/SnackBar";
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
 import ProductModal from "./ProductModal";
 import CategoryModal from "./CategoryModal";
 

@@ -11,8 +11,8 @@ import {
 } from "recharts";
 import { Clock, Loader2, ScrollText, Table2, Users } from "lucide-react";
 
-import api from "../../services/axios";
-import Snackbar from "../../components/snackBar/SnackBar";
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
 
 const statusStyles = {
   "Em Preparo": "bg-amber-100 text-amber-700",

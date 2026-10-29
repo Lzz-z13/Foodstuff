@@ -7,8 +7,8 @@ import {
   Phone,
 } from "lucide-react";
 
-import api from "../../services/axios";
-import Snackbar from "../../components/snackBar/SnackBar";
+import api from "../../../services/axios";
+import Snackbar from "../../../components/snackBar/SnackBar";
 
 const cargos = [
   { valor: "WAITER", label: "Garçom" },
