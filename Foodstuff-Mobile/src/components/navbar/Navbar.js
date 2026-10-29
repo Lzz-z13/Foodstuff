@@ -28,6 +28,7 @@ const ROUTES = {
   Dashboard: "Dashboard",
   Users: "Cadastro",
   Config: "contaAdmin",
+  Mesas: "Mesas",
 };
 
 export default function Navbar({

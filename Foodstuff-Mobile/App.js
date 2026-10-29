@@ -6,6 +6,7 @@ import Cadastro from "./src/screens/Cadastro";
 import Login from "./src/screens/Login";
 import Dashboard from "./src/screens/Dashboard";
 import contaAdmin from "./src/screens/contaAdmin";
+import Mesas from "./src/screens/Mesas";
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,7 @@ export default function App() {
           <Stack.Screen name="Cadastro" component={Cadastro} />
           <Stack.Screen name="Dashboard" component={Dashboard} />
           <Stack.Screen name="contaAdmin" component={contaAdmin} />
+          <Stack.Screen name="Mesas" component={Mesas}/>
           
         </Stack.Navigator>
       </NavigationContainer>
