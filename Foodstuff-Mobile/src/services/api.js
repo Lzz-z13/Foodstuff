@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
@@ -20,56 +19,26 @@ api.interceptors.request.use(async (config) => {
 });
 
 const sheets = {
+  // Autenticação e usuários
   postLogin: (user) => api.post("/auth/login", user, { timeout: 15000 }),
   postUser: (user) => api.post("/users", user),
 
   getCurrentUser: () => api.get("/users/me"),
   patchUserCredentials: (user) => api.patch("/users/me", user),
+  patchUserPhoto: (photo) => api.patch("/users/me/photo", { photo }),
   patchUserPassword: (passwords) =>
     api.patch("/users/me/password", passwords),
 
+  // Pedidos
   getPedidos: () => api.get("/pedidos"),
   getPedido: (id) => api.get(`/pedidos/${id}`),
   postSolicitarConta: (id) => api.post(`/pedidos/${id}/conta`),
   patchPedidoStatus: (id, dados) => api.patch(`/pedidos/${id}`, dados),
 
-  getUser: async () => {
-    const storedUser = await SecureStore.getItemAsync("user");
-
-    if (!storedUser) {
-      throw new Error("Usuário não encontrado no armazenamento local.");
-    }
-
-    const parsedUser = JSON.parse(storedUser);
-
-    return {
-      data: {
-        data: parsedUser,
-      },
-    };
-  },
-
-  updateUser: async (user) => {
-    const response = await api.patch("/users/me", user);
-
-    return {
-      ...response,
-      data: {
-        ...response.data,
-        data: response.data?.data ?? user,
-      },
-    };
-  },
-
-  updatePassword: (data) =>
-    api.patch("/users/me/password", data),
-
   // Dashboard
-  getDashboard: () =>
-    api.get("/dashboard"),
+  getDashboard: () => api.get("/dashboard"),
 
-  getDashboardResumo: () =>
-    api.get("/dashboard/resumo"),
+  getDashboardResumo: () => api.get("/dashboard/resumo"),
 
   getFaturamentoSemanal: () =>
     api.get("/dashboard/faturamento-semanal"),
@@ -86,11 +55,25 @@ const sheets = {
   // Produtos
   getProducts: (params = {}) => {
     const query = new URLSearchParams();
-    if (params.category_id) query.append("category_id", params.category_id);
-    if (params.search)      query.append("search", params.search);
-    if (params.is_available !== undefined) query.append("is_available", params.is_available);
-    if (params.include_inactive) query.append("include_inactive", "1");
+
+    if (params.category_id) {
+      query.append("category_id", params.category_id);
+    }
+
+    if (params.search) {
+      query.append("search", params.search);
+    }
+
+    if (params.is_available !== undefined) {
+      query.append("is_available", params.is_available);
+    }
+
+    if (params.include_inactive) {
+      query.append("include_inactive", "1");
+    }
+
     const qs = query.toString();
+
     return api.get(`/products${qs ? `?${qs}` : ""}`);
   },
 
@@ -110,12 +93,10 @@ const sheets = {
     api.delete(`/products/${product_id}`),
 
   // Categorias
-  getCategories: () =>
-    api.get("/categories"),
+  getCategories: () => api.get("/categories"),
 
   createCategory: (data) =>
     api.post("/categories", data),
-  updatePassword: (data) => api.patch("/users/me/password", data),
 };
 
 export default sheets;
