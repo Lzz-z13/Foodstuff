@@ -1,10 +1,9 @@
 
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
 
 const api = axios.create({
-  baseURL: "http://[IP != COMMITAR IP]:5000/api/foodstuff",
+  baseURL: "http://192.168.100.9:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },
@@ -21,7 +20,7 @@ api.interceptors.request.use(async (config) => {
 });
 
 const sheets = {
-  postLogin: (user) => api.post("/auth/login", user),
+  postLogin: (user) => api.post("/auth/login", user, { timeout: 15000 }),
   postUser: (user) => api.post("/users", user),
 
   getCurrentUser: () => api.get("/users/me"),
