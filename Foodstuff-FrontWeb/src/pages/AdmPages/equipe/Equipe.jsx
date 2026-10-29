@@ -23,6 +23,25 @@ const CARGO_BADGE = {
 const INPUT =
   "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#ff5a47]";
 
+function AvatarEquipe({ usuario, className }) {
+  const [fotoComErro, setFotoComErro] = useState(null);
+
+  return (
+    <span className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 font-bold text-slate-600 ${className}`}>
+      {usuario.photo && usuario.photo !== fotoComErro ? (
+        <img
+          src={usuario.photo}
+          alt={`Foto de ${usuario.name || "usuário"}`}
+          className="h-full w-full object-cover"
+          onError={() => setFotoComErro(usuario.photo)}
+        />
+      ) : (
+        usuario.name?.trim().charAt(0).toUpperCase() || "?"
+      )}
+    </span>
+  );
+}
+
 export default function Equipe() {
   const eu = useMemo(() => {
     try {
@@ -193,9 +212,7 @@ export default function Equipe() {
                         onClick={() => selecionar(u)}
                         className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${ativo ? "bg-red-50/50" : ""}`}
                       >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[14px] font-bold text-slate-600">
-                          {u.name?.charAt(0)?.toUpperCase() ?? "?"}
-                        </span>
+                        <AvatarEquipe usuario={u} className="h-10 w-10 text-[14px]" />
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-2">
                             <span className="truncate text-[13px] font-semibold text-slate-800">
@@ -232,11 +249,14 @@ export default function Equipe() {
               </p>
             ) : (
               <form onSubmit={salvar} className="flex flex-col gap-4">
-                <div>
-                  <h2 className="truncate text-[15px] font-bold text-slate-900">
-                    {selecionado.name}
-                  </h2>
-                  <p className="text-[11px] text-slate-400">{selecionado.email}</p>
+                <div className="flex items-center gap-3">
+                  <AvatarEquipe key={selecionado.user_id} usuario={selecionado} className="h-14 w-14 text-[20px]" />
+                  <div className="min-w-0">
+                    <h2 className="truncate text-[15px] font-bold text-slate-900">
+                      {selecionado.name}
+                    </h2>
+                    <p className="truncate text-[11px] text-slate-400">{selecionado.email}</p>
+                  </div>
                 </div>
 
                 {eMinhaConta && (

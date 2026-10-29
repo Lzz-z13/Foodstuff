@@ -167,6 +167,7 @@ function GraficoCategorias({ pedidosPorCategoria }) {
                 innerRadius="58%"
                 outerRadius="82%"
                 paddingAngle={2}
+                zindex={0}
                 stroke="none"
               >
                 {pedidosPorCategoria.map((categoria, i) => (
