@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 const api = axios.create({
   baseURL: "http://192.168.1.12:5000/api/foodstuff",
