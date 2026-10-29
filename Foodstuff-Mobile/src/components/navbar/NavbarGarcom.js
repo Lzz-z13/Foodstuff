@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const TABS = [
   { key: "Mesas", icon: "grid-outline", route: "Mesas" },
   { key: "Pedidos", icon: "receipt-outline", route: "Garcom" },
-  { key: "Perfil", icon: "person-circle-outline", route: "Perfil" },
+  { key: "Perfil", icon: "person-circle-outline", route: "PerfilGarcom" },
 ];
 
 export default function NavbarGarcom({ navigation, activeTab = "Pedidos" }) {

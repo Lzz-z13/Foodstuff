@@ -5,6 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import api from "../../services/api";
 
@@ -13,19 +14,25 @@ export default function Pedidos() {
 
   const carregarPedidos = async () => {
     try {
-      const { data } = await api.get("/orders");
+      const { data } = await api.get("/pedidos");
       setPedidos(data);
     } catch (error) {
-      console.log(error);
+      Alert.alert(
+        "Erro",
+        error?.response?.data?.message || "Não foi possível carregar os pedidos.",
+      );
     }
   };
 
   const alterarStatus = async (id, status) => {
     try {
-      await api.patch(`/orders/${id}/status`, { status });
+      await api.patch(`/pedidos/${id}/status`, { status });
       carregarPedidos();
     } catch (error) {
-      console.log(error);
+      Alert.alert(
+        "Erro",
+        error?.response?.data?.message || "Não foi possível atualizar o pedido.",
+      );
     }
   };
 

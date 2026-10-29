@@ -1,4 +1,3 @@
-
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -27,19 +26,25 @@ export default function App() {
           initialRouteName="Login"
           screenOptions={{ headerShown: false }}
         >
+          {/* ADMIN */}
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Cadastro" component={Cadastro} />
           <Stack.Screen name="Dashboard" component={Dashboard} />
-
-          <Stack.Screen name="Garcom" component={PedidosAtivosGarcom} />
-          <Stack.Screen name="Mesas" component={MesasGarcom} />
-          <Stack.Screen name="DetalhesPedido" component={DetalhesPedidoGarcom} />
-          <Stack.Screen name="AnotarPedido" component={AnotarPedidoGarcom} />
-          <Stack.Screen name="PerfilGarcom" component={PerfilGarcom} />
-
           <Stack.Screen name="contaAdmin" component={contaAdmin} />
           <Stack.Screen name="Cardapio" component={Cardapio} />
-          
+
+          {/* GARÇOM */}
+          <Stack.Screen name="Garcom" component={PedidosAtivosGarcom} />
+          <Stack.Screen name="Mesas" component={MesasGarcom} />
+          <Stack.Screen
+            name="DetalhesPedido"
+            component={DetalhesPedidoGarcom}
+          />
+          <Stack.Screen
+            name="AnotarPedido"
+            component={AnotarPedidoGarcom}
+          />
+          <Stack.Screen name="PerfilGarcom" component={PerfilGarcom} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

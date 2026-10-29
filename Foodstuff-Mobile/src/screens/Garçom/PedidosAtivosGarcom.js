@@ -129,7 +129,7 @@ export default function PedidosAtivosGarcom({ navigation }) {
   const entregar = async (id) => {
     try {
       await api.patchPedidoStatus(id, {
-        status: "entregue",
+        status: "DELIVERED",
       });
 
       await carregar();

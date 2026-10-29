@@ -74,7 +74,10 @@ export default function Login({ navigation }) {
       navigation.replace(nextRoute);
     } catch (error) {
       const errorMsg =
-        error?.response?.data?.message || "Erro ao conectar ao servidor";
+        error?.response?.data?.message ||
+        (error?.code === "ECONNABORTED" || error?.code === "ETIMEDOUT"
+          ? "O servidor demorou para responder. Tente novamente."
+          : "Não foi possível conectar ao servidor. Verifique a conexão e tente novamente.");
       Alert.alert("Erro", errorMsg);
     } finally {
       setLoading(false);
