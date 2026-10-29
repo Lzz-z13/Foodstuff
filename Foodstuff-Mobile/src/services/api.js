@@ -29,19 +29,26 @@ const sheets = {
 
   patchUserCredentials: (user) => api.patch("/users/me", user),
 
-  patchUserPhoto: (photo) => api.patch("/users/me/photo", { photo }),
+  patchUserPhoto: (photo) =>
+    api.patch("/users/me/photo", { photo }),
 
   patchUserPassword: (passwords) =>
     api.patch("/users/me/password", passwords),
+
+  // Compatibility with the method name used in main
+  updatePassword: (data) =>
+    api.patch("/users/me/password", data),
 
   // Orders
   getPedidos: () => api.get("/pedidos"),
 
   getPedido: (id) => api.get(`/pedidos/${id}`),
 
-  postSolicitarConta: (id) => api.post(`/pedidos/${id}/conta`),
+  postSolicitarConta: (id) =>
+    api.post(`/pedidos/${id}/conta`),
 
-  patchPedidoStatus: (id, dados) => api.patch(`/pedidos/${id}`, dados),
+  patchPedidoStatus: (id, dados) =>
+    api.patch(`/pedidos/${id}`, dados),
 
   // Dashboard
   getDashboard: () => api.get("/dashboard"),
@@ -90,7 +97,8 @@ const sheets = {
   getProductById: (productId) =>
     api.get(`/products/${productId}`),
 
-  createProduct: (data) => api.post("/products", data),
+  createProduct: (data) =>
+    api.post("/products", data),
 
   updateProduct: (productId, data) =>
     api.patch(`/products/${productId}`, data),
@@ -106,7 +114,8 @@ const sheets = {
   // Categories
   getCategories: () => api.get("/categories"),
 
-  createCategory: (data) => api.post("/categories", data),
+  createCategory: (data) =>
+    api.post("/categories", data),
 };
 
 export default sheets;

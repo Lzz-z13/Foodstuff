@@ -12,6 +12,7 @@ CREATE TABLE
         name VARCHAR(100) NOT NULL,
         email VARCHAR(150) NOT NULL,
         phone CHAR(11) NOT NULL,
+        photo MEDIUMTEXT NULL,
         password VARCHAR(255) NOT NULL,
         role ENUM ('MANAGER', 'WAITER', 'KITCHEN', 'CASHIER') NOT NULL,
         first_login TINYINT NOT NULL DEFAULT TRUE,

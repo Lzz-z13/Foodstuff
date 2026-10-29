@@ -37,6 +37,7 @@ module.exports = async function globalSetup() {
     port: process.env.TEST_DB_PORT || process.env.DB_PORT,
     user: process.env.TEST_DB_USER,
     password: process.env.TEST_DB_PASSWORD,
+    charset: "UTF8MB4_0900_AI_CI",
     multipleStatements: true,
   });
 
