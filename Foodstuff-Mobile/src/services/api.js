@@ -1,6 +1,5 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
 
 const api = axios.create({
   baseURL: "http://192.168.1.12:5000/api/foodstuff",
@@ -72,7 +71,6 @@ const sheets = {
   },
 
   getProductById: (product_id) => api.get(`/products/${product_id}`),
-
   createProduct: (data) => api.post("/products", data),
 
   updateProduct: (product_id, data) =>
@@ -85,7 +83,6 @@ const sheets = {
 
   // Categories
   getCategories: () => api.get("/categories"),
-
   createCategory: (data) => api.post("/categories", data),
 };
 
