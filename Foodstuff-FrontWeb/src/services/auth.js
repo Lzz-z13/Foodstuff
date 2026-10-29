@@ -21,6 +21,8 @@ export function temToken() {
 /** Rota inicial de cada role após o login. */
 export function homePorRole(role) {
   switch (role) {
+    case "CASHIER":
+      return "/caixa";
     case "KITCHEN":
       return "/cozinha";
     default:
@@ -39,8 +41,9 @@ export const ROTAS_POR_ROLE = {
     "/equipe",
     "/cadastro",
     "/minha-conta",
+    "/caixa",
   ],
-  CASHIER: ["/pedidos", "/mesas", "/minha-conta"],
+  CASHIER: ["/caixa", "/minha-conta"],
 };
 
 export function podeAcessar(pathname, role) {

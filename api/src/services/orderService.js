@@ -329,6 +329,19 @@ module.exports = class OrderService {
       await connection.beginTransaction();
       transactionStarted = true;
 
+      // Serializa alterações de consumo com o fechamento/pagamento da comanda.
+      const [orderCommands] = await connection.execute(
+        'SELECT command_id FROM orders WHERE order_id = ?',
+        [order_id],
+      );
+      const [commandRows] = orderCommands.length ? await connection.execute(
+        'SELECT command_id, status FROM commands WHERE command_id = ? FOR UPDATE',
+        [orderCommands[0].command_id],
+      ) : [[]];
+      if (normalized === 'CANCELLED' && commandRows.length && commandRows[0].status !== 'OPEN') {
+        throw { status: 409, message: 'Não é possível cancelar consumo de uma comanda fechada ou paga.' };
+      }
+
       const [orderResult] = await connection.execute(
         `SELECT
           order_id,

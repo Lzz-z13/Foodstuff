@@ -36,3 +36,8 @@
 
   font-family: 'Montserrat', sans-serif;
 }
+@media print {
+  body:has(.cashier-receipt) * { visibility: hidden; }
+  body .cashier-receipt, body .cashier-receipt * { visibility: visible; }
+  .cashier-receipt { position: absolute; inset: 0; min-height: auto; border: 0; box-shadow: none; }
+}

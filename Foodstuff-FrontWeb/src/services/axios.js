@@ -24,6 +24,10 @@ api.interceptors.request.use(
 );
 
 const sheets = {
+  getCashierCommands: () => api.get('/commands'),
+  getCashierSummary: () => api.get('/cashier/summary'),
+  getCommandCheckout: (commandId, config) => api.get(`/commands/${commandId}/checkout`, config),
+  postCommandPayment: (commandId, data) => api.post(`/commands/${commandId}/payments`, data),
   postLogin: (user) => api.post("/auth/login", user),
   postPasswordResetRequest: (data) =>
     api.post("/auth/password-reset/request", data),
