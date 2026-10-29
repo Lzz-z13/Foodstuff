@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const api = axios.create({
-  baseURL: "http://10.89.240.46:5000/api/foodstuff",
+  baseURL: "http://10.89.240.61:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },
@@ -116,6 +116,10 @@ const sheets = {
 
   createCategory: (data) =>
     api.post("/categories", data),
+
+  // Tables
+  getTables: () => api.get("/tables"),
+  getTableCommands: (tableId) => api.get(`/tables/${tableId}/commands`),
 };
 
 export default sheets;

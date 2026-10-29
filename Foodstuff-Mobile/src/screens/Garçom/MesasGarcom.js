@@ -1,9 +1,79 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import LogoutButton from "../../components/header/LogoutButton";
 import NavbarGarcom from "../../components/navbar/NavbarGarcom";
+import api from "../../services/api";
 
 export default function MesasGarcom({ navigation }) {
+  const [mesas, setMesas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadMesas = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await api.getTables();
+      const data = response?.data?.data || [];
+
+      const mesasComStatus = await Promise.all(
+        data.map(async (mesa) => {
+          try {
+            const commandsResponse = await api.getTableCommands(mesa.table_id);
+            const commands = commandsResponse?.data?.data || [];
+            const temComandaAberta = commands.some(
+              (command) => command.status === "OPEN"
+            );
+
+            return {
+              ...mesa,
+              status: temComandaAberta ? "Ocupada" : "Livre",
+            };
+          } catch (commandError) {
+            console.warn(
+              `Erro ao buscar comandas da mesa ${mesa.table_id}:`,
+              commandError
+            );
+
+            return {
+              ...mesa,
+              status: "Livre",
+            };
+          }
+        })
+      );
+
+      setMesas(mesasComStatus);
+    } catch (err) {
+      console.error("Erro ao buscar mesas:", err);
+      setError("Não foi possível carregar as mesas.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMesas();
+
+    const intervalId = setInterval(loadMesas, 10000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadMesas();
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -11,24 +81,54 @@ export default function MesasGarcom({ navigation }) {
           <Text style={styles.title}>Mesas</Text>
           <Text style={styles.subtitle}>Visualização das mesas disponíveis</Text>
         </View>
-        <LogoutButton navigation={navigation} />
-      </View>
 
-      <View style={styles.cardGrid}>
-        {[
-          { numero: 1, status: "Livre" },
-          { numero: 2, status: "Ocupada" },
-          { numero: 3, status: "Livre" },
-          { numero: 4, status: "Ocupada" },
-        ].map((mesa) => (
-          <TouchableOpacity key={mesa.numero} style={styles.card} activeOpacity={0.8}>
-            <Text style={styles.mesaNumero}>Mesa {mesa.numero}</Text>
-            <Text style={[styles.status, mesa.status === "Livre" ? styles.statusLivre : styles.statusOcupada]}>
-              {mesa.status}
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+            disabled={refreshing}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.refreshText}>
+              {refreshing ? "Atualizando..." : "Atualizar"}
             </Text>
           </TouchableOpacity>
-        ))}
+
+          <LogoutButton navigation={navigation} />
+        </View>
       </View>
+
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#111827" />
+          <Text style={styles.loadingText}>Carregando mesas...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <View style={styles.cardGrid}>
+          {mesas.map((mesa) => (
+            <TouchableOpacity
+              key={mesa.table_id}
+              style={styles.card}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate("DetalhesMesa", { table: mesa })}
+            >
+              <Text style={styles.mesaNumero}>Mesa {mesa.number}</Text>
+              <Text
+                style={[
+                  styles.status,
+                  mesa.status === "Livre" ? styles.statusLivre : styles.statusOcupada,
+                ]}
+              >
+                {mesa.status}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <NavbarGarcom navigation={navigation} activeTab="Mesas" />
     </View>
@@ -53,6 +153,22 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  refreshButton: {
+    backgroundColor: "#E5E7EB",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  refreshText: {
+    color: "#111827",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   title: {
     fontSize: 24,
     fontWeight: "800",
@@ -62,6 +178,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#6B7280",
     fontSize: 14,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: "#374151",
+    fontSize: 14,
+  },
+  errorText: {
+    color: "#B91C1C",
+    fontSize: 14,
+    textAlign: "center",
   },
   cardGrid: {
     flex: 1,
