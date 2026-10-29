@@ -12,6 +12,7 @@ import Cardapio from "./src/screens/Adm/Cardapio";
 // GARÇOM
 import PedidosAtivosGarcom from "./src/screens/Garçom/PedidosAtivosGarcom";
 import MesasGarcom from "./src/screens/Garçom/MesasGarcom";
+import DetalhesMesaGarcom from "./src/screens/Garçom/DetalhesMesaGarcom";
 import DetalhesPedidoGarcom from "./src/screens/Garçom/DetalhesPedidoGarcom";
 import AnotarPedidoGarcom from "./src/screens/Garçom/AnotarPedidoGarcom";
 import PerfilGarcom from "./src/screens/Garçom/PerfilGarcom";
@@ -36,6 +37,10 @@ export default function App() {
           {/* GARÇOM */}
           <Stack.Screen name="Garcom" component={PedidosAtivosGarcom} />
           <Stack.Screen name="Mesas" component={MesasGarcom} />
+          <Stack.Screen
+            name="DetalhesMesa"
+            component={DetalhesMesaGarcom}
+          />
           <Stack.Screen
             name="DetalhesPedido"
             component={DetalhesPedidoGarcom}
