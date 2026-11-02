@@ -281,7 +281,7 @@ SET @demo_password = (SELECT password FROM users WHERE user_id = @demo_manager);
 SET @demo_now = NOW();
 
 INSERT INTO users (user_id, name, email, phone, password, role, first_login, is_active) VALUES
-(@demo_waiter, 'Garçom Demo', 'garcom@foodstuff.test', '11900009002', @demo_password, 'WAITER', 0, 1),
+(@demo_waiter, 'Garcom Demo', 'garcom@foodstuff.test', '11900009002', @demo_password, 'WAITER', 0, 1),
 (@demo_kitchen, 'Cozinha Demo', 'cozinha@foodstuff.test', '11900009003', @demo_password, 'KITCHEN', 0, 1),
 (@demo_cashier, 'Caixa Demo', 'caixa@foodstuff.test', '11900009004', @demo_password, 'CASHIER', 0, 1);
 
