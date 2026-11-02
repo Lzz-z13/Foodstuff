@@ -50,12 +50,9 @@ export default function Cozinha() {
   const [snackbar, setSnackbar] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [user, setUser] = useState(null);
+  const user = lerUsuario();
   const [agora, setAgora] = useState(new Date());
 
-  useEffect(() => {
-    setUser(lerUsuario());
-  }, []);
 
   // Relógio
   useEffect(() => {

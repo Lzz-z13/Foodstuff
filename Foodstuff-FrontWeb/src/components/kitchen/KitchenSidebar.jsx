@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { ChefHat, X, Menu } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { lerUsuario } from "../../services/auth";
 import { SidebarUserMenu } from "../sideBar/SideBar";
@@ -9,11 +9,8 @@ export default function KitchenSidebar() {
   const location = useLocation();
 
   const [aberta, setAberta] = useState(false);
-  const [user, setUser] = useState(null);
+  const user = lerUsuario();
 
-  useEffect(() => {
-    setUser(lerUsuario());
-  }, []);
 
   const fechar = () => {
     setAberta(false);

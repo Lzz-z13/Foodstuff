@@ -1,4 +1,5 @@
 import "./style.css";
+import useUserSync from "./services/useUserSync";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Pg404 from "./pages/404/pg404";
@@ -29,6 +30,7 @@ function AccountLayout() {
 }
 
 function App() {
+  useUserSync();
   return (
     <BrowserRouter>
       <Routes>

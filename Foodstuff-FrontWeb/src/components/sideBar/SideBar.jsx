@@ -92,18 +92,25 @@ export function SidebarUserMenu({ user }) {
         onClick={() => setOpen((value) => !value)}
         className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-gray-100 md:justify-start"
       >
-        <UserRound
-          size={20}
-          className="shrink-0 text-gray-500 md:hidden"
-        />
+        <UserRound size={20} className="shrink-0 text-gray-500 md:hidden" />
 
-        <span className="hidden min-w-0 flex-1 md:block">
-          <span className="block truncate text-xs font-semibold text-gray-800">
-            {user.name || "Usuário"}
+        <span className="hidden min-w-0 flex-1 md:flex md:items-center md:gap-3">
+          <span className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+            <img
+              src={user.photo}
+              alt={user.name || "Foto do usuário"}
+              className="w-full h-full object-cover"
+            />
           </span>
 
-          <span className="mt-1 block truncate text-[10px] text-gray-500">
-            {user.email}
+          <span className="min-w-0">
+            <span className="block truncate text-xs font-semibold text-gray-800">
+              {user.name || "Usuário"}
+            </span>
+
+            <span className="mt-1 block truncate text-[10px] text-gray-500">
+              {user.email}
+            </span>
           </span>
         </span>
 
@@ -151,8 +158,8 @@ export default function SideBar() {
   const [aberta, setAberta] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
 
-  const [desktop, setDesktop] = useState(() =>
-    window.matchMedia("(min-width: 64rem)").matches
+  const [desktop, setDesktop] = useState(
+    () => window.matchMedia("(min-width: 64rem)").matches,
   );
 
   const abrirRef = useRef(null);
@@ -190,9 +197,7 @@ export default function SideBar() {
 
     if (!painel) return;
 
-    const focaveis = () => [
-      ...painel.querySelectorAll("a[href], button"),
-    ];
+    const focaveis = () => [...painel.querySelectorAll("a[href], button")];
 
     focaveis()[0]?.focus();
 
@@ -206,16 +211,10 @@ export default function SideBar() {
         const primeiro = elementos[0];
         const ultimo = elementos[elementos.length - 1];
 
-        if (
-          event.shiftKey &&
-          document.activeElement === primeiro
-        ) {
+        if (event.shiftKey && document.activeElement === primeiro) {
           event.preventDefault();
           ultimo?.focus();
-        } else if (
-          !event.shiftKey &&
-          document.activeElement === ultimo
-        ) {
+        } else if (!event.shiftKey && document.activeElement === ultimo) {
           event.preventDefault();
           primeiro?.focus();
         }
@@ -228,10 +227,7 @@ export default function SideBar() {
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener(
-        "keydown",
-        aoPressionarTecla
-      );
+      document.removeEventListener("keydown", aoPressionarTecla);
 
       document.body.style.overflow = overflowAnterior;
 
@@ -241,53 +237,17 @@ export default function SideBar() {
     };
   }, [aberta, desktop]);
 
-  const links = LINKS.filter(({ path }) =>
-    podeAcessar(path, user.role)
-  );
+  const links = LINKS.filter(({ path }) => podeAcessar(path, user.role));
 
   const isActive = (path) => location.pathname === path;
 
   return (
     <>
-      {/* Botão mobile */}
-      {!desktop && (
-        <button
-          type="button"
-          onClick={() => setAberta(true)}
-          aria-label="Abrir menu"
-          ref={abrirRef}
-          hidden={aberta}
-          aria-controls="sidebar-admin"
-          aria-expanded={aberta}
-          className="fixed top-4 left-4 z-40 flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
-        >
-          <Menu size={20} />
-        </button>
-      )}
-
-      {/* Backdrop mobile */}
-      {aberta && !desktop && (
-        <button
-          type="button"
-          aria-label="Fechar menu"
-          onClick={fechar}
-          tabIndex={-1}
-          className="fixed inset-0 z-40 cursor-pointer bg-black/50 lg:hidden"
-        />
-      )}
-
       <aside
         id="sidebar-admin"
         ref={painelRef}
         aria-label="Menu principal"
-        role={aberta && !desktop ? "dialog" : undefined}
-        aria-modal={aberta && !desktop ? true : undefined}
-        inert={!desktop && !aberta}
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 max-w-[85vw] shrink-0 flex-col border-r border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:z-30 lg:translate-x-0 lg:shadow-none ${
-          aberta
-            ? "translate-x-0"
-            : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 max-w-[85vw] shrink-0 flex-col border-r border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:z-30 lg:translate-x-0`}
       >
         {/* Logo */}
         <div className="flex h-14 items-center gap-2 border-b border-gray-200 px-3">
@@ -313,20 +273,14 @@ export default function SideBar() {
           </button>
         </div>
 
-        {/* Navegação */}
         <nav className="mt-5 flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-2">
           {links.map(({ path, label, icon: Icon }) => (
             <Link
               key={path}
               to={path}
               onClick={fechar}
-              aria-current={
-                isActive(path) ? "page" : undefined
-              }
               className={`${LINK_BASE} ${
-                isActive(path)
-                  ? "bg-[#ff5a47] text-white"
-                  : "text-gray-600"
+                isActive(path) ? "bg-[#ff5a47] text-white" : "text-gray-600"
               }`}
             >
               <Icon size={16} />
@@ -335,11 +289,7 @@ export default function SideBar() {
           ))}
         </nav>
 
-        {/* Usuário */}
-        <SidebarUserMenu
-          key={location.key}
-          user={user}
-        />
+        <SidebarUserMenu key={location.key} user={user} />
       </aside>
     </>
   );
