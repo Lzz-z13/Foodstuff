@@ -20,7 +20,7 @@ const TABS = [
   ["Pedidos", "receipt-outline", "ion"],
   ["Cardápio", "book-outline", "ion"],
   ["Mesas", "table-furniture", "mci"],
-  ["Users", "account-outline", "mci"],
+  ["Users", "account-plus-outline", "mci"],
   ["Config", "settings-outline", "ion"],
 ];
 

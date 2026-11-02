@@ -48,7 +48,7 @@ function adaptarResumo(resumo) {
     faturamentoDia = 0,
     pedidosHoje = 0,
     ticketMedio = 0,
-    mesasAtivas = null,
+    mesasAtivas = 0,
   } = resumo ?? {};
 
   return [
@@ -162,10 +162,16 @@ export default function Dashboard({ navigation }) {
     setError(null);
 
     try {
-      const response = await sheets.getDashboard();
+      const [response, mesasResponse] = await Promise.all([
+        sheets.getDashboard(),
+        sheets.getTables(),
+      ]);
       const data = response.data?.data ?? {};
 
-      setDashboardStats(adaptarResumo(data.resumo));
+      setDashboardStats(adaptarResumo({
+        ...data.resumo,
+        mesasAtivas: (mesasResponse.data?.data ?? []).length,
+      }));
       setWeeklyRevenue(adaptarFaturamentoSemanal(data.faturamentoSemanal));
       setCategoryData(adaptarCategorias(data.pedidosPorCategoria));
       setBestSelling(adaptarMaisVendidos(data.maisVendidos));
