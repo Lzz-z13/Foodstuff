@@ -33,6 +33,11 @@ const sheets = {
     api.post("/auth/login", user, { timeout: 15000 }),
 
   postUser: (user) => api.post("/users", user),
+  postTable: (table) =>
+    api.post("/tables", table, { timeout: 15000 }),
+  getTables: () => api.get("/tables", { timeout: 15000 }),
+  deleteTable: (tableId) =>
+    api.delete(`/tables/${tableId}`, { timeout: 15000 }),
 
   getCurrentUser: () => api.get("/users/me"),
 

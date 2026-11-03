@@ -29,6 +29,7 @@ const ROUTES = {
   Users: "Cadastro",
   "Cardápio": "Cardapio",
   Config: "contaAdmin",
+  Mesas: "Mesas",
 };
 
 export default function Navbar({
