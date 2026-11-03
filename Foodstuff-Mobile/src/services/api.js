@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const api = axios.create({
-  baseURL: "http://10.89.240.52:5000/api/foodstuff",
+  baseURL: "http://172.20.10.8:5000/api/foodstuff",
   headers: {
     "Content-Type": "application/json",
   },
@@ -24,8 +24,11 @@ const sheets = {
     api.post("/auth/login", user, { timeout: 15000 }),
 
   postUser: (user) => api.post("/users", user),
-  postTable: (table) => api.post("/tables", table),
-  deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
+  postTable: (table) =>
+    api.post("/tables", table, { timeout: 15000 }),
+  getTables: () => api.get("/tables", { timeout: 15000 }),
+  deleteTable: (tableId) =>
+    api.delete(`/tables/${tableId}`, { timeout: 15000 }),
 
   getCurrentUser: () => api.get("/users/me"),
 
