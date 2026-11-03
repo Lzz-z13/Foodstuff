@@ -31,7 +31,14 @@ const sheets = {
     api.post("/auth/password-reset/verify", data),
   postPasswordResetConfirm: (data) =>
     api.post("/auth/password-reset/confirm", data),
+  
+  getCashierCommands: () => api.get('/commands'),
+  getCashierSummary: () => api.get('/cashier/summary'),
+  getCommandCheckout: (commandId, config) => api.get(`/commands/${commandId}/checkout`, config),
+  postCommandPayment: (commandId, data) => api.post(`/commands/${commandId}/payments`, data),
+  
   postUser: (user) => api.post("/users", user),
+  getCurrentUser: () => api.get("/users/me"),
   patchMe: (data) => api.patch("/users/me", data),
   patchMePhoto: (photo) => api.patch("/users/me/photo", { photo }),
   patchMePassword: (data) => api.patch("/users/me/password", data),
@@ -59,7 +66,6 @@ const sheets = {
     api.patch(`/categories/${categoryId}`, data),
   deleteCategory: (categoryId) => api.delete(`/categories/${categoryId}`),
 
-  // Orders - Kitchen
   patchOrderStatus: (orderId, status) =>
     api.patch(`/orders/${orderId}/status`, { status }),
 

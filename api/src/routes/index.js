@@ -16,6 +16,8 @@ const productRoutes = require("./productRoutes");
 const categoryRoutes = require("./categoryRoutes");
 const dashboardRoutes = require("./dashboardRoutes");
 const logRoutes = require("./logRoutes");
+const publicRoutes = require("./publicRoutes");
+const paymentRoutes = require("./paymentRoutes");
 
 const QrCodeController = require("../controllers/qrCodeController");
 const CommandController = require("../controllers/commandController");
@@ -39,11 +41,14 @@ router.get(
   CommandController.readCommandBySession,
 );
 
+router.use("/public", publicRoutes);
+
 // Authenticated routes
 router.use(verifyJWT);
 router.use(verifyActiveUser);
 
 router.use("/users", userRoutes);
+router.use(verifyFirstLogin);
 router.use("/tables", tableRoutes);
 router.use("/products", productRoutes);
 router.use("/categories", categoryRoutes);
@@ -52,5 +57,10 @@ router.use("/", qrCodeRoutes);
 router.use("/", commandRoutes);
 router.use("/", orderRoutes);
 router.use("/logs", logRoutes);
+
+router.use(
+  "/payments",
+  paymentRoutes
+);
 
 module.exports = router;

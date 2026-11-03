@@ -130,7 +130,11 @@ module.exports = class OrderService {
   }
 
   // Cria um pedido para uma comanda aberta.
-  static async createOrder(command_id, items, jwt_user_id) {
+  static async createOrder(command_id, items, jwt_user_id, options = {}) {
+    const origin = options.origin === "CUSTOMER" ? "CUSTOMER" : "WAITER";
+    const created_by =
+      options.createdBy !== undefined ? options.createdBy : jwt_user_id;
+
     const connection = await connect.getConnection();
     let transactionStarted = false;
 
@@ -234,8 +238,8 @@ module.exports = class OrderService {
       `;
 
       const [orderResult] = await connection.execute(insertOrderQuery, [
-        jwt_user_id,
-        "WAITER",
+        created_by,
+        origin,
         "PENDING",
         command_id,
       ]);
@@ -270,11 +274,13 @@ module.exports = class OrderService {
       // Registra a criação no log de auditoria.
       await createLog(
         connection,
-        jwt_user_id,
+        created_by,
         "CREATE",
         "orders",
         orderId,
-        "Pedido criado",
+        origin === "CUSTOMER"
+          ? "Pedido criado pelo cliente."
+          : "Pedido criado",
         null,
       );
 
@@ -303,6 +309,26 @@ module.exports = class OrderService {
     }
   }
 
+  // Cria um pedido feito pelo próprio cliente a partir do token de sessão.
+  static async createCustomerOrderBySession(session_token, items) {
+    const [commands] = await connect.execute(
+      `SELECT command_id FROM commands WHERE session_token = ? LIMIT 1`,
+      [session_token],
+    );
+
+    if (commands.length === 0) {
+      throw {
+        status: 404,
+        message: "Comanda não encontrada.",
+      };
+    }
+
+    return this.createOrder(commands[0].command_id, items, null, {
+      origin: "CUSTOMER",
+      createdBy: null,
+    });
+  }
+
   // Atualiza o status do pedido e registra a alteração.
   static async updateOrderStatus(order_id, status, jwt_user_id) {
     const normalized = normalizeStatus(status);
@@ -328,6 +354,19 @@ module.exports = class OrderService {
     try {
       await connection.beginTransaction();
       transactionStarted = true;
+
+      // Serializa alterações de consumo com o fechamento/pagamento da comanda.
+      const [orderCommands] = await connection.execute(
+        'SELECT command_id FROM orders WHERE order_id = ?',
+        [order_id],
+      );
+      const [commandRows] = orderCommands.length ? await connection.execute(
+        'SELECT command_id, status FROM commands WHERE command_id = ? FOR UPDATE',
+        [orderCommands[0].command_id],
+      ) : [[]];
+      if (normalized === 'CANCELLED' && commandRows.length && commandRows[0].status !== 'OPEN') {
+        throw { status: 409, message: 'Não é possível cancelar consumo de uma comanda fechada ou paga.' };
+      }
 
       const [orderResult] = await connection.execute(
         `SELECT

@@ -216,6 +216,7 @@ module.exports = class UserService {
         name,
         email,
         phone,
+        photo,
         role,
         first_login,
         is_active,

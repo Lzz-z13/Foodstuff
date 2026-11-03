@@ -80,6 +80,7 @@ CREATE TABLE
         customer_name VARCHAR(100) NOT NULL,
         session_token VARCHAR(255) NOT NULL,
         status ENUM ('OPEN', 'CLOSED', 'PAID', 'CANCELLED') NOT NULL DEFAULT 'OPEN',
+        service_fee_percent DECIMAL(5, 2) NOT NULL DEFAULT 10.00,
         opened_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         closed_at DATETIME NULL,
         table_id INT NOT NULL,
@@ -280,7 +281,7 @@ SET @demo_password = (SELECT password FROM users WHERE user_id = @demo_manager);
 SET @demo_now = NOW();
 
 INSERT INTO users (user_id, name, email, phone, password, role, first_login, is_active) VALUES
-(@demo_waiter, 'Garçom Demo', 'garcom@foodstuff.test', '11900009002', @demo_password, 'WAITER', 0, 1),
+(@demo_waiter, 'Garcom Demo', 'garcom@foodstuff.test', '11900009002', @demo_password, 'WAITER', 0, 1),
 (@demo_kitchen, 'Cozinha Demo', 'cozinha@foodstuff.test', '11900009003', @demo_password, 'KITCHEN', 0, 1),
 (@demo_cashier, 'Caixa Demo', 'caixa@foodstuff.test', '11900009004', @demo_password, 'CASHIER', 0, 1);
 
@@ -400,6 +401,8 @@ INSERT INTO order_items (quantity, unit_price, observation, order_id, product_id
 (1, 7.00, NULL, @demo_order_hugo, @demo_soda);
 
 -- Apenas comandas PAID têm pagamentos; a soma coincide com os itens.
+-- Os exemplos históricos pagos foram quitados sem taxa de serviço.
+UPDATE commands SET service_fee_percent = 0 WHERE status IN ('PAID', 'CANCELLED');
 -- Eva: 2 x 49 + 2 x 7 = 112, dividido em PIX e crédito.
 INSERT INTO payments (value, method, status, paid_at, command_id) VALUES
 (56.00, 'PIX', 'PAID', @demo_now - INTERVAL 60 MINUTE, @demo_eva),

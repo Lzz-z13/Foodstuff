@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Foodstuff favicon</title>
+  <desc id="desc">Talheres laranja do Foodstuff em fundo transparente, um pouco maiores e mais separados.</desc>
+
+  <g transform="translate(256 256) scale(1.08) translate(-256 -256)">
+    <!-- Garfo -->
+    <path
+      d="M145 105
+         a14 14 0 0 1 14 14
+         v82
+         h18
+         v-82
+         a14 14 0 0 1 28 0
+         v82
+         h18
+         v-82
+         a14 14 0 0 1 28 0
+         v112
+         c0 42-26 73-62 81
+         v91
+         a16 16 0 0 1-32 0
+         v-91
+         c-36-8-62-39-62-81
+         V119
+         a14 14 0 0 1 28 0
+         v82
+         h18
+         v-82
+         a14 14 0 0 1 14-14z"
+      fill="#FF4B1F"
+      transform="translate(-18 0)"
+    />
+
+    <!-- Faca -->
+    <path
+      d="M327 104
+         c-22 0-44 16-60 38
+         c-18 25-28 55-28 85
+         v68
+         c0 26 20 46 46 46
+         h20
+         v62
+         a16 16 0 0 0 32 0
+         V120
+         c0-9-4-16-10-16z
+
+         M305 157
+         v121
+         h-18
+         c-9 0-16-7-16-16
+         v-32
+         c0-18 5-36 14-50
+         c6-10 13-18 20-23z"
+      fill="#FF4B1F"
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      transform="translate(18 0)"
+    />
+  </g>
+</svg>

@@ -97,11 +97,33 @@ function Toggle({ ligado, onChange, label }) {
 
 export default function Conta() {
   const [usuario, setUsuario] = useState(() => lerUsuario());
+  const perfilAnterior = useRef(usuario);
   const [dados, setDados] = useState({
     nome: usuario.name ?? "",
     email: usuario.email ?? "",
     telefone: usuario.phone ?? "",
   });
+  useEffect(() => {
+    function atualizarPerfil() {
+      const atual = lerUsuario();
+      setUsuario(atual);
+      const anterior = perfilAnterior.current;
+      setDados(previous => {
+        return {
+          nome: previous.nome === (anterior.name ?? "") ? (atual.name ?? "") : previous.nome,
+          email: previous.email === (anterior.email ?? "") ? (atual.email ?? "") : previous.email,
+          telefone: previous.telefone === (anterior.phone ?? "") ? (atual.phone ?? "") : previous.telefone,
+        };
+      });
+      perfilAnterior.current = atual;
+    }
+    window.addEventListener("userUpdated", atualizarPerfil);
+    window.addEventListener("storage", atualizarPerfil);
+    return () => {
+      window.removeEventListener("userUpdated", atualizarPerfil);
+      window.removeEventListener("storage", atualizarPerfil);
+    };
+  }, []);
   const [senha, setSenha] = useState({ atual: "", nova: "", confirmar: "" });
   const [notificacoes, setNotificacoes] = useState({
     email: true,
@@ -208,6 +230,7 @@ export default function Conta() {
       const atualizado = { ...lerUsuario(), photo: response.data.data.photo };
       setUsuario(atualizado);
       localStorage.setItem("user", JSON.stringify(atualizado));
+      window.dispatchEvent(new Event("userUpdated"));
       setSnackbar({ message: "Foto atualizada com sucesso.", type: "success" });
     } catch (error) {
       setSnackbar({
@@ -245,6 +268,7 @@ export default function Conta() {
 
       const atualizado = { ...lerUsuario(), ...payload };
       localStorage.setItem("user", JSON.stringify(atualizado));
+      window.dispatchEvent(new Event("userUpdated"));
       setUsuario(atualizado);
       setSnackbar({
         message: "Dados atualizados com sucesso.",
@@ -294,6 +318,7 @@ export default function Conta() {
       }
       const atualizado = { ...lerUsuario(), first_login: 0 };
       localStorage.setItem("user", JSON.stringify(atualizado));
+      window.dispatchEvent(new Event("userUpdated"));
       setUsuario(atualizado);
       setSenha({ atual: "", nova: "", confirmar: "" });
       setSnackbar({
@@ -355,10 +380,11 @@ export default function Conta() {
                   onClick={() => arquivoFotoRef.current?.click()}
                 />
               ) : (
-                <span
-                  role="img"
-                  aria-label="Sem foto de perfil"
-                  className="h-[68px] w-[68px] shrink-0 rounded-full bg-gray-300"
+                <img
+                src="../public/foodstuff-icon.svg"
+                  alt="Foto de perfil"
+                  className="h-[68px] w-[68px] shrink-0 rounded-full bg-gray-300 object-cover cursor-pointer"
+                  onClick={() => arquivoFotoRef.current?.click()}
                 />
               )}
               <div>
