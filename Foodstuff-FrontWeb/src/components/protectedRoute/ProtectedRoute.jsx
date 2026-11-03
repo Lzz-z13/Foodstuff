@@ -1,7 +1,11 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { lerUsuario } from "../../services/auth";
 
 export default function ProtectedRoute() {
   const token = localStorage.getItem("token");
+  const location = useLocation();
 
-  return token ? <Outlet /> : <Navigate to="/" replace />;
+  if (!token) return <Navigate to="/" replace />;
+
+  return <Outlet />;
 }

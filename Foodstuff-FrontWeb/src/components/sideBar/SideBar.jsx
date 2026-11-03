@@ -97,7 +97,7 @@ export function SidebarUserMenu({ user }) {
         <span className="hidden min-w-0 flex-1 md:flex md:items-center md:gap-3">
           <span className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
             <img
-              src={user.photo}
+              src={user.photo || "/foodstuff-icon.svg"}
               alt={user.name || "Foto do usuário"}
               className="w-full h-full object-cover"
             />

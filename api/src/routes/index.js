@@ -44,6 +44,7 @@ router.use(verifyJWT);
 router.use(verifyActiveUser);
 
 router.use("/users", userRoutes);
+router.use(verifyFirstLogin);
 router.use("/tables", tableRoutes);
 router.use("/products", productRoutes);
 router.use("/categories", categoryRoutes);
