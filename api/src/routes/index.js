@@ -16,6 +16,7 @@ const productRoutes = require("./productRoutes");
 const categoryRoutes = require("./categoryRoutes");
 const dashboardRoutes = require("./dashboardRoutes");
 const logRoutes = require("./logRoutes");
+const publicRoutes = require("./publicRoutes");
 
 const QrCodeController = require("../controllers/qrCodeController");
 const CommandController = require("../controllers/commandController");
@@ -38,6 +39,8 @@ router.get(
   "/commands/session/:session_token",
   CommandController.readCommandBySession,
 );
+
+router.use("/public", publicRoutes);
 
 // Authenticated routes
 router.use(verifyJWT);
