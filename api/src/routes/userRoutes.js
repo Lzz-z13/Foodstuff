@@ -16,12 +16,12 @@
     UserController.updateUserPassword
   );
 
+  router.use(verifyFirstLogin);
+
   router.delete(
     "/me",
     UserController.deleteOwnUserAccount
   );
-
-  router.use(verifyFirstLogin);
 
   router.patch(
     "/me/photo",

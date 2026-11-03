@@ -380,10 +380,11 @@ export default function Conta() {
                   onClick={() => arquivoFotoRef.current?.click()}
                 />
               ) : (
-                <span
-                  role="img"
-                  aria-label="Sem foto de perfil"
-                  className="h-[68px] w-[68px] shrink-0 rounded-full bg-gray-300"
+                <img
+                src="../public/foodstuff-icon.svg"
+                  alt="Foto de perfil"
+                  className="h-[68px] w-[68px] shrink-0 rounded-full bg-gray-300 object-cover cursor-pointer"
+                  onClick={() => arquivoFotoRef.current?.click()}
                 />
               )}
               <div>
