@@ -35,15 +35,6 @@ const sheets = {
   patchUserPassword: (passwords) =>
     api.patch("/users/me/password", passwords),
 
-  requestPasswordReset: (data) =>
-    api.post("/auth/password-reset/request", data, { timeout: 15000 }),
-
-  verifyPasswordReset: (data) =>
-    api.post("/auth/password-reset/verify", data, { timeout: 15000 }),
-
-  confirmPasswordReset: (data) =>
-    api.post("/auth/password-reset/confirm", data, { timeout: 15000 }),
-
   // Compatibility with the method name used in main
   updatePassword: (data) =>
     api.patch("/users/me/password", data),
