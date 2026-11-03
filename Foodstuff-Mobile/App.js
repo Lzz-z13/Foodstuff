@@ -9,6 +9,10 @@ import Dashboard from "./src/screens/Adm/Dashboard";
 import contaAdmin from "./src/screens/Adm/contaAdmin";
 import Cardapio from "./src/screens/Adm/Cardapio";
 
+// CLIENTE
+import CardapioCliente from "./src/screens/Cliente/CardapioCliente";
+import DetalheProduto from "./src/screens/Cliente/DetalheProduto";
+
 // GARÇOM
 import PedidosAtivosGarcom from "./src/screens/Garçom/PedidosAtivosGarcom";
 import MesasGarcom from "./src/screens/Garçom/MesasGarcom";
@@ -27,7 +31,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Login"
+          initialRouteName="CardapioCliente"
           screenOptions={{ headerShown: false }}
         >
           {/* ADMIN */}
@@ -36,6 +40,11 @@ export default function App() {
           <Stack.Screen name="Dashboard" component={Dashboard} />
           <Stack.Screen name="contaAdmin" component={contaAdmin} />
           <Stack.Screen name="Cardapio" component={Cardapio} />
+
+          {/* CLIENTE */}
+          <Stack.Screen name="CardapioCliente" component={CardapioCliente} />
+          <Stack.Screen name="DetalheProduto" component={DetalheProduto} />
+
           <Stack.Screen name="EsqueciSenha" component={EsqueciSenhaGarcom} />
           <Stack.Screen name="CodigoSenha" component={CodigoSenhaGarcom} />
           <Stack.Screen name="NovaSenha" component={NovaSenhaGarcom} />
