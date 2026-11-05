@@ -1,8 +1,17 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
+const BASE_URL = "http://10.67.168.142:5000/api/foodstuff";
+
 const api = axios.create({
-  baseURL: "http://192.168.56.1:5000/api/foodstuff",
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+const publicApi = axios.create({
+  baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -24,6 +33,11 @@ const sheets = {
     api.post("/auth/login", user, { timeout: 15000 }),
 
   postUser: (user) => api.post("/users", user),
+  postTable: (table) =>
+    api.post("/tables", table, { timeout: 15000 }),
+  getTables: () => api.get("/tables", { timeout: 15000 }),
+  deleteTable: (tableId) =>
+    api.delete(`/tables/${tableId}`, { timeout: 15000 }),
 
   getCurrentUser: () => api.get("/users/me"),
 
@@ -125,6 +139,42 @@ const sheets = {
 
   createCategory: (data) =>
     api.post("/categories", data),
+
+  // Public client routes (no authentication required)
+  getPublicProducts: (params = {}) => {
+    const query = new URLSearchParams();
+
+    if (params.category_id) {
+      query.append("category_id", params.category_id);
+    }
+
+    if (params.search) {
+      query.append("search", params.search);
+    }
+
+    const queryString = query.toString();
+
+    return publicApi.get(
+      `/public/products${queryString ? `?${queryString}` : ""}`
+    );
+  },
+
+  getPublicProductById: (productId) =>
+    publicApi.get(`/public/products/${productId}`),
+
+  getPublicCategories: () => publicApi.get("/public/categories"),
+
+  getPublicCommandBySession: (sessionToken) =>
+    publicApi.get(`/public/commands/${sessionToken}`),
+
+  postPublicOrder: (sessionToken, data) =>
+    publicApi.post(`/public/commands/${sessionToken}/orders`, data),
+
+  resolveQrCodeByToken: (token) =>
+    publicApi.get(`/qr-codes/token/${token}`),
+
+  postCommandByQr: (token, data) =>
+    publicApi.post(`/qr-codes/token/${token}/commands`, data),
 
   // Tables
   getTables: () => api.get("/tables"),

@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TABS = [
-  { key: "Mesas", icon: "grid-outline", route: "Mesas" },
+  { key: "Mesas", icon: "grid-outline", route: "MesasGarcom" },
   { key: "Pedidos", icon: "receipt-outline", route: "Garcom" },
   { key: "Perfil", icon: "person-circle-outline", route: "PerfilGarcom" },
 ];

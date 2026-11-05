@@ -7,7 +7,6 @@ router.post("/", verifyRole("MANAGER"), ProductController.createProduct);
 
 router.get(
   "/",
-  verifyRole("MANAGER", "WAITER", "KITCHEN", "CASHIER"),
   ProductController.readAllProducts,
 );
 

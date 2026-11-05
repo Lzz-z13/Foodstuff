@@ -13,7 +13,7 @@ module.exports = class TableService {
         SELECT name
         FROM users
         WHERE user_id = ?
-          AND is_active = 1
+        AND is_active = 1
         LIMIT 1
       `;
 
