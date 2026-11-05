@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import api from "../services/api";
 
 const COLORS = {
   background: "#F5F6F8",
@@ -23,8 +24,8 @@ const COLORS = {
   text: "#1C1C1E",
 };
 
-export default function NovaSenhaGarcom({ navigation, route }) {
-  const { email, codigo } = route?.params || {};
+export default function NovaSenha({ navigation, route }) {
+  const { email, resetToken, otp, flow } = route?.params || {};
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,13 +33,17 @@ export default function NovaSenhaGarcom({ navigation, route }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function handleRedefinir() {
-    if (!email || !codigo) {
-      Alert.alert("Atenção", "Dados da recuperação não encontrados.");
+    // Precisa do e-mail e de ao menos uma credencial: token ou código OTP
+    if (!email || (!resetToken && !otp)) {
+      Alert.alert(
+        "Atenção",
+        "Dados da recuperação não encontrados. Solicite um novo código e tente novamente."
+      );
       return;
     }
 
-    if (senha.length < 6) {
-      Alert.alert("Atenção", "A senha deve ter pelo menos 6 caracteres.");
+    if (senha.length < 8) {
+      Alert.alert("Atenção", "A senha deve ter no mínimo 8 caracteres.");
       return;
     }
 
@@ -49,19 +54,32 @@ export default function NovaSenhaGarcom({ navigation, route }) {
 
     try {
       setLoading(true);
-      // await api.post('/garcom/redefinir-senha', { email, codigo, senha });
+
+      const payload = {
+        email,
+        new_password: senha,
+        confirm_password: confirmar,
+      };
+      if (resetToken) payload.resetToken = resetToken;
+      if (otp) payload.otp = otp;
+
+      await api.confirmPasswordReset(payload);
+
       Alert.alert("Pronto!", "Senha redefinida com sucesso.", [
         {
           text: "OK",
           onPress: () =>
             navigation?.reset?.({
               index: 0,
-              routes: [{ name: "LoginGarcom" }],
+              routes: [{ name: "Login" }],
             }),
         },
       ]);
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível redefinir a senha.");
+      Alert.alert(
+        "Erro",
+        error?.response?.data?.message || "Não foi possível redefinir a senha."
+      );
     } finally {
       setLoading(false);
     }

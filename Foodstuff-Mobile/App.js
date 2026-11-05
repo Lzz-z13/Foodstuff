@@ -21,9 +21,9 @@ import DetalhesMesaGarcom from "./src/screens/Garçom/DetalhesMesaGarcom";
 import DetalhesPedidoGarcom from "./src/screens/Garçom/DetalhesPedidoGarcom";
 import AnotarPedidoGarcom from "./src/screens/Garçom/AnotarPedidoGarcom";
 import PerfilGarcom from "./src/screens/Garçom/PerfilGarcom";
-import EsqueciSenhaGarcom from "./src/screens/Garçom/EsqueciSenhaGarcom";
-import CodigoSenhaGarcom from "./src/screens/Garçom/CodigoSenhaGarcom";
-import NovaSenhaGarcom from "./src/screens/Garçom/NovaSenhaGarcom";
+import RecuperarSenha from "./src/screens/RecuperarSenha";
+import VerificarCodigo from "./src/screens/VerificarCodigo";
+import NovaSenha from "./src/screens/NovaSenha";
 
 const Stack = createNativeStackNavigator();
 
@@ -32,7 +32,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="CardapioCliente"
+          initialRouteName="Login"
           screenOptions={{ headerShown: false }}
         >
           {/* ADMIN */}
@@ -43,14 +43,13 @@ export default function App() {
           <Stack.Screen name="Mesas" component={Mesas}/>
           
           <Stack.Screen name="Cardapio" component={Cardapio} />
+          <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
+          <Stack.Screen name="VerificarCodigo" component={VerificarCodigo} />
+          <Stack.Screen name="NovaSenha" component={NovaSenha} />
 
           {/* CLIENTE */}
           <Stack.Screen name="CardapioCliente" component={CardapioCliente} />
           <Stack.Screen name="DetalheProduto" component={DetalheProduto} />
-
-          <Stack.Screen name="EsqueciSenha" component={EsqueciSenhaGarcom} />
-          <Stack.Screen name="CodigoSenha" component={CodigoSenhaGarcom} />
-          <Stack.Screen name="NovaSenha" component={NovaSenhaGarcom} />
 
           {/* GARÇOM */}
           <Stack.Screen name="Garcom" component={PedidosAtivosGarcom} />

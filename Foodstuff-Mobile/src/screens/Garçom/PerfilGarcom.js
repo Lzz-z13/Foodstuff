@@ -9,16 +9,41 @@ import {
   Alert,
   ActivityIndicator,
   StatusBar,
+  Image,
+  DeviceEventEmitter,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
 import api from '../../services/api';
 import LogoutButton from '../../components/header/LogoutButton';
 import NavbarGarcom from '../../components/navbar/NavbarGarcom';
 
 const LARANJA = '#FF5A1F';
 const LARANJA_CLARO = '#FFB59A';
+const MAX_FOTO_BYTES = 5 * 1024 * 1024;
+const MIME_POR_EXTENSAO = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+};
+const MIMES_PERMITIDOS = new Set([
+  ...Object.values(MIME_POR_EXTENSAO),
+  'image/jpg',
+]);
+
+function obterMimeDaFoto(asset) {
+  const mimeInformado = asset.mimeType?.toLowerCase();
+  if (mimeInformado && MIMES_PERMITIDOS.has(mimeInformado)) {
+    return mimeInformado;
+  }
+
+  const extensao = asset.uri.split('.').pop()?.toLowerCase();
+  return MIME_POR_EXTENSAO[extensao] || '';
+}
 
 export default function PerfilGarcom({ navigation }) {
   const [perfil, setPerfil] = useState({
@@ -51,6 +76,7 @@ export default function PerfilGarcom({ navigation }) {
         phone: String(user.phone || ''),
         email: user.email || '',
         role: user.role || '',
+        photo: user.photo || '',
       };
       setPerfil(dados);
       setPerfilInicial(dados);
@@ -64,6 +90,115 @@ export default function PerfilGarcom({ navigation }) {
       setCarregandoPerfil(false);
     }
   }, []);
+
+  const salvarFotoNoServidor = async (photo) => {
+    setSalvando(true);
+
+    try {
+      const response = await api.patchUserPhoto(photo);
+      const fotoSalva = response.data?.data?.photo ?? photo;
+
+      const perfilAtualizado = { ...perfil, photo: fotoSalva };
+      const perfilInicialAtualizado = perfilInicial
+        ? { ...perfilInicial, photo: fotoSalva }
+        : perfilAtualizado;
+
+      setPerfil(perfilAtualizado);
+      setPerfilInicial(perfilInicialAtualizado);
+
+      try {
+        const userCache = await SecureStore.getItemAsync('user');
+        const dadosCache = userCache ? JSON.parse(userCache) : {};
+        await SecureStore.setItemAsync(
+          'user',
+          JSON.stringify({ ...dadosCache, ...perfilAtualizado }),
+        );
+      } catch {
+        // ignora falha local para não bloquear a atualização do servidor
+      }
+
+      DeviceEventEmitter.emit('userPhotoUpdated', fotoSalva || null);
+
+      Alert.alert(
+        'Sucesso',
+        fotoSalva ? 'Foto atualizada com sucesso!' : 'Foto removida com sucesso!',
+      );
+    } catch (error) {
+      Alert.alert(
+        'Erro',
+        error?.response?.data?.message || 'Não foi possível atualizar a foto.',
+      );
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const alterarFoto = async () => {
+    if (salvando) return;
+
+    try {
+      const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissao.granted) {
+        Alert.alert(
+          'Permissão necessária',
+          'Permita o acesso às suas fotos para alterar a foto de perfil.',
+        );
+        return;
+      }
+
+      const resultado = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (resultado.canceled) return;
+
+      const asset = resultado.assets?.[0];
+
+      if (!asset?.base64) {
+        Alert.alert('Erro', 'Não foi possível ler a imagem selecionada.');
+        return;
+      }
+
+      const mime = obterMimeDaFoto(asset);
+
+      if (!mime) {
+        Alert.alert(
+          'Formato não suportado',
+          'Escolha uma imagem PNG, JPEG, GIF ou WEBP.',
+        );
+        return;
+      }
+
+      const tamanhoBytes = Math.ceil((asset.base64.length * 3) / 4);
+
+      if (tamanhoBytes > MAX_FOTO_BYTES) {
+        Alert.alert('Imagem muito grande', 'Escolha uma imagem de até 5 MB.');
+        return;
+      }
+
+      await salvarFotoNoServidor(`data:${mime};base64,${asset.base64}`);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível abrir a galeria de fotos.');
+    }
+  };
+
+  const removerFoto = () => {
+    if (!perfil?.photo || salvando) return;
+
+    Alert.alert('Remover foto', 'Deseja remover sua foto de perfil?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: () => salvarFotoNoServidor(null),
+      },
+    ]);
+  };
 
   useEffect(() => {
     carregarPerfil();
@@ -242,6 +377,38 @@ export default function PerfilGarcom({ navigation }) {
           <Text style={styles.subtitulo}>
             Atualize suas informações pessoais ou altere sua senha.
           </Text>
+
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatarWrap}>
+              {perfil.photo ? (
+                <Image source={{ uri: perfil.photo }} style={styles.avatarImage} />
+              ) : (
+                <Ionicons name="person-circle-outline" size={64} color={LARANJA} />
+              )}
+            </View>
+
+            <View style={styles.avatarActions}>
+              <TouchableOpacity
+                style={styles.avatarButton}
+                onPress={alterarFoto}
+                disabled={salvando}
+              >
+                <Text style={styles.avatarButtonText}>
+                  {perfil.photo ? 'Alterar Foto' : 'Adicionar Foto'}
+                </Text>
+              </TouchableOpacity>
+
+              {perfil.photo ? (
+                <TouchableOpacity
+                  style={[styles.avatarButton, styles.avatarButtonSecondary]}
+                  onPress={removerFoto}
+                  disabled={salvando}
+                >
+                  <Text style={styles.avatarButtonTextSecondary}>Remover Foto</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
 
           <Text style={styles.secao}>Dados Pessoais</Text>
 
@@ -424,6 +591,58 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingVertical: 10,
     paddingHorizontal: 16,
+  },
+
+  avatarContainer: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 18,
+  },
+  avatarWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#FFF0EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: LARANJA_CLARO,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  avatarActions: {
+    width: '100%',
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  avatarButton: {
+    backgroundColor: LARANJA,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    minWidth: 134,
+    alignItems: 'center',
+  },
+  avatarButtonSecondary: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: LARANJA_CLARO,
+  },
+  avatarButtonText: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  avatarButtonTextSecondary: {
+    fontSize: 11,
+    color: LARANJA,
+    fontWeight: '700',
   },
 
   conteudo: { paddingHorizontal: 16, paddingBottom: 24 },
