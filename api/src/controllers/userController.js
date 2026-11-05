@@ -346,16 +346,6 @@ module.exports = class UserController {
         String(otp),
       );
 
-      if (result.flow === "first_login") {
-        return res.status(200).json({
-          error: false,
-          message:
-            "Código verificado. Uma nova senha temporária foi enviada para o seu email. Efetue login e altere a senha.",
-          flow: "first_login",
-          next: "login",
-        });
-      }
-
       return res.status(200).json({
         error: false,
         message:

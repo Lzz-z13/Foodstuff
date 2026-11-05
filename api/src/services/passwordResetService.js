@@ -250,12 +250,6 @@ module.exports = class PasswordResetService {
       throw { status: 400, message: "Código inválido ou expirado." };
     }
 
-    // A decisão do fluxo usa o first_login real do banco, nunca um
-    // indicador enviado pelo frontend.
-    if (Number(user.first_login) === 1) {
-      return await resendTemporaryPassword(user);
-    }
-
     const resetToken = passwordResetStore.issueResetToken(user.user_id);
 
     console.warn(
@@ -337,7 +331,7 @@ module.exports = class PasswordResetService {
         await connection.execute(
           `
             UPDATE users
-            SET password = ?
+            SET password = ?, first_login = 0
             WHERE user_id = ?
               AND is_active = 1
           `,

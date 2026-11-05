@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import api from "../services/api";
 
 const COLORS = {
   background: "#F5F6F8",
@@ -23,21 +24,35 @@ const COLORS = {
   text: "#1C1C1E",
 };
 
-export default function RecuperarSenhaGarcom({ navigation }) {
+export default function RecuperarSenha({ navigation }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleEnviarCodigo() {
-    if (!email.trim() || !email.includes("@")) {
+    const emailFormatado = email.trim().toLowerCase();
+
+    if (!emailFormatado || !emailFormatado.includes("@")) {
       Alert.alert("Atenção", "Informe um email válido.");
       return;
     }
 
     try {
       setLoading(true);
-      navigation?.navigate?.("VerificarCodigo", { email });
+      await api.requestPasswordReset({ email: emailFormatado });
+
+      Alert.alert(
+        "Código enviado",
+        "Se o e-mail estiver cadastrado, você receberá o código para redefinir a senha.",
+        [{
+          text: "Continuar",
+          onPress: () => navigation?.navigate?.("VerificarCodigo", { email: emailFormatado }),
+        }],
+      );
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível enviar o código.");
+      Alert.alert(
+        "Erro",
+        error?.response?.data?.message || "Não foi possível enviar o código."
+      );
     } finally {
       setLoading(false);
     }
@@ -97,7 +112,7 @@ export default function RecuperarSenhaGarcom({ navigation }) {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Lembrou a senha? </Text>
-          <TouchableOpacity onPress={() => navigation?.navigate?.("LoginGarcom")}>
+          <TouchableOpacity onPress={() => navigation?.navigate?.("Login")}>
             <Text style={styles.link}>Login</Text>
           </TouchableOpacity>
         </View>

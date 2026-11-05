@@ -170,7 +170,7 @@ export default function Login({ navigation }) {
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.forgotPassword}
-            onPress={() => navigation.navigate("EsqueciSenha")}
+            onPress={() => navigation.navigate("RecuperarSenha")}
           >
             <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
           </TouchableOpacity>
@@ -255,13 +255,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   forgotPassword: {
-    alignSelf: "flex-end",
-    marginBottom: 20,
+    alignSelf: "center",
+    marginTop: 18,
   },
   forgotPasswordText: {
     color: COLORS.orange,
+    fontWeight: "600",
     fontSize: 13,
-    fontWeight: "500",
   },
   button: {
     backgroundColor: COLORS.orange,

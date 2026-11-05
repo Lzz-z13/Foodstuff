@@ -16,6 +16,9 @@ import DetalhesMesaGarcom from "./src/screens/Garçom/DetalhesMesaGarcom";
 import DetalhesPedidoGarcom from "./src/screens/Garçom/DetalhesPedidoGarcom";
 import AnotarPedidoGarcom from "./src/screens/Garçom/AnotarPedidoGarcom";
 import PerfilGarcom from "./src/screens/Garçom/PerfilGarcom";
+import RecuperarSenha from "./src/screens/RecuperarSenha";
+import VerificarCodigo from "./src/screens/VerificarCodigo";
+import NovaSenha from "./src/screens/NovaSenha";
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +36,9 @@ export default function App() {
           <Stack.Screen name="Dashboard" component={Dashboard} />
           <Stack.Screen name="contaAdmin" component={contaAdmin} />
           <Stack.Screen name="Cardapio" component={Cardapio} />
+          <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
+          <Stack.Screen name="VerificarCodigo" component={VerificarCodigo} />
+          <Stack.Screen name="NovaSenha" component={NovaSenha} />
 
           {/* GARÇOM */}
           <Stack.Screen name="Garcom" component={PedidosAtivosGarcom} />

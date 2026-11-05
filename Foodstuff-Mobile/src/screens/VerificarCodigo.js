@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import api from "../services/api";
 
 const COLORS = {
   background: "#F5F6F8",
@@ -28,7 +29,7 @@ function formatCodigo(text) {
   return digits.replace(/(\d{2})(?=\d)/g, "$1.");
 }
 
-export default function VerificarCodigoGarcom({ navigation, route }) {
+export default function VerificarCodigo({ navigation, route }) {
   const email = route?.params?.email;
   const [codigo, setCodigo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,9 +48,33 @@ export default function VerificarCodigoGarcom({ navigation, route }) {
 
     try {
       setLoading(true);
-      navigation?.navigate?.("NovaSenhaGarcom", { email, codigo: digits });
+      const response = await api.verifyPasswordReset({ email, otp: digits });
+
+      // Aceita tanto axios response (response.data) quanto o body já extraído.
+      // Se a API confirmar o OTP, o usuário deve seguir para a tela de criar a nova senha,
+      // mesmo que o token venha em um formato alternativo ou em um payload aninhado.
+      const wrapped = response?.data ?? response ?? {};
+      const data = wrapped?.data ?? wrapped ?? {};
+      const flow = data.flow || "reset_password";
+      const resetToken =
+        data.resetToken ||
+        data.reset_token ||
+        data.token ||
+        wrapped?.resetToken ||
+        wrapped?.reset_token ||
+        wrapped?.token ||
+        null;
+      const mensagem = data.message || wrapped.message || "Código validado.";
+
+      const params = { email, resetToken, otp: digits, flow };
+      Alert.alert("Código validado", mensagem, [
+        { text: "OK", onPress: () => navigation?.navigate?.("NovaSenha", params) },
+      ]);
     } catch (error) {
-      Alert.alert("Erro", "Código inválido ou expirado.");
+      Alert.alert(
+        "Erro",
+        error?.response?.data?.message || "Código inválido ou expirado."
+      );
     } finally {
       setLoading(false);
     }

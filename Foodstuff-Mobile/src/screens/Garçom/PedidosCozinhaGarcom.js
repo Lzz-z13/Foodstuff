@@ -137,6 +137,8 @@ export default function Pedidos() {
   );
 }
 
+// estilização geral.
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

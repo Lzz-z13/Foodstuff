@@ -22,6 +22,8 @@ const FILTROS = [
   "Cancelados",
 ];
 
+// Estilização do filtro
+
 const STATUS = {
   pendente: {
     label: "PENDENTE",
@@ -49,6 +51,8 @@ const STATUS = {
     cor: "#DC2626",
   },
 };
+
+// Fim da estilização do filtro
 
 const filtroStatus = {
   Preparando: "preparando",
@@ -256,6 +260,8 @@ export default function PedidosAtivosGarcom({ navigation }) {
     </View>
   );
 }
+
+// Dessa linha para baixo é apenas estilização.
 
 const s = StyleSheet.create({
   container: {
