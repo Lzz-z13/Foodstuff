@@ -1,6 +1,11 @@
+import React from "react";
+import { ActivityIndicator, Linking, Text, TouchableOpacity, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as SecureStore from "expo-secure-store";
+import { CustomerProvider, useCustomer } from "./src/contexts/CustomerContext";
+import CarrinhoCliente from "./src/screens/Cliente/CarrinhoCliente";
 
 // ADMIN
 import Cadastro from "./src/screens/Adm/Cadastro";
@@ -25,16 +30,25 @@ import RecuperarSenha from "./src/screens/RecuperarSenha";
 import VerificarCodigo from "./src/screens/VerificarCodigo";
 import NovaSenha from "./src/screens/NovaSenha";
 
-const Stack = createNativeStackNavigator();
 
-export default function App() {
+const Stack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
+
+// O React Navigation interpreta o link e entrega o token à tela Cliente.
+const linking = {
+  prefixes: ["foodstuff://", "exp://192.168.24.12:8081/--/"],
+  config: { screens: { Cliente: "mesa/:token" } },
+  async getInitialURL() {
+    const url = await Linking.getInitialURL();
+    if (url) return url;
+    const token = await SecureStore.getItemAsync("foodstuff.customer.lastQr");
+    return token ? `foodstuff://mesa/${token}` : null;
+  },
+};
+
+function EmployeeNavigator() {
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Login"
-          screenOptions={{ headerShown: false }}
-        >
+    <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
           {/* ADMIN */}
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Cadastro" component={Cadastro} />
@@ -46,10 +60,6 @@ export default function App() {
           <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
           <Stack.Screen name="VerificarCodigo" component={VerificarCodigo} />
           <Stack.Screen name="NovaSenha" component={NovaSenha} />
-
-          {/* CLIENTE */}
-          <Stack.Screen name="CardapioCliente" component={CardapioCliente} />
-          <Stack.Screen name="DetalheProduto" component={DetalheProduto} />
 
           {/* GARÇOM */}
           <Stack.Screen name="Garcom" component={PedidosAtivosGarcom} />
@@ -67,7 +77,54 @@ export default function App() {
             component={AnotarPedidoGarcom}
           />
           <Stack.Screen name="PerfilGarcom" component={PerfilGarcom} />
-        </Stack.Navigator>
+    </Stack.Navigator>
+  );
+}
+
+function CustomerNavigator() {
+  const customer = useCustomer();
+  if (customer.loading) {
+    return <View style={{ flex: 1, justifyContent: "center" }}><ActivityIndicator size="large" color="#FF6B2C" /></View>;
+  }
+  if (customer.error) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", padding: 28, gap: 20 }}>
+        <Text style={{ fontSize: 20, fontWeight: "700" }}>Não foi possível abrir esta mesa</Text>
+        <Text>{customer.error}</Text>
+        <TouchableOpacity onPress={customer.retry}><Text>Tentar novamente</Text></TouchableOpacity>
+        <TouchableOpacity onPress={customer.openStaffLogin}><Text>Acesso de funcionários</Text></TouchableOpacity>
+      </View>
+    );
+  }
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="CardapioCliente" component={CardapioCliente} />
+      <Stack.Screen name="DetalheProduto" component={DetalheProduto} />
+      <Stack.Screen name="CarrinhoCliente" component={CarrinhoCliente} />
+    </Stack.Navigator>
+  );
+}
+
+function CustomerFlow({ route, navigation }) {
+  return (
+    <CustomerProvider
+      key={route.params?.token}
+      qrToken={route.params?.token}
+      onStaffLogin={() => navigation.reset({ index: 0, routes: [{ name: "Equipe" }] })}
+    >
+      <CustomerNavigator />
+    </CustomerProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer linking={linking} fallback={<ActivityIndicator size="large" color="#FF6B2C" />}>
+        <RootStack.Navigator initialRouteName="Equipe" screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="Equipe" component={EmployeeNavigator} />
+          <RootStack.Screen name="Cliente" component={CustomerFlow} />
+        </RootStack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
   );

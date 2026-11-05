@@ -11,9 +11,6 @@ import {
   AppState,
   FlatList,
   Image,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -28,6 +25,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 import sheets from "../../services/api";
+import { useCustomer } from "../../contexts/CustomerContext";
 
 const C = {
   primary: "#FF6B2C",
@@ -94,11 +92,9 @@ function ProdutoCard({ produto, onPress }) {
   );
 }
 
-export default function CardapioCliente({ route, navigation }) {
-  const params = route?.params ?? {};
-  const initialSessionToken =
-    params.session_token ?? params.sessionToken ?? null;
-  const qrToken = params.qr_token ?? params.token ?? null;
+export default function CardapioCliente({ navigation }) {
+  const customer = useCustomer();
+  const { table, command, cart, pending } = customer;
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -107,14 +103,6 @@ export default function CardapioCliente({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-
-  const [sessionToken, setSessionToken] = useState(initialSessionToken);
-  const [command, setCommand] = useState(null);
-  const [nameModalVisible, setNameModalVisible] = useState(
-    Boolean(qrToken && !initialSessionToken)
-  );
-  const [customerName, setCustomerName] = useState("");
-  const [openingCommand, setOpeningCommand] = useState(false);
 
   const requestIdRef = useRef(0);
   const firstFocusRef = useRef(true);
@@ -153,24 +141,13 @@ export default function CardapioCliente({ route, navigation }) {
     }
   }, []);
 
-  const carregarComanda = useCallback(async (token) => {
-    if (!token) return;
-
-    try {
-      const response = await sheets.getPublicCommandBySession(token);
-      setCommand(response.data?.data ?? null);
-    } catch (err) {
-      console.log("Erro ao carregar a comanda:", err);
-    }
-  }, []);
-
   const sincronizar = useCallback(
     () =>
       Promise.all([
         carregarCardapio({ silent: true }),
-        sessionToken ? carregarComanda(sessionToken) : Promise.resolve(),
+        customer.refresh().catch(() => {}),
       ]),
-    [carregarCardapio, carregarComanda, sessionToken]
+    [carregarCardapio, customer.refresh],
   );
 
   const atualizar = useCallback(async () => {
@@ -190,12 +167,6 @@ export default function CardapioCliente({ route, navigation }) {
       requestIdRef.current += 1;
     };
   }, [carregarCardapio]);
-
-  useEffect(() => {
-    if (sessionToken) {
-      carregarComanda(sessionToken);
-    }
-  }, [sessionToken, carregarComanda]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
@@ -218,59 +189,68 @@ export default function CardapioCliente({ route, navigation }) {
       const interval = setInterval(sincronizar, REFRESH_INTERVAL);
 
       return () => clearInterval(interval);
-    }, [sincronizar])
+    }, [sincronizar]),
   );
 
-  async function abrirComanda() {
-    const name = customerName.trim();
+  function resolverPendencia() {
+    Alert.alert(
+      "Confira primeiro com o garçom",
+      pending === "opening"
+        ? "A comanda pode ter sido aberta. Se ela existe, continue o atendimento com o garçom. Só libere uma nova tentativa se ele confirmar que a comanda não foi aberta. O carrinho será limpo."
+        : "O servidor pode ter recebido o pedido. Peça ao garçom para conferir antes de continuar. O carrinho será limpo para evitar um reenvio acidental.",
+      [
+        { text: "Voltar", style: "cancel" },
+        {
+          text:
+            pending === "opening"
+              ? "Confirmou que não abriu"
+              : "Garçom já conferiu",
+          onPress: async () => {
+            try {
+              await customer.resolvePending();
+            } catch (err) {
+              Alert.alert("Erro", err.message);
+            }
+          },
+        },
+      ],
+    );
+  }
 
-    if (!name) {
-      Alert.alert("Atenção", "Informe seu nome para abrir a comanda.");
-      return;
-    }
-
-    setOpeningCommand(true);
-
-    try {
-      const response = await sheets.postCommandByQr(qrToken, {
-        customer_name: name,
-      });
-
-      const token = response.data?.data?.session_token;
-
-      if (!token) {
-        throw new Error("Comanda não identificada.");
-      }
-
-      setSessionToken(token);
-      setNameModalVisible(false);
-    } catch (err) {
-      Alert.alert(
-        "Erro",
-        err.response?.data?.message ??
-          err.message ??
-          "Não foi possível abrir a comanda."
-      );
-    } finally {
-      setOpeningCommand(false);
-    }
+  function novaComanda() {
+    Alert.alert(
+      "Iniciar outro atendimento?",
+      "A comanda anterior será preservada no restaurante. Os itens ainda não enviados serão removidos do carrinho.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Continuar",
+          onPress: async () => {
+            try {
+              await customer.startNewCommand();
+            } catch (err) {
+              Alert.alert("Erro", err.response?.data?.message || err.message);
+            }
+          },
+        },
+      ],
+    );
   }
 
   function abrirProduto(produto) {
     navigation.navigate("DetalheProduto", {
       product: produto,
       product_id: produto.product_id,
-      sessionToken,
     });
   }
 
   const categoriasVisiveis = useMemo(() => {
     const idsComProduto = new Set(
-      products.map((produto) => produto.category_id)
+      products.map((produto) => produto.category_id),
     );
 
     return categories.filter((category) =>
-      idsComProduto.has(category.category_id)
+      idsComProduto.has(category.category_id),
     );
   }, [categories, products]);
 
@@ -278,7 +258,7 @@ export default function CardapioCliente({ route, navigation }) {
     if (
       selectedCategory !== null &&
       !categoriasVisiveis.some(
-        (category) => category.category_id === selectedCategory
+        (category) => category.category_id === selectedCategory,
       )
     ) {
       setSelectedCategory(null);
@@ -302,7 +282,7 @@ export default function CardapioCliente({ route, navigation }) {
   }, [products, selectedCategory, search]);
 
   const categoriaSelecionada = categoriasVisiveis.find(
-    (category) => category.category_id === selectedCategory
+    (category) => category.category_id === selectedCategory,
   );
 
   const comandaAberta = !command || command.status === "OPEN";
@@ -314,13 +294,18 @@ export default function CardapioCliente({ route, navigation }) {
       <View style={styles.header}>
         <View style={styles.topBar}>
           <View style={styles.topInfo}>
-            <Text style={styles.eyebrow}>
-              {command ? `Mesa ${command.table_number}` : "Foodstuff"}
-            </Text>
+            <Text style={styles.eyebrow}>{`Mesa ${table.number}`}</Text>
             <Text style={styles.pageTitle}>Cardápio</Text>
           </View>
 
           <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={customer.openStaffLogin}
+              accessibilityLabel="Acesso de funcionários"
+            >
+              <Ionicons name="log-in-outline" size={18} color={C.primary} />
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.refreshButton}
               onPress={atualizar}
@@ -390,7 +375,7 @@ export default function CardapioCliente({ route, navigation }) {
                   </Text>
                 </TouchableOpacity>
               );
-            }
+            },
           )}
         </ScrollView>
       </View>
@@ -401,6 +386,25 @@ export default function CardapioCliente({ route, navigation }) {
           <Text style={styles.closedBannerText}>
             Esta comanda não está aberta para novos pedidos.
           </Text>
+          {!pending && (
+            <TouchableOpacity onPress={novaComanda}>
+              <Text style={styles.customerBadgeText}>Nova comanda</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {pending && (
+        <View style={styles.pendingBanner}>
+          <Text style={styles.closedBannerText}>
+            {pending === "opening"
+              ? "A abertura da comanda ficou sem confirmação."
+              : "O envio do pedido ficou sem confirmação."}{" "}
+            Confira com o garçom antes de continuar.
+          </Text>
+          <TouchableOpacity onPress={resolverPendencia}>
+            <Text style={styles.customerBadgeText}>Resolver com o garçom</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -482,57 +486,40 @@ export default function CardapioCliente({ route, navigation }) {
         />
       )}
 
-      <Modal
-        visible={nameModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {}}
+      <TouchableOpacity
+        style={styles.cartFooter}
+        onPress={() => navigation.navigate("CarrinhoCliente")}
+        accessibilityLabel="Ver carrinho"
       >
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          <View style={styles.modalCard}>
-            <View style={styles.modalIcon}>
-              <Ionicons name="restaurant-outline" size={28} color={C.primary} />
-            </View>
-
-            <Text style={styles.modalTitle}>Bem-vindo!</Text>
-            <Text style={styles.modalSubtitle}>
-              Informe seu nome para abrir a comanda da mesa.
-            </Text>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Seu nome"
-              placeholderTextColor={C.gray}
-              value={customerName}
-              onChangeText={setCustomerName}
-              autoCapitalize="words"
-              returnKeyType="done"
-              onSubmitEditing={abrirComanda}
-            />
-
-            <TouchableOpacity
-              style={[styles.modalButton, openingCommand && { opacity: 0.7 }]}
-              onPress={abrirComanda}
-              disabled={openingCommand}
-              activeOpacity={0.85}
-            >
-              {openingCommand ? (
-                <ActivityIndicator color={C.card} size="small" />
-              ) : (
-                <Text style={styles.modalButtonText}>Abrir comanda</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        <Ionicons name="bag-outline" size={22} color={C.card} />
+        <Text style={styles.cartFooterText}>
+          Ver carrinho · {cart.reduce((sum, item) => sum + item.quantity, 0)}{" "}
+          itens
+        </Text>
+        <Text style={styles.cartFooterText}>
+          {formatMoeda(
+            cart.reduce(
+              (sum, item) => sum + Math.round(item.price * 100) * item.quantity,
+              0,
+            ) / 100,
+          )}
+        </Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  pendingBanner: { padding: 16, gap: 10, backgroundColor: C.primaryLight },
+  cartFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    padding: 18,
+    backgroundColor: C.primary,
+  },
+  cartFooterText: { color: C.card, fontWeight: "700", fontSize: 14 },
   safe: {
     flex: 1,
     backgroundColor: C.bg,
@@ -846,65 +833,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: C.primary,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  modalCard: {
-    width: "100%",
-    backgroundColor: C.card,
-    borderRadius: 18,
-    padding: 22,
-    alignItems: "center",
-  },
-  modalIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: C.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: C.dark,
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: C.gray,
-    textAlign: "center",
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  modalInput: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 11,
-    fontSize: 14,
-    color: C.dark,
-    backgroundColor: C.bg,
-  },
-  modalButton: {
-    width: "100%",
-    marginTop: 14,
-    backgroundColor: C.primary,
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
-  modalButtonText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: C.card,
   },
 });
