@@ -19,6 +19,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 import sheets from "../../services/api";
+import { useCustomer } from "../../contexts/CustomerContext";
 
 const C = {
   primary: "#FF6B2C",
@@ -45,7 +46,7 @@ function formatMoeda(value) {
 
 export default function DetalheProduto({ route, navigation }) {
   const params = route?.params ?? {};
-  const sessionToken = params.session_token ?? params.sessionToken ?? null;
+  const customer = useCustomer();
   const productId =
     params.product_id ?? params.productId ?? params.product?.product_id ?? null;
 
@@ -58,7 +59,6 @@ export default function DetalheProduto({ route, navigation }) {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [observation, setObservation] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const carregarProduto = useCallback(
     async ({ silent = false } = {}) => {
@@ -90,7 +90,7 @@ export default function DetalheProduto({ route, navigation }) {
         setLoading(false);
       }
     },
-    [productId]
+    [productId],
   );
 
   const atualizarProduto = useCallback(async () => {
@@ -117,67 +117,24 @@ export default function DetalheProduto({ route, navigation }) {
 
       const interval = setInterval(
         () => carregarProduto({ silent: true }),
-        REFRESH_INTERVAL
+        REFRESH_INTERVAL,
       );
 
       return () => clearInterval(interval);
-    }, [carregarProduto])
+    }, [carregarProduto]),
   );
 
   function alterarQuantidade(delta) {
     setQuantity((current) => Math.min(99, Math.max(1, current + delta)));
   }
 
-  async function adicionarPedido() {
+  function adicionarAoCarrinho() {
     if (!product) return;
-
-    if (!sessionToken) {
-      Alert.alert(
-        "Comanda não identificada",
-        "Escaneie o QR Code da mesa para abrir sua comanda."
-      );
-      return;
-    }
-
-    const observacao = observation.trim();
-
-    setSubmitting(true);
-
     try {
-      await sheets.postPublicOrder(sessionToken, {
-        items: [
-          {
-            product_id: product.product_id,
-            quantity,
-            ...(observacao ? { observation: observacao } : {}),
-          },
-        ],
-      });
-
-      Alert.alert(
-        "Pedido enviado",
-        `${quantity}x ${product.name} foi adicionado à sua comanda.`,
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      customer.addItem(product, quantity, observation);
+      navigation.goBack();
     } catch (err) {
-      const status = err.response?.status;
-
-      if (status === 400 || status === 404) {
-        atualizarProduto();
-      }
-
-      Alert.alert(
-        "Erro",
-        err.response?.data?.message ??
-          "Não foi possível adicionar o item à comanda."
-      );
-    } finally {
-      setSubmitting(false);
+      Alert.alert("Não foi possível adicionar", err.message);
     }
   }
 
@@ -356,17 +313,22 @@ export default function DetalheProduto({ route, navigation }) {
             </View>
 
             <TouchableOpacity
-              style={[styles.addButton, submitting && { opacity: 0.7 }]}
-              onPress={adicionarPedido}
-              disabled={submitting}
+              style={[
+                styles.addButton,
+                !customer.canOrder && { opacity: 0.45 },
+              ]}
+              onPress={adicionarAoCarrinho}
+              disabled={!customer.canOrder || customer.submitting}
               activeOpacity={0.85}
             >
-              {submitting ? (
+              {customer.submitting ? (
                 <ActivityIndicator color={C.card} size="small" />
               ) : (
                 <>
                   <Ionicons name="bag-add-outline" size={18} color={C.card} />
-                  <Text style={styles.addButtonText}>Adicionar</Text>
+                  <Text style={styles.addButtonText}>
+                    Adicionar ao carrinho
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -611,6 +573,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   addButtonText: {
+    flexShrink: 1,
+    textAlign: "center",
     fontSize: 15,
     fontWeight: "800",
     color: C.card,
