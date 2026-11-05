@@ -32,7 +32,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="CardapioCliente"
+          initialRouteName="Login"
           screenOptions={{ headerShown: false }}
         >
           {/* ADMIN */}
