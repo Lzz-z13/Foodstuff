@@ -55,9 +55,9 @@ export default function CommandDetails({ commandId }) {
         <button
           type="button"
           onClick={() => window.print()}
-          className="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 print:hidden"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 print:hidden cursor-pointer"
         >
-          <Printer size={14} />
+          <Printer size={14}/>
           Pré-conta
         </button>
       </div>
