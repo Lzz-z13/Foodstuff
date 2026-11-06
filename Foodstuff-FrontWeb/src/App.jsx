@@ -43,7 +43,10 @@ function App() {
           <Route element={<RoleRoute allowedRoles={["CASHIER", "MANAGER"]} />}>
             <Route element={<CashierLayout />}>
               <Route path="/caixa" element={<Caixa />} />
-              <Route path="/caixa/comandas/:commandId/pagamento" element={<Pagamento />} />
+              <Route
+                path="/caixa/comandas/:commandId/pagamento"
+                element={<Pagamento />}
+              />
             </Route>
           </Route>
           {/* COZINHA */}
@@ -52,9 +55,9 @@ function App() {
               <Route path="/cozinha" element={<Cozinha />} />
             </Route>
           </Route>
-          <Route element={<DefaultLayout />}>
-            {/* Administração */}
-            <Route element={<RoleRoute allowedRoles={["MANAGER"]} />}>
+          {/* Administração */}
+          <Route element={<RoleRoute allowedRoles={["MANAGER"]} />}>
+            <Route element={<DefaultLayout />}>
               <Route path="/home" element={<Home />} />
               <Route path="/mesas" element={<Mesas />} />
               <Route path="/equipe" element={<Equipe />} />
@@ -62,11 +65,14 @@ function App() {
               <Route path="/cardapio" element={<Cardapio />} />
               <Route path="/cadastro" element={<CadastroFuncionario />} />
             </Route>
-
           </Route>
 
           {/* Uma única rota de conta, com a sidebar do cargo conectado. */}
-          <Route element={<RoleRoute allowedRoles={["MANAGER", "KITCHEN", "CASHIER"]} />}>
+          <Route
+            element={
+              <RoleRoute allowedRoles={["MANAGER", "KITCHEN", "CASHIER"]} />
+            }
+          >
             <Route element={<AccountLayout />}>
               <Route path="/minha-conta" element={<MinhaConta />} />
             </Route>

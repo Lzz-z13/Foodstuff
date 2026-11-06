@@ -179,7 +179,7 @@ export default function PaymentForm({
           className="rounded-lg bg-red-50 p-3 text-xs text-red-700"
         >
           <p>{error}</p>
-          <button type="button" onClick={onRefresh} className="mt-2 underline">
+          <button type="button" onClick={onRefresh} className="mt-2 underline cursor-pointer">
             Atualizar comanda
           </button>
         </div>
