@@ -15,15 +15,22 @@ async function main() {
     return;
   }
 
-  const response = await fetch(`http://192.168.24.12:5000/api/foodstuff/qr-codes/token/${encodeURIComponent(token)}`, {
-    signal: AbortSignal.timeout(10000),
-  });
+  const response = await fetch(
+    `http://192.168.24.12:5000/api/foodstuff/qr-codes/token/${encodeURIComponent(token)}`,
+    {
+      signal: AbortSignal.timeout(10000),
+    },
+  );
   const result = await response.json();
-  if (!response.ok) throw new Error(result.message || "QR Code não encontrado.");
+  if (!response.ok)
+    throw new Error(result.message || "QR Code não encontrado.");
 
-  const prefix = mode === "app" ? "foodstuff://" : "exp://192.168.24.12:8081/--/";
+  const prefix =
+    mode === "app" ? "foodstuff://" : "exp://192.168.24.12:8081/--/";
   const url = `${prefix}mesa/${encodeURIComponent(token)}`;
-  console.log(`\nMesa ${result.data.number} — ${mode === "app" ? "Foodstuff instalado" : "Expo Go"}`);
+  console.log(
+    `\nMesa ${result.data.number} — ${mode === "app" ? "Foodstuff instalado" : "Expo Go"}`,
+  );
   console.log(url);
   printQRCode(url).print();
 }
