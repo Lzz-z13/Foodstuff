@@ -19,6 +19,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Header from "../components/header/Header"; // Ajuste o caminho se necessário
 import Navbar from "../components/navbar/Navbar"; // Ajuste o caminho se necessário
+import NotificacaoMesa from "../components/notificacaoMesa/NotificacaoMesa";
+import useNotificacaoComandas from "../hooks/useNotificacaoComandas";
 import api from "../services/api";
 
 const COLORS = {
@@ -124,6 +126,8 @@ export default function Mesas({ navigation }) {
   const [deletandoId, setDeletandoId] = useState(null);
 
   const scrollViewRef = useRef(null);
+
+  const { notificacao, fecharNotificacao } = useNotificacaoComandas(mesas);
 
   // Evita duas sincronizações rodando ao mesmo tempo (foco + primeiro plano).
   const sincronizandoRef = useRef(false);
@@ -437,6 +441,11 @@ export default function Mesas({ navigation }) {
 
       {/* HEADER - igual ao Dashboard */}
       <Header navigation={navigation} />
+
+      <NotificacaoMesa
+        notificacao={notificacao}
+        onClose={fecharNotificacao}
+      />
 
       <ScrollView
         ref={scrollViewRef}
