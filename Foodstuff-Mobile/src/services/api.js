@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
 
-const BASE_URL = "http://[IP]:5000/api/foodstuff";
+const BASE_URL = "http://192.168.1.13:5000/api/foodstuff";
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -60,6 +60,8 @@ const sheets = {
   updatePassword: (data) => api.patch("/users/me/password", data),
 
   // Orders
+  getAllOrders: () => api.get("/orders"),
+
   getPedidos: () => api.get("/pedidos"),
 
   getPedido: (id) => api.get(`/pedidos/${id}`),
