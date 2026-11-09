@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api/foodstuff",
+  baseURL: "https://foodstuff-production.up.railway.app/api/foodstuff",
   headers: {
     accept: "application/json",
   },

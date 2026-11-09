@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
 
-const BASE_URL = "http://[IP]:5000/api/foodstuff";
+const BASE_URL = "https://foodstuff-production.up.railway.app/api/foodstuff";
 
 const api = axios.create({
   baseURL: BASE_URL,
