@@ -8,6 +8,8 @@ import {
 } from "react-native";
 import LogoutButton from "../../components/header/LogoutButton";
 import NavbarGarcom from "../../components/navbar/NavbarGarcom";
+import NotificacaoMesa from "../../components/notificacaoMesa/NotificacaoMesa";
+import useNotificacaoComandas from "../../hooks/useNotificacaoComandas";
 import api from "../../services/api";
 
 export default function MesasGarcom({ navigation }) {
@@ -15,6 +17,8 @@ export default function MesasGarcom({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+
+  const { notificacao, fecharNotificacao } = useNotificacaoComandas(mesas);
 
   const loadMesas = async () => {
     try {
@@ -97,6 +101,11 @@ export default function MesasGarcom({ navigation }) {
           <LogoutButton navigation={navigation} />
         </View>
       </View>
+
+      <NotificacaoMesa
+        notificacao={notificacao}
+        onClose={fecharNotificacao}
+      />
 
       {loading ? (
         <View style={styles.centered}>
