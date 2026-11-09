@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   AppState,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -98,6 +99,15 @@ function formatarHora(valor) {
   });
 }
 
+function formatarData(valor) {
+  const data = lerData(valor);
+  if (!data) return "—";
+  return data.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
 function tempoDecorrido(valor) {
   const data = lerData(valor);
   if (!data) return "—";
@@ -145,14 +155,18 @@ function normalizarPedido(pedido) {
 }
 
 // ─── Card de pedido ─────────────────────────────────────────────────────────
-function OrderCard({ pedido }) {
+function OrderCard({ pedido, onPress }) {
   const status = STATUS[pedido.status] ?? STATUS.PENDING;
   const hora = formatarHora(pedido.created_at);
   const itensVisiveis = pedido.items.slice(0, 4);
   const itensRestantes = pedido.items.length - itensVisiveis.length;
 
   return (
-    <View style={styles.orderCard}>
+    <TouchableOpacity
+      style={styles.orderCard}
+      activeOpacity={0.75}
+      onPress={() => onPress(pedido)}
+    >
       <View style={styles.orderIconWrap}>
         <Ionicons name="receipt-outline" size={22} color={C.primary} />
       </View>
@@ -219,16 +233,191 @@ function OrderCard({ pedido }) {
 
         <View style={styles.orderBottom}>
           <Text style={styles.orderTotal}>{formatMoeda(pedido.total)}</Text>
-          <Text style={styles.orderOrigin}>
-            {pedido.origin === "CUSTOMER"
-              ? "Cliente"
-              : pedido.origin === "WAITER"
-                ? "Garçom"
-                : ""}
-          </Text>
+          <View style={styles.orderOriginWrap}>
+            <Text style={styles.orderOrigin}>
+              {pedido.origin === "CUSTOMER"
+                ? "Cliente"
+                : pedido.origin === "WAITER"
+                  ? "Garçom"
+                  : ""}
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={C.gray} />
+          </View>
         </View>
       </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Modal de detalhes do pedido ────────────────────────────────────────────
+function InfoCell({ label, value }) {
+  return (
+    <View style={styles.infoCell}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={2}>
+        {value}
+      </Text>
     </View>
+  );
+}
+
+function OrderDetailsModal({ visible, pedido, loading, onClose }) {
+  const status = STATUS[pedido?.status] ?? STATUS.PENDING;
+  const origem =
+    pedido?.origin === "CUSTOMER"
+      ? "Cliente"
+      : pedido?.origin === "WAITER"
+        ? "Garçom"
+        : "Não informada";
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+
+          <View style={styles.modalHeader}>
+            <View style={styles.modalHeaderText}>
+              <Text style={styles.modalTitle}>
+                Pedido #{pedido?.order_id ?? "—"}
+              </Text>
+              <Text style={styles.modalSubtitle} numberOfLines={1}>
+                Mesa {pedido?.table_number ?? "—"}
+                {pedido?.customer_name ? ` • ${pedido.customer_name}` : ""}
+              </Text>
+            </View>
+
+            <View style={[styles.badge, { backgroundColor: status.bg }]}>
+              <Text style={[styles.badgeText, { color: status.color }]}>
+                {status.label}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color={C.dark} />
+            </TouchableOpacity>
+          </View>
+
+          {loading && !pedido ? (
+            <View style={styles.modalLoading}>
+              <ActivityIndicator size="large" color={C.primary} />
+              <Text style={styles.centerText}>Carregando detalhes…</Text>
+            </View>
+          ) : (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalContent}
+            >
+              <View style={styles.infoGrid}>
+                <InfoCell
+                  label="Comanda"
+                  value={
+                    pedido?.command_id ? `#${pedido.command_id}` : "Não informada"
+                  }
+                />
+                <InfoCell label="Origem" value={origem} />
+                <InfoCell
+                  label="Criado em"
+                  value={`${formatarData(pedido?.created_at)} às ${formatarHora(pedido?.created_at)}`}
+                />
+                <InfoCell
+                  label="Tempo"
+                  value={tempoDecorrido(pedido?.created_at)}
+                />
+              </View>
+
+              {pedido?.status === "CANCELLED" && (
+                <View style={styles.cancelBox}>
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={16}
+                    color={C.red}
+                  />
+                  <Text style={styles.cancelText}>
+                    Pedido cancelado
+                    {pedido?.cancelled_at
+                      ? ` em ${formatarData(pedido.cancelled_at)} às ${formatarHora(pedido.cancelled_at)}`
+                      : ""}
+                    .
+                  </Text>
+                </View>
+              )}
+
+              {pedido?.observations ? (
+                <View style={styles.modalObsBox}>
+                  <Text style={styles.sectionTitle}>Observações</Text>
+                  <Text style={styles.modalObsText}>{pedido.observations}</Text>
+                </View>
+              ) : null}
+
+              <View>
+                <Text style={styles.sectionTitle}>
+                  Itens do pedido ({pedido?.items?.length ?? 0})
+                </Text>
+
+                <View style={styles.modalItems}>
+                  {pedido?.items?.length ? (
+                    pedido.items.map((item, index) => (
+                      <View key={index} style={styles.modalItem}>
+                        <View style={styles.modalItemQty}>
+                          <Text style={styles.modalItemQtyText}>
+                            {item.quantity}x
+                          </Text>
+                        </View>
+
+                        <View style={styles.modalItemInfo}>
+                          <Text style={styles.modalItemName}>
+                            {item.product_name}
+                          </Text>
+                          <Text style={styles.modalItemUnit}>
+                            {formatMoeda(item.unit_price)} / un.
+                          </Text>
+                          {item.observation ? (
+                            <Text style={styles.modalItemObs}>
+                              {item.observation}
+                            </Text>
+                          ) : null}
+                        </View>
+
+                        <Text style={styles.modalItemTotal}>
+                          {formatMoeda(item.quantity * item.unit_price)}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.itemEmpty}>
+                      Nenhum item informado.
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.modalTotalRow}>
+                <Text style={styles.modalTotalLabel}>Total do pedido</Text>
+                <Text style={styles.modalTotalValue}>
+                  {formatMoeda(pedido?.total)}
+                </Text>
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -241,6 +430,9 @@ export default function Pedidos({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
+  const [selecionadoId, setSelecionadoId] = useState(null);
+  const [detalhe, setDetalhe] = useState(null);
+  const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
 
   const emAndamentoRef = useRef(false);
   const ativoRef = useRef(true);
@@ -307,6 +499,47 @@ export default function Pedidos({ navigation }) {
     return () => subscription.remove();
   }, [carregar]);
 
+  React.useEffect(() => {
+    if (!selecionadoId) {
+      setDetalhe(null);
+      setCarregandoDetalhe(false);
+      return;
+    }
+
+    let ativo = true;
+    setDetalhe(null);
+    setCarregandoDetalhe(true);
+
+    sheets
+      .getPedido(selecionadoId)
+      .then((response) => {
+        const data = response.data?.data ?? response.data;
+        if (ativo && data) setDetalhe(normalizarPedido(data));
+      })
+      .catch((err) => {
+        console.log(
+          "Erro ao carregar detalhes do pedido:",
+          err?.response?.data ?? err,
+        );
+      })
+      .finally(() => {
+        if (ativo) setCarregandoDetalhe(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [selecionadoId]);
+
+  function abrirDetalhes(pedido) {
+    setSelecionadoId(String(pedido.order_id));
+  }
+
+  function fecharDetalhes() {
+    setSelecionadoId(null);
+    setDetalhe(null);
+  }
+
   function atualizar() {
     setRefreshing(true);
     carregar(true);
@@ -336,6 +569,19 @@ export default function Pedidos({ navigation }) {
       return texto.includes(termo);
     });
   }, [pedidos, filtro, search]);
+
+  const pedidoSelecionado = useMemo(() => {
+    const base =
+      pedidos.find(
+        (pedido) => String(pedido.order_id) === String(selecionadoId),
+      ) ?? null;
+
+    if (detalhe && String(detalhe.order_id) === String(selecionadoId)) {
+      return { ...base, ...detalhe };
+    }
+
+    return base;
+  }, [pedidos, detalhe, selecionadoId]);
 
   function contar(statuses) {
     if (!statuses) return pedidos.length;
@@ -415,6 +661,7 @@ export default function Pedidos({ navigation }) {
               activeOpacity={0.7}
             >
               <Text
+                numberOfLines={1}
                 style={[
                   styles.filterChipText,
                   active && styles.filterChipTextActive,
@@ -466,7 +713,9 @@ export default function Pedidos({ navigation }) {
         <FlatList
           data={filtrados}
           keyExtractor={(item) => String(item.order_id)}
-          renderItem={({ item }) => <OrderCard pedido={item} />}
+          renderItem={({ item }) => (
+            <OrderCard pedido={item} onPress={abrirDetalhes} />
+          )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -479,6 +728,13 @@ export default function Pedidos({ navigation }) {
           }
         />
       )}
+
+      <OrderDetailsModal
+        visible={Boolean(selecionadoId)}
+        pedido={pedidoSelecionado}
+        loading={carregandoDetalhe}
+        onClose={fecharDetalhes}
+      />
 
       <Navbar navigation={navigation} activeTab="Pedidos" />
     </SafeAreaView>
@@ -567,14 +823,20 @@ const styles = StyleSheet.create({
 
   // Filtros
   filterScroll: {
-    maxHeight: 44,
+    flexGrow: 0,
+    flexShrink: 0,
+    marginBottom: 2,
   },
   filterContent: {
     paddingHorizontal: 16,
+    paddingVertical: 6,
     gap: 8,
     alignItems: "center",
   },
   filterChip: {
+    flexShrink: 0,
+    justifyContent: "center",
+    minHeight: 32,
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
@@ -587,6 +849,7 @@ const styles = StyleSheet.create({
     borderColor: C.primary,
   },
   filterChipText: {
+    flexShrink: 0,
     fontSize: 12,
     color: C.gray,
     fontWeight: "600",
@@ -740,10 +1003,215 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: C.dark,
   },
+  orderOriginWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
   orderOrigin: {
     fontSize: 10,
     fontWeight: "700",
     color: C.gray,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  modalSheet: {
+    backgroundColor: C.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 20,
+    maxHeight: "88%",
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: C.border,
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 14,
+  },
+  modalHeaderText: {
+    flex: 1,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: C.dark,
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: C.gray,
+    marginTop: 2,
+  },
+  modalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.bg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalLoading: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 60,
+  },
+  modalContent: {
+    paddingBottom: 8,
+  },
+  infoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    backgroundColor: C.bg,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: 12,
+  },
+  infoCell: {
+    width: "50%",
+    paddingVertical: 7,
+    paddingRight: 8,
+  },
+  infoLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: C.gray,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  infoValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: C.dark,
+    marginTop: 2,
+  },
+  cancelBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: C.redBg,
+    marginBottom: 12,
+  },
+  cancelText: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: "600",
+    color: C.red,
+  },
+  modalObsBox: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: C.yellowBg,
+    marginBottom: 14,
+  },
+  modalObsText: {
+    fontSize: 12,
+    color: C.yellow,
+    marginTop: 3,
+  },
+  sectionTitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: C.gray,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 6,
+  },
+  modalItems: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  modalItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+  },
+  modalItemQty: {
+    minWidth: 30,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: C.primaryLight,
+    alignItems: "center",
+  },
+  modalItemQtyText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: C.primary,
+  },
+  modalItemInfo: {
+    flex: 1,
+  },
+  modalItemName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: C.dark,
+  },
+  modalItemUnit: {
+    fontSize: 10,
+    color: C.gray,
+    marginTop: 1,
+  },
+  modalItemObs: {
+    fontSize: 10,
+    color: C.yellow,
+    backgroundColor: C.yellowBg,
+    borderRadius: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  modalItemTotal: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: C.dark,
+    paddingTop: 2,
+  },
+  modalTotalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+  },
+  modalTotalLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: C.dark,
+  },
+  modalTotalValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: C.primary,
   },
 
   // Estados vazios / loading
