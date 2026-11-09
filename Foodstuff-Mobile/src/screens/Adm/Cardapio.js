@@ -262,7 +262,10 @@ function ProductModal({ visible, product, categories, onClose, onSaved }) {
                     onPress={() => set("category_id", cat.category_id)}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.catChipText, active && styles.catChipTextActive]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.catChipText, active && styles.catChipTextActive]}
+                    >
                       {cat.name}
                     </Text>
                   </TouchableOpacity>
@@ -501,6 +504,7 @@ export default function Cardapio({ navigation }) {
               activeOpacity={0.7}
             >
               <Text
+                numberOfLines={1}
                 style={[
                   styles.filterChipText,
                   active && styles.filterChipTextActive,
@@ -637,14 +641,20 @@ const styles = StyleSheet.create({
 
   // Filtros
   filterScroll: {
-    maxHeight: 44,
+    flexGrow: 0,
+    flexShrink: 0,
+    marginBottom: 2,
   },
   filterContent: {
     paddingHorizontal: 16,
+    paddingVertical: 6,
     gap: 8,
     alignItems: "center",
   },
   filterChip: {
+    flexShrink: 0,
+    justifyContent: "center",
+    minHeight: 32,
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
@@ -657,6 +667,7 @@ const styles = StyleSheet.create({
     borderColor: C.primary,
   },
   filterChipText: {
+    flexShrink: 0,
     fontSize: 12,
     color: C.gray,
     fontWeight: "600",
@@ -847,9 +858,13 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
   },
   categoryScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
     marginBottom: 12,
   },
   catChip: {
+    flexShrink: 0,
+    justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
@@ -863,6 +878,7 @@ const styles = StyleSheet.create({
     borderColor: C.primary,
   },
   catChipText: {
+    flexShrink: 0,
     fontSize: 12,
     color: C.gray,
     fontWeight: "600",
