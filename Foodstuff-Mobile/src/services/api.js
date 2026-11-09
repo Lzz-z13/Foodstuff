@@ -60,6 +60,8 @@ const sheets = {
   updatePassword: (data) => api.patch("/users/me/password", data),
 
   // Orders
+  getAllOrders: () => api.get("/orders"),
+
   getPedidos: () => api.get("/pedidos"),
 
   getPedido: (id) => api.get(`/pedidos/${id}`),

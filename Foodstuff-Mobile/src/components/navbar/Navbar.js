@@ -26,6 +26,7 @@ const TABS = [
 
 const ROUTES = {
   Dashboard: "Dashboard",
+  Pedidos: "PedidosAdmin",
   Users: "Cadastro",
   "Cardápio": "Cardapio",
   Config: "contaAdmin",

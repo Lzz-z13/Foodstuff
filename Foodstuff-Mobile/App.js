@@ -14,6 +14,7 @@ import Mesas from "./src/screens/Mesas";
 import Dashboard from "./src/screens/Adm/Dashboard";
 import contaAdmin from "./src/screens/Adm/contaAdmin";
 import Cardapio from "./src/screens/Adm/Cardapio";
+import PedidosAdmin from "./src/screens/Adm/Pedidos";
 
 // CLIENTE
 import CardapioCliente from "./src/screens/Cliente/CardapioCliente";
@@ -57,6 +58,7 @@ function EmployeeNavigator() {
           <Stack.Screen name="Mesas" component={Mesas}/>
           
           <Stack.Screen name="Cardapio" component={Cardapio} />
+          <Stack.Screen name="PedidosAdmin" component={PedidosAdmin} />
           <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
           <Stack.Screen name="VerificarCodigo" component={VerificarCodigo} />
           <Stack.Screen name="NovaSenha" component={NovaSenha} />
