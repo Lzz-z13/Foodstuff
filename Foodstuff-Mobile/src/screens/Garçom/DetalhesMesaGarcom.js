@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,28 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../services/api";
+
+const STATUS_COMANDA = {
+  OPEN: "Aberta",
+  CLOSED: "Fechada",
+  PAID: "Paga",
+  CANCELLED: "Cancelada",
+};
+
+const hora = (data) => {
+  if (!data) return "—";
+
+  const momento = new Date(data);
+
+  if (Number.isNaN(momento.getTime())) return "—";
+
+  return `${String(momento.getHours()).padStart(2, "0")}:${String(
+    momento.getMinutes(),
+  ).padStart(2, "0")}`;
+};
 
 export default function DetalhesMesaGarcom({ route, navigation }) {
   const mesa = route?.params?.table ?? null;
@@ -16,32 +36,35 @@ export default function DetalhesMesaGarcom({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const carregarDetalhes = async () => {
-      if (!mesa?.table_id) {
-        setError("Mesa não informada.");
-        setLoading(false);
-        return;
-      }
+  const carregarDetalhes = useCallback(async () => {
+    if (!mesa?.table_id) {
+      setError("Mesa não informada.");
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError("");
+    try {
+      setLoading(true);
+      setError("");
 
-        const response = await api.getTableCommands(mesa.table_id);
-        const data = response?.data?.data || [];
+      const response = await api.getTableCommands(mesa.table_id);
+      const data = response?.data?.data || [];
 
-        setComandas(data);
-      } catch (err) {
-        console.error("Erro ao buscar detalhes da mesa:", err);
-        setError("Não foi possível carregar os detalhes desta mesa.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    carregarDetalhes();
+      setComandas(data);
+    } catch (err) {
+      console.error("Erro ao buscar detalhes da mesa:", err);
+      setError("Não foi possível carregar os detalhes desta mesa.");
+    } finally {
+      setLoading(false);
+    }
   }, [mesa?.table_id]);
+
+  // Recarrega ao voltar de "Anotar pedido" para refletir a comanda aberta.
+  useFocusEffect(
+    useCallback(() => {
+      carregarDetalhes();
+    }, [carregarDetalhes]),
+  );
 
   if (!mesa) {
     return (
@@ -58,9 +81,32 @@ export default function DetalhesMesaGarcom({ route, navigation }) {
     );
   }
 
-  const status = comandas.some((command) => command.status === "OPEN")
-    ? "Ocupada"
-    : "Livre";
+  const comandasAbertas = comandas.filter(
+    (command) => command.status === "OPEN",
+  );
+
+  const status = comandasAbertas.length > 0 ? "Ocupada" : "Livre";
+
+  function anotarPedidoNaMesa() {
+    // Mesa ocupada: anota na comanda aberta. Mesa livre: o nome do cliente
+    // é pedido ao final e a comanda é aberta na hora.
+    if (comandasAbertas.length > 0) {
+      navigation.navigate("AnotarPedido", {
+        commandId: comandasAbertas[0].command_id,
+        mesa,
+      });
+      return;
+    }
+
+    navigation.navigate("AnotarPedido", { mesa, novaComanda: true });
+  }
+
+  function anotarPedidoNaComanda(command) {
+    navigation.navigate("AnotarPedido", {
+      commandId: command.command_id,
+      mesa,
+    });
+  }
 
   return (
     <View style={styles.container}>
@@ -72,12 +118,14 @@ export default function DetalhesMesaGarcom({ route, navigation }) {
           <Text style={styles.value}>Mesa {mesa.number}</Text>
 
           <Text style={styles.label}>Status</Text>
-          <Text style={[styles.status, status === "Livre" ? styles.statusLivre : styles.statusOcupada]}>
+          <Text
+            style={[
+              styles.status,
+              status === "Livre" ? styles.statusLivre : styles.statusOcupada,
+            ]}
+          >
             {status}
           </Text>
-
-          <Text style={styles.label}>ID da mesa</Text>
-          <Text style={styles.value}>{mesa.table_id}</Text>
         </View>
 
         <Text style={styles.subtitle}>Comandas da mesa</Text>
@@ -93,14 +141,49 @@ export default function DetalhesMesaGarcom({ route, navigation }) {
           </View>
         ) : comandas.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Nenhuma comanda registrada nesta mesa.</Text>
+            <Text style={styles.emptyText}>
+              Nenhuma comanda registrada nesta mesa.
+            </Text>
           </View>
         ) : (
           comandas.map((command) => (
             <View key={command.command_id} style={styles.commandCard}>
-              <Text style={styles.commandTitle}>Comanda #{command.command_id}</Text>
-              <Text style={styles.commandMeta}>Cliente: {command.customer_name || "Não informado"}</Text>
-              <Text style={styles.commandMeta}>Status: {command.status}</Text>
+              <Text style={styles.commandTitle}>
+                Comanda #{command.command_id}
+              </Text>
+              <Text style={styles.commandMeta}>
+                Cliente: {command.customer_name || "Não informado"}
+              </Text>
+              <Text style={styles.commandMeta}>
+                Aberta às: {hora(command.opened_at)}
+              </Text>
+              <Text
+                style={[
+                  styles.commandStatus,
+                  command.status === "OPEN"
+                    ? styles.commandStatusAberta
+                    : styles.commandStatusEncerrada,
+                ]}
+              >
+                {STATUS_COMANDA[command.status] ?? command.status}
+              </Text>
+
+              {command.status === "OPEN" && (
+                <TouchableOpacity
+                  style={styles.anotarComandaButton}
+                  onPress={() => anotarPedidoNaComanda(command)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={16}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.anotarComandaButtonText}>
+                    Anotar pedido nesta comanda
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))
         )}
@@ -108,12 +191,21 @@ export default function DetalhesMesaGarcom({ route, navigation }) {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.primaryButton}
+          style={styles.secondaryButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.8}
         >
-          <Ionicons name="arrow-back-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>Voltar</Text>
+          <Ionicons name="arrow-back-outline" size={18} color="#111827" />
+          <Text style={styles.secondaryButtonText}>Voltar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={anotarPedidoNaMesa}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.primaryButtonText}>Anotar pedido nesta mesa</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -199,6 +291,38 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     marginBottom: 4,
   },
+  commandStatus: {
+    fontSize: 12,
+    fontWeight: "800",
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginTop: 6,
+  },
+  commandStatusAberta: {
+    backgroundColor: "#DCFCE7",
+    color: "#166534",
+  },
+  commandStatusEncerrada: {
+    backgroundColor: "#E5E7EB",
+    color: "#4B5563",
+  },
+  anotarComandaButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EA5B25",
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 10,
+    gap: 6,
+  },
+  anotarComandaButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 13,
+  },
   emptyCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -217,12 +341,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     paddingHorizontal: 20,
     paddingBottom: 24,
     paddingTop: 8,
     backgroundColor: "#F8F9FF",
   },
   primaryButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -233,6 +361,23 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  secondaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    gap: 6,
+  },
+  secondaryButtonText: {
+    color: "#111827",
     fontWeight: "700",
     fontSize: 14,
   },

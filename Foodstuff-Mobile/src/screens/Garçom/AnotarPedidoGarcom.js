@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -7,19 +13,29 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import LogoutButton from '../../components/header/LogoutButton';
-import sheets from '../../services/api';
+  Modal,
+  TextInput,
+} from "react-native";
+import LogoutButton from "../../components/header/LogoutButton";
+import sheets from "../../services/api";
 
 const brl = (valor) =>
-  `R$ ${Number(valor || 0).toFixed(2).replace('.', ',')}`;
+  `R$ ${Number(valor || 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
 
 export default function AnotarPedidoGarcom({ route, navigation }) {
   const pedidoId =
-    route?.params?.pedidoId ?? route?.params?.id ?? route?.params?.pedido?.id ?? '—';
+    route?.params?.pedidoId ??
+    route?.params?.id ??
+    route?.params?.pedido?.id ??
+    "—";
   const pedidoParams = route?.params?.pedido ?? null;
+  const mesa = route?.params?.mesa ?? null;
+  const abrirNovaComanda = Boolean(route?.params?.novaComanda);
 
   // O novo pedido é criado dentro da comanda à qual o pedido atual pertence.
+  // No fluxo de mesa livre a comanda ainda não existe: é aberta ao confirmar.
   const commandIdRef = useRef(
     route?.params?.commandId ?? pedidoParams?.command_id ?? null,
   );
@@ -28,13 +44,17 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [itensSelecionados, setItensSelecionados] = useState([]);
+  const [modalNomeVisivel, setModalNomeVisivel] = useState(false);
+  const [nomeCliente, setNomeCliente] = useState("");
+  const [criandoComanda, setCriandoComanda] = useState(false);
 
   const carregarDados = useCallback(async () => {
     try {
       setCarregando(true);
 
       // Busca a comanda do pedido caso ela não tenha vindo na navegação.
-      if (!commandIdRef.current && pedidoId !== '—') {
+      // (No fluxo de nova comanda não há o que buscar: ela é criada depois.)
+      if (!commandIdRef.current && !abrirNovaComanda && pedidoId !== "—") {
         try {
           const respostaPedido = await sheets.getPedido(pedidoId);
           const pedidoCarregado =
@@ -42,7 +62,7 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
           commandIdRef.current = pedidoCarregado?.command_id ?? null;
           setCommandId(commandIdRef.current);
         } catch (erroPedido) {
-          console.log('Erro ao carregar pedido:', erroPedido);
+          console.log("Erro ao carregar pedido:", erroPedido);
         }
       }
 
@@ -50,12 +70,12 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
       const lista = respostaProdutos?.data?.data;
       setProdutos(Array.isArray(lista) ? lista : []);
     } catch (error) {
-      console.log('Erro ao carregar produtos:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os produtos.');
+      console.log("Erro ao carregar produtos:", error);
+      Alert.alert("Erro", "Não foi possível carregar os produtos.");
     } finally {
       setCarregando(false);
     }
-  }, [pedidoId]);
+  }, [pedidoId, abrirNovaComanda]);
 
   useEffect(() => {
     carregarDados();
@@ -100,21 +120,29 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
     );
   };
 
-  const confirmarItens = async () => {
-    if (!itensSelecionados.length) {
-      Alert.alert('Atenção', 'Selecione pelo menos um item antes de confirmar.');
+  const finalizarNavegacao = (novoPedidoId) => {
+    // Veio de um pedido existente: volta para os detalhes da comanda.
+    if (pedidoId !== "—") {
+      Alert.alert("Sucesso", "Pedido adicionado à comanda com sucesso.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
       return;
     }
 
-    if (!commandIdRef.current) {
-      Alert.alert('Erro', 'Não foi possível identificar a comanda deste pedido.');
+    // Veio da mesa: abre os detalhes da comanda com o pedido recém-criado.
+    if (novoPedidoId) {
+      navigation.replace("DetalhesPedido", { id: novoPedidoId });
       return;
     }
 
+    navigation.goBack();
+  };
+
+  const enviarPedido = async () => {
     try {
       setEnviando(true);
 
-      await sheets.postCommandOrder(
+      const resposta = await sheets.postCommandOrder(
         commandIdRef.current,
         itensSelecionados.map((item) => ({
           product_id: Number(item.product_id),
@@ -122,34 +150,109 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
         })),
       );
 
-      Alert.alert('Sucesso', 'Pedido adicionado à comanda com sucesso.');
-      navigation.goBack();
+      finalizarNavegacao(resposta?.data?.data?.order_id);
     } catch (error) {
-      console.log('Erro ao adicionar itens:', error?.response?.data || error);
+      console.log("Erro ao adicionar itens:", error?.response?.data || error);
       Alert.alert(
-        'Erro',
+        "Erro",
         error?.response?.data?.message ||
-          'Não foi possível adicionar os itens ao pedido.',
+          "Não foi possível adicionar os itens ao pedido.",
       );
     } finally {
       setEnviando(false);
     }
   };
 
+  // Fluxo da mesa livre: abre a comanda com o nome do cliente e envia o pedido.
+  const criarComandaEPedido = async () => {
+    const nome = nomeCliente.trim();
+
+    if (!nome || nome.length > 100) {
+      Alert.alert(
+        "Atenção",
+        "Digite um nome de cliente válido (1 a 100 caracteres).",
+      );
+      return;
+    }
+
+    if (!mesa?.table_id) {
+      Alert.alert("Erro", "Não foi possível identificar a mesa.");
+      return;
+    }
+
+    try {
+      setCriandoComanda(true);
+
+      const resposta = await sheets.postTableCommand(mesa.table_id, {
+        customer_name: nome,
+      });
+
+      const novaComandaId = resposta?.data?.data?.command_id;
+
+      if (!novaComandaId) {
+        throw new Error("A API não retornou o id da comanda criada.");
+      }
+
+      commandIdRef.current = novaComandaId;
+      setCommandId(novaComandaId);
+      setModalNomeVisivel(false);
+
+      await enviarPedido();
+    } catch (error) {
+      console.log("Erro ao criar comanda:", error?.response?.data || error);
+      Alert.alert(
+        "Erro",
+        error?.response?.data?.message ||
+          error?.message ||
+          "Não foi possível abrir a comanda para esta mesa.",
+      );
+    } finally {
+      setCriandoComanda(false);
+    }
+  };
+
+  const confirmarItens = () => {
+    if (!itensSelecionados.length) {
+      Alert.alert(
+        "Atenção",
+        "Selecione pelo menos um item antes de confirmar.",
+      );
+      return;
+    }
+
+    // Mesa sem comanda aberta: o nome do cliente é pedido antes de criar tudo.
+    if (!commandIdRef.current) {
+      setNomeCliente("");
+      setModalNomeVisivel(true);
+      return;
+    }
+
+    enviarPedido();
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.titulo}>Adicionar Itens</Text>
+        <Text style={styles.titulo}>
+          {abrirNovaComanda ? "Anotar Pedido" : "Adicionar Itens"}
+        </Text>
         <LogoutButton navigation={navigation} />
       </View>
 
       <View style={styles.pedidoInfo}>
         <Text style={styles.pedidoTexto}>
-          Pedido #{pedidoId}
-          {commandId ? ` • Comanda #${commandId}` : ''}
+          {pedidoId !== "—"
+            ? `Pedido #${pedidoId}${commandId ? ` • Comanda #${commandId}` : ""}`
+            : abrirNovaComanda && mesa?.number
+              ? `Mesa ${mesa.number} • Nova comanda`
+              : commandId
+                ? `Comanda #${commandId}`
+                : "Nova comanda"}
         </Text>
         <Text style={styles.pedidoSub}>
-          Selecione os itens para incluir na comanda.
+          {abrirNovaComanda
+            ? "O nome do cliente será pedido ao confirmar."
+            : "Selecione os itens para incluir na comanda."}
         </Text>
       </View>
 
@@ -230,6 +333,66 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
           )}
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={modalNomeVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalNomeVisivel(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitulo}>Nome do cliente</Text>
+            <Text style={styles.modalSub}>
+              {mesa?.number ? `Mesa ${mesa.number} • ` : ""}
+              Usado para identificar o cliente na entrega.
+            </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Ex.: Maria"
+              placeholderTextColor="#9CA3AF"
+              value={nomeCliente}
+              onChangeText={setNomeCliente}
+              maxLength={100}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={criarComandaEPedido}
+              editable={!criandoComanda}
+            />
+
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity
+                style={styles.modalBotaoCancelar}
+                onPress={() => setModalNomeVisivel(false)}
+                disabled={criandoComanda}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalBotaoCancelarTexto}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalBotaoConfirmar,
+                  (!nomeCliente.trim() || criandoComanda) &&
+                    styles.modalBotaoDesabilitado,
+                ]}
+                onPress={criarComandaEPedido}
+                disabled={!nomeCliente.trim() || criandoComanda}
+                activeOpacity={0.8}
+              >
+                {criandoComanda ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalBotaoConfirmarTexto}>
+                    Anotar pedido
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -237,62 +400,62 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FF',
+    backgroundColor: "#F8F9FF",
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 48,
     paddingBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
 
   titulo: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#111827',
+    fontWeight: "800",
+    color: "#111827",
   },
 
   pedidoInfo: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
   },
 
   pedidoTexto: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
   },
 
   pedidoSub: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 12,
     marginTop: 4,
   },
 
   centered: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
   },
 
   loadingText: {
     marginTop: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 14,
   },
 
   vazioLista: {
-    textAlign: 'center',
-    color: '#6B7280',
+    textAlign: "center",
+    color: "#6B7280",
     marginTop: 40,
   },
 
@@ -302,10 +465,10 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
@@ -319,104 +482,185 @@ const styles = StyleSheet.create({
 
   nomeProduto: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
   },
 
   categoriaProduto: {
     marginTop: 2,
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 12,
   },
 
   precoProduto: {
     marginTop: 4,
-    color: '#EA5B25',
-    fontWeight: '700',
+    color: "#EA5B25",
+    fontWeight: "700",
   },
 
   botaoAdicionar: {
-    backgroundColor: '#EA5B25',
+    backgroundColor: "#EA5B25",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
 
   botaoAdicionarTexto: {
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
     fontSize: 12,
   },
 
   resumo: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: "#E5E7EB",
     padding: 16,
   },
 
   resumoTitulo: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
   },
 
   vazio: {
     marginTop: 8,
-    color: '#6B7280',
+    color: "#6B7280",
   },
 
   itemResumo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 8,
   },
 
   itemResumoTexto: {
-    color: '#374151',
+    color: "#374151",
     fontSize: 13,
   },
 
   removerTexto: {
-    color: '#DC2626',
-    fontWeight: '700',
+    color: "#DC2626",
+    fontWeight: "700",
     fontSize: 12,
   },
 
   totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: "#E5E7EB",
   },
 
   totalTexto: {
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
   },
 
   totalValor: {
-    color: '#EA5B25',
-    fontWeight: '800',
+    color: "#EA5B25",
+    fontWeight: "800",
   },
 
   botaoConfirmar: {
-    backgroundColor: '#EA5B25',
+    backgroundColor: "#EA5B25",
     borderRadius: 10,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
 
   botaoConfirmarDesabilitado: {
-    backgroundColor: '#D1D5DB',
+    backgroundColor: "#D1D5DB",
   },
 
   botaoConfirmarTexto: {
-    color: '#fff',
-    fontWeight: '800',
+    color: "#fff",
+    fontWeight: "800",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(17, 24, 39, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    width: "100%",
+  },
+
+  modalTitulo: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  modalSub: {
+    color: "#6B7280",
+    fontSize: 13,
+    marginTop: 6,
+  },
+
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 16,
+    fontSize: 15,
+    color: "#111827",
+    backgroundColor: "#F8F9FF",
+  },
+
+  modalBotoes: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 18,
+  },
+
+  modalBotaoCancelar: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#fff",
+  },
+
+  modalBotaoCancelarTexto: {
+    color: "#111827",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  modalBotaoConfirmar: {
+    flex: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#EA5B25",
+  },
+
+  modalBotaoConfirmarTexto: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 14,
+  },
+
+  modalBotaoDesabilitado: {
+    backgroundColor: "#D1D5DB",
   },
 });

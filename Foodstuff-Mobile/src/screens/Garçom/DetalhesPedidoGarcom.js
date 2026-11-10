@@ -203,6 +203,11 @@ export default function DetalhesPedido({ route, navigation }) {
             {pedido.mesa?.codigo ?? pedido.table_number ?? "Não informada"}
           </Text>
 
+          <Text style={styles.label}>Cliente</Text>
+          <Text style={styles.valor}>
+            {comanda?.customer_name || "Não informado"}
+          </Text>
+
           <Text style={styles.label}>Comanda</Text>
           <Text style={styles.valor}>
             {pedido.command_id ? `#${pedido.command_id}` : "Não informada"}
