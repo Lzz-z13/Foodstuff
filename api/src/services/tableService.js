@@ -311,6 +311,8 @@ module.exports = class TableService {
         FROM commands
         WHERE table_id = ?
           AND status = 'OPEN'
+        ORDER BY command_id
+        FOR UPDATE
       `;
 
       const [openCommands] = await connection.execute(commandsQuery, [

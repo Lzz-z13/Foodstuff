@@ -1,4 +1,4 @@
-const METHODS = ['CASH', 'PIX', 'CREDIT_CARD', 'DEBIT_CARD', 'VOUCHER'];
+const METHODS = ['CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'VOUCHER'];
 
 function validMoney(value) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 &&
@@ -6,6 +6,9 @@ function validMoney(value) {
 }
 
 module.exports = function validatePayment(body = {}) {
+  if (body.method === 'PIX') {
+    throw { status: 400, message: 'Utilize /payments/pix. Pix só pode ser confirmado pelo Mercado Pago.' };
+  }
   if (!METHODS.includes(body.method)) {
     throw { status: 400, message: 'Selecione um método de pagamento válido.' };
   }
