@@ -51,7 +51,7 @@ describe("DELETE /tables/:table_id", () => {
 
     const res = await request(app)
       .delete(`${BASE}/tables/${tableId}`)
-      .set("Authorization", managerToken());
+      .set("Authorization", `Bearer ${managerToken()}`);
 
     expect(res.status).toBe(200);
     expect(res.body.error).toBe(false);
@@ -157,7 +157,7 @@ describe("DELETE /tables/:table_id", () => {
 
     const res = await request(app)
       .delete(`${BASE}/tables/${tableId}`)
-      .set("Authorization", managerToken());
+      .set("Authorization", `Bearer ${managerToken()}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({
@@ -181,7 +181,7 @@ describe("DELETE /tables/:table_id", () => {
   test("retorna 404 para mesa inexistente", async () => {
     const res = await request(app)
       .delete(`${BASE}/tables/999999`)
-      .set("Authorization", managerToken());
+      .set("Authorization", `Bearer ${managerToken()}`);
 
     expect(res.status).toBe(404);
   });
@@ -191,7 +191,7 @@ describe("DELETE /tables/:table_id", () => {
 
     const res = await request(app)
       .delete(`${BASE}/tables/${tableId}`)
-      .set("Authorization", managerToken());
+      .set("Authorization", `Bearer ${managerToken()}`);
 
     expect(res.status).toBe(404);
   });
@@ -202,7 +202,7 @@ describe("DELETE /tables/:table_id", () => {
     for (const tableId of invalidIds) {
       const res = await request(app)
         .delete(`${BASE}/tables/${tableId}`)
-        .set("Authorization", managerToken());
+        .set("Authorization", `Bearer ${managerToken()}`);
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe("O ID da mesa é inválido.");
@@ -214,7 +214,7 @@ describe("DELETE /tables/:table_id", () => {
 
     const res = await request(app)
       .delete(`${BASE}/tables/${tableId}`)
-      .set("Authorization", waiterToken());
+      .set("Authorization", `Bearer ${waiterToken()}`);
 
     expect(res.status).toBe(403);
   });

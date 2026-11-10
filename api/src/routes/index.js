@@ -18,6 +18,8 @@ const dashboardRoutes = require("./dashboardRoutes");
 const logRoutes = require("./logRoutes");
 const publicRoutes = require("./publicRoutes");
 const paymentRoutes = require("./paymentRoutes");
+const PaymentController = require('../controllers/paymentController');
+const verifyMercadoPagoSignature = require('../middlewares/verifyMercadoPagoSignature');
 
 const QrCodeController = require("../controllers/qrCodeController");
 const CommandController = require("../controllers/commandController");
@@ -42,6 +44,8 @@ router.get(
 );
 
 router.use("/public", publicRoutes);
+
+router.post('/payments/webhook', verifyMercadoPagoSignature, PaymentController.webhook);
 
 // Authenticated routes
 router.use(verifyJWT);

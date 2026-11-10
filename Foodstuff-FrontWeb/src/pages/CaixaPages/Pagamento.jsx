@@ -98,7 +98,9 @@ export default function Pagamento() {
           onRefresh={reload}
           onSuccess={(payment) => {
             setMessage(
-              payment.status === "PAID"
+              payment.method === "PIX"
+                ? `PIX de ${moeda(payment.value)} confirmado. Saldo da comanda atualizado.`
+                : payment.status === "PAID"
                 ? `Pagamento confirmado. Comanda quitada.${payment.change > 0 ? ` Troco: ${moeda(payment.change)}` : ""}`
                 : "Pagamento registrado. Confirme o restante da conta.",
             );

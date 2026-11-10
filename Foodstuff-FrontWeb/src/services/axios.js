@@ -36,6 +36,9 @@ const sheets = {
   getCashierSummary: () => api.get('/cashier/summary'),
   getCommandCheckout: (commandId, config) => api.get(`/commands/${commandId}/checkout`, config),
   postCommandPayment: (commandId, data) => api.post(`/commands/${commandId}/payments`, data),
+  postPixPayment: (commandId) => api.post('/payments/pix', { command_id: commandId }, { timeout: 15000 }),
+  getPixPayment: (paymentId, config) => api.get(`/payments/${paymentId}`, config),
+  cancelPixPayment: (paymentId) => api.post(`/payments/${paymentId}/cancel`, {}, { timeout: 30000 }),
   
   postUser: (user) => api.post("/users", user),
   getCurrentUser: () => api.get("/users/me"),
