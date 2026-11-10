@@ -8,7 +8,7 @@ let commandId;
 let orderId;
 const checkout = () => request(app).get(`${BASE}/commands/${commandId}/checkout`).set('Authorization', `Bearer ${cashierToken()}`);
 const pay = body => request(app).post(`${BASE}/commands/${commandId}/payments`).set('Authorization', `Bearer ${cashierToken()}`).send(body);
-const payment = (extra = {}) => ({ method: 'PIX', value: 110, expected_balance: 110, ...extra });
+const payment = (extra = {}) => ({ method: 'DEBIT_CARD', value: 110, expected_balance: 110, ...extra });
 
 beforeEach(async () => {
   await reset();

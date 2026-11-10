@@ -7,6 +7,9 @@ const { loadEnvFile } = require("./environment");
 loadEnvFile();
 
 module.exports = async function globalSetup() {
+  if (TEST_DB_NAME !== 'foodstuff_test' || !process.env.TEST_DB_USER || process.env.TEST_DB_PASSWORD === undefined) {
+    throw new Error('Testes exigem foodstuff_test e credenciais exclusivas em TEST_DB_USER/TEST_DB_PASSWORD.');
+  }
   const schemaPath = path.join(
     __dirname,
     "..",

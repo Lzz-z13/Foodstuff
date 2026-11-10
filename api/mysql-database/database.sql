@@ -207,10 +207,23 @@ CREATE TABLE
             'VOUCHER',
             'OTHER'
         ) NOT NULL,
-        status ENUM ('PAID', 'CANCELLED') NOT NULL DEFAULT 'PAID',
-        paid_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        status ENUM ('PAID', 'CANCELLED', 'PENDING') NOT NULL DEFAULT 'PAID',
+        paid_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
         command_id BIGINT NOT NULL,
+        mp_order_id VARCHAR(64) NULL,
+        mp_payment_id VARCHAR(64) NULL,
+        idempotency_key CHAR(36) NULL,
+        mp_request JSON NULL,
+        pix_data JSON NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        active_pix_command_id BIGINT GENERATED ALWAYS AS (
+            CASE WHEN method = 'PIX' AND status = 'PENDING' THEN command_id ELSE NULL END
+        ) VIRTUAL,
         CONSTRAINT pk_payments PRIMARY KEY (payment_id),
+        CONSTRAINT uk_payments_mp_order UNIQUE (mp_order_id),
+        CONSTRAINT uk_payments_mp_payment UNIQUE (mp_payment_id),
+        CONSTRAINT uk_payments_idempotency UNIQUE (idempotency_key),
+        CONSTRAINT uk_payments_active_pix UNIQUE (active_pix_command_id),
         CONSTRAINT fk_payments_command FOREIGN KEY (command_id) REFERENCES commands (command_id) ON UPDATE CASCADE ON DELETE RESTRICT,
         CONSTRAINT chk_payments_value CHECK (value > 0)
     );
