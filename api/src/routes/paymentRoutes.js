@@ -1,9 +1,9 @@
 const router = require("express").Router();
 
-const {
-    criarPagamentoPix
-} = require("../controllers/paymentController");
+const { criarPagamentoPix, readPayment } = require("../controllers/paymentController");
+const verifyRole = require('../middlewares/verifyRole');
 
-router.post("/pix", criarPagamentoPix);
+router.post('/pix', verifyRole('MANAGER', 'CASHIER'), criarPagamentoPix);
+router.get('/:payment_id', verifyRole('MANAGER', 'CASHIER'), readPayment);
 
 module.exports = router;
