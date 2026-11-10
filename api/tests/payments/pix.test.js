@@ -21,6 +21,8 @@ const create = (body = { command_id: commandId }, token = cashierToken()) => req
   .post(`${BASE}/payments/pix`).set('Authorization', `Bearer ${token}`).send(body);
 const read = (paymentId, token = cashierToken()) => request(app)
   .get(`${BASE}/payments/${paymentId}`).set('Authorization', `Bearer ${token}`);
+const cancel = (paymentId, token = cashierToken()) => request(app)
+  .post(`${BASE}/payments/${paymentId}/cancel`).set('Authorization', `Bearer ${token}`);
 const checkout = () => request(app).get(`${BASE}/commands/${commandId}/checkout`)
   .set('Authorization', `Bearer ${cashierToken()}`);
 const manual = (extra = {}) => request(app).post(`${BASE}/commands/${commandId}/payments`)
@@ -74,6 +76,14 @@ beforeEach(async () => {
   axios.post.mockReset();
   axios.get.mockReset();
   axios.post.mockImplementation(async (url, payload) => {
+    if (url.endsWith('/cancel')) {
+      const order = [...orders.values()].find(item => url.endsWith(`/${item.id}/cancel`));
+      order.status = 'canceled';
+      order.status_detail = 'canceled_transaction';
+      order.transactions.payments[0].status = 'canceled';
+      order.transactions.payments[0].status_detail = 'canceled_transaction';
+      return { data: structuredClone(order) };
+    }
     if (!orders.has(payload.external_reference)) orders.set(payload.external_reference, providerOrder(payload));
     return { data: structuredClone(orders.get(payload.external_reference)) };
   });
@@ -328,6 +338,40 @@ test('cancelamento/expiração confirmado externamente libera outros métodos', 
   order.transactions.payments[0].status = 'canceled';
   expect((await read(res.body.data.payment_id)).body.data.status).toBe('CANCELLED');
   expect((await manual()).status).toBe(201);
+});
+
+test('cancelamento solicitado libera outro método somente após confirmação e audita uma vez', async () => {
+  const created = await create();
+  const paymentId = created.body.data.payment_id;
+  expect((await manual()).status).toBe(409);
+  expect((await cancel(paymentId)).body.data.status).toBe('CANCELLED');
+  expect((await checkout()).body.data).toMatchObject({ status: 'CLOSED', paid: 0, balance: 110 });
+  expect((await cancel(paymentId)).body.data.status).toBe('CANCELLED');
+  expect(axios.post.mock.calls.filter(([url]) => url.endsWith('/cancel'))).toHaveLength(1);
+  const [payments] = await connect.execute("SELECT payment_id FROM payments WHERE payment_id = ? AND status = 'CANCELLED'", [paymentId]);
+  expect(payments).toHaveLength(1);
+  const [audit] = await connect.execute("SELECT log_id FROM audit_logs WHERE action = 'CANCEL_PIX' AND entity_id = ?", [String(paymentId)]);
+  expect(audit).toHaveLength(1);
+  expect((await manual()).status).toBe(201);
+});
+
+test('cliente paga durante cancelamento: confirma Pix e impede outro pagamento', async () => {
+  const created = await create();
+  axios.post.mockImplementationOnce(async () => {
+    approve([...orders.values()][0]);
+    throw { response: { status: 409 } };
+  });
+  expect((await cancel(created.body.data.payment_id)).body.data.status).toBe('PAID');
+  expect((await checkout()).body.data).toMatchObject({ status: 'PAID', balance: 0, paid: 110 });
+  expect((await manual()).status).toBe(409);
+});
+
+test('cancelamento sem confirmação conserva bloqueio do pagamento manual', async () => {
+  const created = await create();
+  axios.post.mockRejectedValueOnce({ code: 'ECONNABORTED' });
+  expect((await cancel(created.body.data.payment_id)).status).toBe(504);
+  expect((await checkout()).body.data.payments[0].status).toBe('PENDING');
+  expect((await manual()).status).toBe(409);
 });
 
 test('desativar mesa com Pix em andamento preserva itens e permite confirmação', async () => {

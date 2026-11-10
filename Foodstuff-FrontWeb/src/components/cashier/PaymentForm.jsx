@@ -85,9 +85,32 @@ export default function PaymentForm({
     }
   }
 
+  async function cancelPix(payment) {
+    if (submitting.current) return;
+    submitting.current = true;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await api.cancelPixPayment(payment.payment_id);
+      const current = response.data.data;
+      if (current.status === "PAID") {
+        onSuccess(current);
+      } else if (current.status === "CANCELLED") {
+        setPix(null);
+        setMethod("CASH");
+        onRefresh();
+      } else {
+        throw new Error("Aguarde a confirmação do cancelamento antes de escolher outro método.");
+      }
+    } finally {
+      submitting.current = false;
+      setSaving(false);
+    }
+  }
+
   return (
     <>
-    {pix && <PixPaymentModal initialPayment={pix} onPaid={onSuccess} onClose={() => { setPix(null); onRefresh(); }} />}
+    {pix && <PixPaymentModal initialPayment={pix} onPaid={onSuccess} onCancelPix={cancelPix} cancelling={saving} onClose={() => { setPix(null); onRefresh(); }} />}
     <form onSubmit={submit} className={`${painel} flex flex-col gap-5`}>
       <PaymentMethods
         value={method}
@@ -98,7 +121,8 @@ export default function PaymentForm({
         <div className="space-y-3 rounded-xl bg-[#fff0ec] p-4">
           <p className="text-sm font-semibold">Pix de {moeda(pendingPix.value)} aguardando confirmação</p>
           <p className="text-xs text-slate-600">Consulte a cobrança para exibir o QR Code e acompanhar o recebimento.</p>
-          <button type="button" onClick={() => setPix({ ...pendingPix, command_id: command.command_id })} className={`${botao} w-full`}><QrCode size={18} />Consultar Pix</button>
+          <button type="button" disabled={saving} onClick={() => setPix({ ...pendingPix, command_id: command.command_id })} className={`${botao} w-full`}><QrCode size={18} />Consultar Pix</button>
+          <button type="button" disabled={saving} onClick={() => cancelPix(pendingPix).catch((e) => setError(e?.response?.data?.message || e.message || "Não foi possível cancelar o Pix. Consulte a cobrança antes de tentar novamente."))} className="w-full rounded-xl border border-[#ff5f38] px-4 py-3 text-sm font-bold text-[#ff5f38] disabled:opacity-50">{saving ? "Cancelando Pix…" : "Cancelar Pix e escolher outro método"}</button>
         </div>
       ) : !payable ? (
         <p className="text-sm text-slate-500">

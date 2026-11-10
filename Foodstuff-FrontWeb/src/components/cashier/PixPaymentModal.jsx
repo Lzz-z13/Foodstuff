@@ -3,14 +3,16 @@ import { Copy, LoaderCircle, QrCode, ShieldCheck, X } from "lucide-react";
 import api from "../../services/axios";
 import { botao, moeda, numeroComanda } from "./format";
 
-export default function PixPaymentModal({ initialPayment, onPaid, onClose }) {
+export default function PixPaymentModal({ initialPayment, onPaid, onClose, onCancelPix, cancelling }) {
   const dialog = useRef(null);
   const codeInput = useRef(null);
+  const pollingController = useRef(null);
   const [payment, setPayment] = useState(initialPayment);
   const [error, setError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
+  const [cancelError, setCancelError] = useState("");
 
   useEffect(() => {
     const element = dialog.current;
@@ -26,7 +28,9 @@ export default function PixPaymentModal({ initialPayment, onPaid, onClose }) {
   }, []);
 
   useEffect(() => {
+    if (cancelling) return;
     const controller = new AbortController();
+    pollingController.current = controller;
     let timer;
     async function check() {
       try {
@@ -54,7 +58,18 @@ export default function PixPaymentModal({ initialPayment, onPaid, onClose }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [initialPayment.payment_id, onPaid, attempt]);
+  }, [initialPayment.payment_id, onPaid, attempt, cancelling]);
+
+  async function cancelPayment() {
+    if (cancelling) return;
+    pollingController.current?.abort();
+    setCancelError("");
+    try {
+      await onCancelPix(payment);
+    } catch (e) {
+      setCancelError(e?.response?.data?.message || e.message || "Não foi possível cancelar o Pix. Consulte novamente antes de trocar o método.");
+    }
+  }
 
   async function copyCode() {
     try {
@@ -74,11 +89,11 @@ export default function PixPaymentModal({ initialPayment, onPaid, onClose }) {
       ref={dialog}
       aria-labelledby="pix-title"
       aria-describedby="pix-description"
-      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onCancel={(event) => { event.preventDefault(); if (!cancelling) onClose(); }}
       className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-3xl border-0 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm"
     >
       <div className="relative bg-[#fff0ec] px-6 pb-5 pt-6 text-center">
-        <button type="button" onClick={onClose} aria-label="Fechar Pix" className="absolute right-4 top-4 rounded-full p-2 text-slate-500 hover:bg-white focus-visible:outline-2">
+        <button type="button" disabled={cancelling} onClick={onClose} aria-label="Fechar Pix sem cancelar a cobrança" className="absolute right-4 top-4 rounded-full p-2 text-slate-500 hover:bg-white focus-visible:outline-2 disabled:opacity-50">
           <X size={20} />
         </button>
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#ff5f38] shadow-sm"><QrCode size={26} /></div>
@@ -91,7 +106,7 @@ export default function PixPaymentModal({ initialPayment, onPaid, onClose }) {
         <p id="pix-description" className="text-sm text-slate-600">
           {cancelled ? "Esta cobrança foi encerrada. Volte à comanda para iniciar um novo pagamento." : "Abra o aplicativo do seu banco, escolha pagar com Pix e escaneie o QR Code."}
         </p>
-        {!cancelled && !paid && (
+        {!cancelled && !paid && !cancelling && (
           <>
             <div className="mx-auto flex min-h-60 w-60 max-w-full items-center justify-center rounded-2xl border border-slate-200 bg-white p-3">
               {payment.qr_code_base64 && !imageFailed ? (
@@ -111,11 +126,13 @@ export default function PixPaymentModal({ initialPayment, onPaid, onClose }) {
           </>
         )}
         <div role="status" className={`flex items-center justify-center gap-2 rounded-xl p-3 text-xs font-semibold ${cancelled ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-700"}`}>
-          {cancelled ? "Cobrança encerrada sem pagamento" : paid ? <><ShieldCheck size={16} />Pix confirmado!</> : <><LoaderCircle size={16} className="animate-spin" />Aguardando pagamento…</>}
+          {cancelled ? "Cobrança encerrada sem pagamento" : paid ? <><ShieldCheck size={16} />Pix confirmado!</> : <><LoaderCircle size={16} className="animate-spin" />{cancelling ? "Cancelando Pix…" : "Aguardando pagamento…"}</>}
         </div>
         {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-xs text-red-700"><p>{error}</p><button type="button" onClick={() => setAttempt((v) => v + 1)} className="mt-2 underline">Consultar novamente</button></div>}
+        {cancelError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-xs text-red-700">{cancelError}</p>}
+        {!cancelled && !paid && <button type="button" disabled={cancelling} onClick={cancelPayment} className="w-full rounded-xl border border-[#ff5f38] px-4 py-3 text-sm font-bold text-[#ff5f38] disabled:opacity-50">{cancelling ? "Cancelando Pix…" : "Cancelar Pix e escolher outro método"}</button>}
         {!cancelled && !paid && <p className="text-xs leading-relaxed text-slate-500">A confirmação é automática. Fechar esta janela mantém a cobrança disponível para consulta na comanda.</p>}
-        <button type="button" onClick={onClose} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600">Voltar à comanda</button>
+        <button type="button" disabled={cancelling} onClick={onClose} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 disabled:opacity-50">{cancelled || paid ? "Voltar à comanda" : "Fechar sem cancelar o Pix"}</button>
       </div>
     </dialog>
   );

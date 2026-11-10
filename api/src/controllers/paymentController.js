@@ -26,4 +26,12 @@ async function webhook(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { criarPagamentoPix, readPayment, webhook };
+async function cancelPayment(req, res, next) {
+  try {
+    validatePaymentId(req.params.payment_id);
+    const data = await CashierService.cancelPix(req.params.payment_id, req.user.id);
+    res.json({ error: false, data });
+  } catch (error) { next(error); }
+}
+
+module.exports = { criarPagamentoPix, readPayment, cancelPayment, webhook };

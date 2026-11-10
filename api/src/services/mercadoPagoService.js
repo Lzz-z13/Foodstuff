@@ -65,4 +65,16 @@ async function readOrder(orderId) {
   } catch (error) { throw communicationError(error); }
 }
 
-module.exports = { buildPixRequest, criarPix, readOrder };
+async function cancelOrder(orderId, idempotencyKey) {
+  if (typeof orderId !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(orderId) || !idempotencyKey) {
+    throw { status: 400, message: 'Tentativa de cancelamento Pix inválida.' };
+  }
+  const config = options(idempotencyKey);
+  try {
+    await axios.post(`${ORDERS_URL}/${encodeURIComponent(orderId)}/cancel`, {}, config);
+  } catch (error) {
+    throw { ...communicationError(error), message: 'Não foi possível confirmar o cancelamento no Mercado Pago. A cobrança foi preservada; consulte novamente antes de escolher outro método.' };
+  }
+}
+
+module.exports = { buildPixRequest, criarPix, readOrder, cancelOrder };

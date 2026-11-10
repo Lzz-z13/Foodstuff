@@ -216,6 +216,31 @@ module.exports = class CashierService {
     return this.applyPixOrder(local.payment_id, local.command_id, order, userId);
   }
 
+  static async cancelPix(paymentId, userId) {
+    // Consulta também recupera uma criação cuja resposta se perdeu e reconhece
+    // pagamentos já recebidos. Nunca cancela apenas o registro local.
+    const payment = await this.readPixStatus(paymentId, userId);
+    if (payment.status !== 'PENDING') return payment;
+    if (!['created', 'action_required'].includes(payment.mp_status)) {
+      throw { status: 409, message: 'Este Pix está em processamento. Aguarde a confirmação antes de trocar a forma de pagamento.' };
+    }
+    const [rows] = await connect.execute(
+      "SELECT idempotency_key FROM payments WHERE payment_id = ? AND method = 'PIX'", [paymentId]);
+    if (!rows[0]?.idempotency_key) throw { status: 409, message: 'Não foi possível identificar a tentativa Pix para cancelamento.' };
+    let cancellationError;
+    try {
+      await MercadoPago.cancelOrder(payment.mp_order_id, `cancel-${rows[0].idempotency_key}`);
+    } catch (error) {
+      cancellationError = error;
+    }
+    // Um timeout pode ter cancelado no provedor; ou o cliente pode ter pago no
+    // mesmo instante. O GET validado e transacional decide o resultado final.
+    const current = await this.readPixStatus(paymentId, userId);
+    if (current.status === 'PAID' || current.status === 'CANCELLED') return current;
+    if (cancellationError) throw cancellationError;
+    throw { status: 409, message: 'O cancelamento do Pix ainda não foi confirmado. Consulte novamente antes de escolher outro método.' };
+  }
+
   static async confirmPixOrder(orderId) {
     const order = await MercadoPago.readOrder(orderId);
     if (order?.id !== orderId) throw { status: 409, message: 'Identificador de confirmação inválido.' };
