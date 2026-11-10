@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import sheets from "../../services/api";
 
@@ -16,19 +17,42 @@ const brl = (valor) =>
     .toFixed(2)
     .replace(".", ",")}`;
 
+const STATUS_PEDIDO = {
+  PENDING: "Pendente",
+  PREPARING: "Preparando",
+  READY: "Pronto",
+  DELIVERED: "Entregue",
+  CANCELLED: "Cancelado",
+};
+
+const STATUS_COMANDA = {
+  OPEN: "Aberta",
+  CLOSED: "Fechada (conta solicitada)",
+  PAID: "Paga",
+  CANCELLED: "Cancelada",
+};
+
+const precoItem = (item) =>
+  Number(
+    item.preco ??
+      item.preco_unitario ??
+      item.valor ??
+      item.preco_unitario_atual ??
+      item.unit_price ??
+      0,
+  );
+
 export default function DetalhesPedido({ route, navigation }) {
   const pedidoId =
     route?.params?.pedidoId ?? route?.params?.id ?? route?.params?.pedido?.id;
 
   const [pedido, setPedido] = useState(null);
+  const [comanda, setComanda] = useState(null);
+  const [pedidosDaComanda, setPedidosDaComanda] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [solicitandoConta, setSolicitandoConta] = useState(false);
 
-  useEffect(() => {
-    carregarPedido();
-  }, [pedidoId]);
-
-  async function carregarPedido() {
+  const carregarDetalhes = useCallback(async () => {
     if (!pedidoId) {
       setCarregando(false);
       Alert.alert("Erro", "Não foi possível identificar o pedido.");
@@ -37,23 +61,68 @@ export default function DetalhesPedido({ route, navigation }) {
 
     try {
       setCarregando(true);
+
+      // O pedido de entrada identifica a comanda: a tela mostra a comanda
+      // inteira, porque novos itens são gravados como novos pedidos dela.
       const resposta = await sheets.getPedido(pedidoId);
-      setPedido(resposta.data?.pedido ?? resposta.data);
+      const pedidoCarregado = resposta.data?.data ?? resposta.data;
+
+      setPedido(pedidoCarregado);
+      setComanda(null);
+      setPedidosDaComanda([]);
+
+      const commandId = pedidoCarregado?.command_id;
+
+      if (!commandId) {
+        return;
+      }
+
+      const respostaPedidos = await sheets.getPedidos();
+      const todos = Array.isArray(respostaPedidos.data)
+        ? respostaPedidos.data
+        : [];
+
+      setPedidosDaComanda(
+        todos.filter(
+          (pedidoComanda) =>
+            String(pedidoComanda.command_id) === String(commandId),
+        ),
+      );
+
+      // A comanda define se ainda é possível adicionar itens ou solicitar
+      // a conta. Se ela não carregar, os botões seguem habilitados e a API
+      // continua validando no servidor.
+      try {
+        const respostaComanda = await sheets.getCommand(commandId);
+        setComanda(respostaComanda.data?.data ?? respostaComanda.data);
+      } catch (erroComanda) {
+        console.log("Erro ao carregar comanda:", erroComanda);
+      }
     } catch (error) {
       console.log("Erro ao carregar pedido:", error);
       Alert.alert("Erro", "Não foi possível carregar os detalhes do pedido.");
     } finally {
       setCarregando(false);
     }
-  }
+  }, [pedidoId]);
+
+  // Recarrega ao voltar de "Anotar pedido" para refletir os itens adicionados.
+  useFocusEffect(
+    useCallback(() => {
+      carregarDetalhes();
+    }, [carregarDetalhes]),
+  );
 
   async function solicitarConta() {
     try {
       setSolicitandoConta(true);
       await sheets.postSolicitarConta(pedidoId);
 
-      Alert.alert("Sucesso", "Solicitação de conta enviada!");
-      carregarPedido();
+      Alert.alert(
+        "Conta solicitada",
+        "A comanda foi fechada. O cliente pode finalizar o pagamento no caixa.",
+      );
+      await carregarDetalhes();
     } catch (error) {
       console.log("Erro ao solicitar conta:", error);
       Alert.alert(
@@ -76,7 +145,7 @@ export default function DetalhesPedido({ route, navigation }) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF6B2C" />
-        <Text style={styles.loadingText}>Carregando pedido...</Text>
+        <Text style={styles.loadingText}>Carregando comanda...</Text>
       </View>
     );
   }
@@ -96,95 +165,131 @@ export default function DetalhesPedido({ route, navigation }) {
     );
   }
 
-  const itens = pedido.itens || pedido.items || [];
+  const comandaEncerrada = Boolean(comanda) && comanda.status !== "OPEN";
 
-  const total = itens.reduce((soma, item) => {
-    const quantidade = Number(item.quantidade || 1);
-    const preco = Number(
-      item.preco ??
-        item.preco_unitario ??
-        item.valor ??
-        item.preco_unitario_atual ??
-        0,
-    );
+  const textoBotaoConta = comanda
+    ? comanda.status === "CLOSED"
+      ? "Conta solicitada"
+      : comanda.status === "PAID"
+        ? "Comanda paga"
+        : comanda.status === "CANCELLED"
+          ? "Comanda cancelada"
+          : "Solicitar conta"
+    : "Solicitar conta";
 
-    return soma + quantidade * preco;
-  }, 0);
+  const totalComanda = pedidosDaComanda
+    .filter((pedidoComanda) => pedidoComanda.status !== "CANCELLED")
+    .reduce((soma, pedidoComanda) => {
+      const itens = pedidoComanda.itens || pedidoComanda.items || [];
+
+      return (
+        soma +
+        itens.reduce(
+          (subtotal, item) =>
+            subtotal + Number(item.quantidade || 1) * precoItem(item),
+          0,
+        )
+      );
+    }, 0);
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.conteudo}>
-        <Text style={styles.titulo}>Detalhes do pedido</Text>
+        <Text style={styles.titulo}>Detalhes da comanda</Text>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Pedido</Text>
-          <Text style={styles.valor}>
-            #{pedido.id ?? pedido.order_id ?? pedidoId}
-          </Text>
-
           <Text style={styles.label}>Mesa</Text>
           <Text style={styles.valor}>
-            {pedido.mesa?.numero ??
-              pedido.mesa?.codigo ??
-              pedido.numero_mesa ??
-              pedido.mesa_numero ??
-              (typeof pedido.mesa === "object" && pedido.mesa !== null
-                ? pedido.mesa.codigo
-                : pedido.mesa) ??
-              "Não informada"}
+            {pedido.mesa?.codigo ?? pedido.table_number ?? "Não informada"}
           </Text>
 
-          <Text style={styles.label}>Status</Text>
-          <Text style={styles.status}>{pedido.status ?? "Em andamento"}</Text>
+          <Text style={styles.label}>Comanda</Text>
+          <Text style={styles.valor}>
+            {pedido.command_id ? `#${pedido.command_id}` : "Não informada"}
+          </Text>
+
+          <Text style={styles.label}>Status da comanda</Text>
+          <Text
+            style={[
+              styles.status,
+              comandaEncerrada && styles.statusComandaEncerrada,
+            ]}
+          >
+            {comanda
+              ? (STATUS_COMANDA[comanda.status] ?? comanda.status)
+              : "Não informada"}
+          </Text>
         </View>
 
-        <Text style={styles.subtitulo}>Itens do pedido</Text>
+        <Text style={styles.subtitulo}>Pedidos da comanda</Text>
+
+        {pedidosDaComanda.length === 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.vazio}>
+              Nenhum pedido encontrado nesta comanda.
+            </Text>
+          </View>
+        ) : (
+          pedidosDaComanda.map((pedidoComanda) => {
+            const itens = pedidoComanda.itens || pedidoComanda.items || [];
+            const cancelado = pedidoComanda.status === "CANCELLED";
+            const statusPedido =
+              STATUS_PEDIDO[pedidoComanda.status] ?? pedidoComanda.status;
+            const subtotal = itens.reduce(
+              (soma, item) =>
+                soma + Number(item.quantidade || 1) * precoItem(item),
+              0,
+            );
+
+            return (
+              <View key={pedidoComanda.id ?? pedidoComanda.order_id} style={styles.card}>
+                <Text style={styles.pedidoNumero}>
+                  {`Pedido #${pedidoComanda.id ?? pedidoComanda.order_id} • ${statusPedido}`}
+                </Text>
+
+                {itens.length > 0 ? (
+                  itens.map((item, index) => (
+                    <View
+                      key={item.id ?? item.id_produto ?? index}
+                      style={[styles.item, cancelado && styles.itemCancelado]}
+                    >
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemNome}>
+                          {item.nome ??
+                            item.nome_produto ??
+                            item.produto?.nome ??
+                            "Produto"}
+                        </Text>
+
+                        <Text style={styles.itemQuantidade}>
+                          Quantidade: {Number(item.quantidade || 1)}
+                        </Text>
+                      </View>
+
+                      <Text style={styles.itemPreco}>
+                        {brl(Number(item.quantidade || 1) * precoItem(item))}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.vazio}>
+                    Nenhum item encontrado neste pedido.
+                  </Text>
+                )}
+
+                <View style={styles.totalContainer}>
+                  <Text style={styles.totalLabel}>Subtotal</Text>
+                  <Text style={styles.totalValor}>{brl(subtotal)}</Text>
+                </View>
+              </View>
+            );
+          })
+        )}
 
         <View style={styles.card}>
-          {itens.length > 0 ? (
-            itens.map((item, index) => {
-              const quantidade = Number(item.quantidade || 1);
-              const preco = Number(
-                item.preco ??
-                  item.preco_unitario ??
-                  item.valor ??
-                  item.preco_unitario_atual ??
-                  0,
-              );
-
-              return (
-                <View
-                  key={item.id ?? item.id_produto ?? index}
-                  style={styles.item}
-                >
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemNome}>
-                      {item.nome ??
-                        item.nome_produto ??
-                        item.produto?.nome ??
-                        "Produto"}
-                    </Text>
-
-                    <Text style={styles.itemQuantidade}>
-                      Quantidade: {quantidade}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.itemPreco}>
-                    {brl(quantidade * preco)}
-                  </Text>
-                </View>
-              );
-            })
-          ) : (
-            <Text style={styles.vazio}>
-              Nenhum item encontrado neste pedido.
-            </Text>
-          )}
-
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total dos itens</Text>
-            <Text style={styles.totalValor}>{brl(total)}</Text>
+            <Text style={styles.totalLabel}>Total da comanda</Text>
+            <Text style={styles.totalValor}>{brl(totalComanda)}</Text>
           </View>
         </View>
       </ScrollView>
@@ -200,18 +305,29 @@ export default function DetalhesPedido({ route, navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.botao, styles.botaoAdicionar]}
+          style={[
+            styles.botao,
+            styles.botaoAdicionar,
+            comandaEncerrada && styles.botaoDesabilitado,
+          ]}
           onPress={adicionarItem}
+          disabled={comandaEncerrada}
           activeOpacity={0.8}
         >
           <Ionicons name="add-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.textoBotao}>Adicionar item</Text>
+          <Text style={styles.textoBotao}>
+            {comandaEncerrada ? "Comanda fechada" : "Adicionar item"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.botao, styles.botaoConta]}
+          style={[
+            styles.botao,
+            styles.botaoConta,
+            (comandaEncerrada || solicitandoConta) && styles.botaoDesabilitado,
+          ]}
           onPress={solicitarConta}
-          disabled={solicitandoConta}
+          disabled={solicitandoConta || comandaEncerrada}
           activeOpacity={0.8}
         >
           {solicitandoConta ? (
@@ -219,7 +335,7 @@ export default function DetalhesPedido({ route, navigation }) {
           ) : (
             <>
               <Ionicons name="receipt-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.textoBotao}>Solicitar conta</Text>
+              <Text style={styles.textoBotao}>{textoBotaoConta}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -286,6 +402,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  statusComandaEncerrada: {
+    color: "#6B7280",
+  },
+
+  pedidoNumero: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1F2024",
+    marginBottom: 4,
+  },
+
   item: {
     flexDirection: "row",
     alignItems: "center",
@@ -294,6 +421,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ECEDF0",
     gap: 8,
+  },
+
+  itemCancelado: {
+    opacity: 0.5,
   },
 
   itemInfo: {
@@ -379,6 +510,11 @@ const styles = StyleSheet.create({
 
   botaoConta: {
     backgroundColor: "#16A34A",
+  },
+
+  botaoDesabilitado: {
+    backgroundColor: "#9CA3AF",
+    opacity: 0.7,
   },
 
   textoBotao: {

@@ -170,6 +170,11 @@ const sheets = {
   // Tables
   getTables: () => api.get("/tables"),
   getTableCommands: (tableId) => api.get(`/tables/${tableId}/commands`),
+
+  // Commands
+  getCommand: (commandId) => api.get(`/commands/${commandId}`),
+  postCommandOrder: (commandId, items) =>
+    api.post(`/commands/${commandId}/orders`, { items }),
 };
 
 export default sheets;

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import LogoutButton from "../../components/header/LogoutButton";
 import NavbarGarcom from "../../components/navbar/NavbarGarcom";
@@ -20,9 +21,11 @@ export default function MesasGarcom({ navigation }) {
 
   const { notificacao, fecharNotificacao } = useNotificacaoComandas(mesas);
 
-  const loadMesas = async () => {
+  const loadMesas = async (mostrarCarregando = true) => {
     try {
-      setLoading(true);
+      if (mostrarCarregando) {
+        setLoading(true);
+      }
       setError("");
 
       const response = await api.getTables();
@@ -68,7 +71,10 @@ export default function MesasGarcom({ navigation }) {
   useEffect(() => {
     loadMesas();
 
-    const intervalId = setInterval(loadMesas, 10000);
+    // A atualização periódica não reativa o estado de carregamento: se o
+    // grid fosse remontado a cada tick, a lista voltaria ao topo e o garçom
+    // perderia a posição ao analisar as mesas.
+    const intervalId = setInterval(() => loadMesas(false), 10000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -117,7 +123,10 @@ export default function MesasGarcom({ navigation }) {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : (
-        <View style={styles.cardGrid}>
+        <ScrollView
+          style={styles.gridScroll}
+          contentContainerStyle={styles.cardGrid}
+        >
           {mesas.map((mesa) => (
             <TouchableOpacity
               key={mesa.table_id}
@@ -136,7 +145,7 @@ export default function MesasGarcom({ navigation }) {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
 
       <NavbarGarcom navigation={navigation} activeTab="Mesas" />
@@ -204,12 +213,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
-  cardGrid: {
+  gridScroll: {
     flex: 1,
+  },
+  cardGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     padding: 16,
+    paddingBottom: 24,
   },
   card: {
     width: "46%",
