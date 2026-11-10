@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
-test('banco sem migração Pix retorna indisponibilidade, desfaz reserva e não solicita cobrança externa', async () => {
+test('banco sem campos Pix retorna indisponibilidade, desfaz reserva e não solicita cobrança externa', async () => {
   connection.execute.mockRejectedValueOnce({ code: 'ER_BAD_FIELD_ERROR', sqlMessage: 'sensitive SQL' });
   await expect(CashierService.createPix(3, 'cashier')).rejects.toMatchObject({
     status: 503, message: expect.stringContaining('atualizar o banco de dados'),
