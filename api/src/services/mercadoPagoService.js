@@ -5,9 +5,19 @@ async function criarPix({
     total,
     pedidoId,
     email,
-    ambienteTeste = true
+    idempotencyKey = randomUUID()
 }) {
-    const amount = Number(total).toFixed(2);
+    const valor = Number(total);
+
+    if (!Number.isFinite(valor) || valor <= 0) {
+        throw new Error("Valor de pagamento inválido.");
+    }
+
+    if (!pedidoId || !email) {
+        throw new Error("Dados obrigatórios não informados.");
+    }
+
+    const amount = valor.toFixed(2);
 
     const { data } = await axios.post(
         "https://api.mercadopago.com/v1/orders",
@@ -30,29 +40,28 @@ async function criarPix({
             },
 
             payer: {
-                email,
-                ...(ambienteTeste && { first_name: "APRO" })
+                email
             }
         },
         {
             headers: {
                 Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
                 "Content-Type": "application/json",
-                "X-Idempotency-Key": randomUUID()
+                "X-Idempotency-Key": idempotencyKey
             }
         }
     );
 
-    const payment = data.transactions.payments[0];
+    const payment = data.transactions?.payments?.[0];
 
     return {
         orderId: data.id,
-        paymentId: payment.id,
-        status: payment.status,
-        statusDetail: payment.status_detail,
-        qrCode: payment.payment_method.qr_code,
-        qrCodeBase64: payment.payment_method.qr_code_base64,
-        ticketUrl: payment.payment_method.ticket_url
+        paymentId: payment?.id,
+        status: payment?.status ?? data.status,
+        statusDetail: payment?.status_detail ?? data.status_detail,
+        qrCode: payment?.payment_method?.qr_code,
+        qrCodeBase64: payment?.payment_method?.qr_code_base64,
+        ticketUrl: payment?.payment_method?.ticket_url
     };
 }
 

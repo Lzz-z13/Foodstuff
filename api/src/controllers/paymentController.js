@@ -8,7 +8,6 @@ async function criarPagamentoPix(req, res) {
             pedidoId,
             total,
             email,
-            ambienteTeste: true
         });
 
         return res.status(201).json(pagamento);
@@ -19,7 +18,9 @@ async function criarPagamentoPix(req, res) {
             error.response?.data || error.message
         );
 
-        return res.status(500).json({
+        return res.status(
+            error.response?.status || 500
+        ).json({
             message: "Erro ao gerar Pix."
         });
     }
