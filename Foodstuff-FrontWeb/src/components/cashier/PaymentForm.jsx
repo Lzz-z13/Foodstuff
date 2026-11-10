@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, QrCode } from "lucide-react";
 import api from "../../services/axios";
 import PaymentMethods from "./PaymentMethods";
+import PixPaymentModal from "./PixPaymentModal";
 import { botao, moeda, painel } from "./format";
 
 function parseValor(value) {
@@ -24,6 +25,8 @@ export default function PaymentForm({
   const [received, setReceived] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [pix, setPix] = useState(null);
+  const pendingPix = command.payments?.find((payment) => payment.method === "PIX" && payment.status === "PENDING");
   const submitting = useRef(false);
   const valueCents = parseValor(value);
   const receivedCents = parseValor(received);
@@ -49,7 +52,8 @@ export default function PaymentForm({
     event.preventDefault();
     if (
       submitting.current ||
-      !validValue ||
+      pendingPix ||
+      (method !== "PIX" && !validValue) ||
       !payable ||
       (method === "CASH" && change === null)
     )
@@ -58,6 +62,11 @@ export default function PaymentForm({
     setSaving(true);
     setError("");
     try {
+      if (method === "PIX") {
+        const response = await api.postPixPayment(command.command_id);
+        setPix(response.data.data);
+        return;
+      }
       const response = await api.postCommandPayment(command.command_id, {
         method,
         value: valueCents / 100,
@@ -77,13 +86,21 @@ export default function PaymentForm({
   }
 
   return (
+    <>
+    {pix && <PixPaymentModal initialPayment={pix} onPaid={onSuccess} onClose={() => { setPix(null); onRefresh(); }} />}
     <form onSubmit={submit} className={`${painel} flex flex-col gap-5`}>
       <PaymentMethods
         value={method}
         onChange={setMethod}
-        disabled={saving || !payable}
+        disabled={saving || !payable || Boolean(pendingPix)}
       />
-      {!payable ? (
+      {pendingPix ? (
+        <div className="space-y-3 rounded-xl bg-[#fff0ec] p-4">
+          <p className="text-sm font-semibold">Pix de {moeda(pendingPix.value)} aguardando confirmação</p>
+          <p className="text-xs text-slate-600">Consulte a cobrança para exibir o QR Code e acompanhar o recebimento.</p>
+          <button type="button" onClick={() => setPix({ ...pendingPix, command_id: command.command_id })} className={`${botao} w-full`}><QrCode size={18} />Consultar Pix</button>
+        </div>
+      ) : !payable ? (
         <p className="text-sm text-slate-500">
           Esta comanda não possui saldo disponível para pagamento.
         </p>
@@ -99,14 +116,16 @@ export default function PaymentForm({
             <input
               required
               inputMode="decimal"
-              value={value}
+              value={method === "PIX" ? Number(command.balance).toFixed(2).replace(".", ",") : value}
+              readOnly={method === "PIX"}
               disabled={saving}
               onChange={(e) => setValue(e.target.value)}
               className="mt-1 block h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900"
             />
             <span className="mt-1 block text-[11px] font-normal text-slate-400">
-              Saldo: {moeda(command.balance)}. Para dividir a conta, informe um
-              valor menor.
+              {method === "PIX"
+                ? "O valor do Pix é calculado pelo sistema a partir do saldo da comanda."
+                : `Saldo: ${moeda(command.balance)}. Para dividir a conta, informe um valor menor.`}
             </span>
           </label>
           {method === "CASH" ? (
@@ -152,11 +171,12 @@ export default function PaymentForm({
             </>
           ) : (
             <p className="rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-500">
-              Confirme o recebimento no banco ou na maquininha antes de
-              registrar este pagamento.
+              {method === "PIX"
+                ? "Gere o QR Code da comanda para o cliente pagar pelo aplicativo do banco. O recebimento será confirmado automaticamente."
+                : "Confirme o recebimento no banco ou na maquininha antes de registrar este pagamento."}
             </p>
           )}
-          {!validValue && (
+          {method !== "PIX" && !validValue && (
             <p className="text-xs text-red-600">
               Informe um valor positivo de até {moeda(command.balance)}.
             </p>
@@ -164,12 +184,12 @@ export default function PaymentForm({
           <button
             type="submit"
             disabled={
-              saving || !validValue || (method === "CASH" && change === null)
+              saving || (method !== "PIX" && !validValue) || (method === "CASH" && change === null)
             }
             className={`${botao} mt-3`}
           >
-            <Check size={18} />
-            {saving ? "Confirmando..." : "Confirmar Pagamento"}
+            {method === "PIX" ? <QrCode size={18} /> : <Check size={18} />}
+            {method === "PIX" ? (saving ? "Gerando Pix..." : "Gerar QR Code Pix") : (saving ? "Confirmando..." : "Confirmar Pagamento")}
           </button>
         </>
       )}
@@ -190,8 +210,9 @@ export default function PaymentForm({
         onClick={onCancel}
         className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50"
       >
-        {payable ? "Cancelar Transação" : "Voltar às comandas"}
+        {payable && !pendingPix ? "Cancelar Transação" : "Voltar às comandas"}
       </button>
     </form>
+    </>
   );
 }
