@@ -704,23 +704,102 @@ module.exports = class OrderService {
     }
   }
 
-  // Solicita a conta de um pedido.
-  static async requestAccount(order_id) {
-    const [rows] = await connect.execute(
-      "SELECT order_id FROM orders WHERE order_id = ? LIMIT 1",
-      [order_id],
-    );
+  // Solicita a conta de um pedido fechando a comanda para o caixa.
+  static async requestAccount(order_id, jwt_user_id) {
+    const connection = await connect.getConnection();
+    let transactionStarted = false;
 
-    if (rows.length === 0) {
-      throw {
-        status: 404,
-        message: "Pedido não encontrado.",
+    try {
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      // Serializa o fechamento com a criação de pedidos e o pagamento.
+      const [orders] = await connection.execute(
+        "SELECT command_id FROM orders WHERE order_id = ? LIMIT 1",
+        [order_id],
+      );
+
+      if (orders.length === 0) {
+        throw {
+          status: 404,
+          message: "Pedido não encontrado.",
+        };
+      }
+
+      const command_id = orders[0].command_id;
+
+      const [commands] = await connection.execute(
+        "SELECT status FROM commands WHERE command_id = ? FOR UPDATE",
+        [command_id],
+      );
+
+      if (commands.length === 0) {
+        throw {
+          status: 404,
+          message: "Comanda não encontrada.",
+        };
+      }
+
+      const status = commands[0].status;
+
+      if (status === "CLOSED") {
+        throw {
+          status: 409,
+          message: "A conta desta comanda já foi solicitada.",
+        };
+      }
+
+      if (status !== "OPEN") {
+        throw {
+          status: 409,
+          message: "Esta comanda já foi encerrada.",
+        };
+      }
+
+      // A comanda fechada deixa de aceitar novos pedidos e passa a aparecer
+      // para o caixa como "Fechada", pronta para o checkout.
+      await connection.execute(
+        `UPDATE commands
+         SET status = 'CLOSED',
+             closed_at = COALESCE(closed_at, NOW()),
+             closed_by = COALESCE(closed_by, ?)
+         WHERE command_id = ?`,
+        [jwt_user_id, command_id],
+      );
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "commands",
+        command_id,
+        `Conta da comanda #${command_id} solicitada pelo pedido #${order_id}.`,
+        null,
+      );
+
+      await connection.commit();
+      transactionStarted = false;
+
+      return {
+        order_id: Number(order_id),
+        command_id: Number(command_id),
+        status: "CLOSED",
       };
-    }
+    } catch (error) {
+      if (transactionStarted) {
+        await connection.rollback();
+      }
 
-    return {
-      order_id: Number(order_id),
-      message: "Conta solicitada com sucesso.",
-    };
+      if (error.status) {
+        throw error;
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao solicitar a conta.",
+      };
+    } finally {
+      connection.release();
+    }
   }
 };

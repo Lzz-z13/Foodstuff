@@ -99,14 +99,19 @@ module.exports = class OrderController {
   }
 
   static async requestAccount(req, res, next) {
+    const jwt_user_id = req.user.id;
     const { order_id } = req.params;
 
     try {
       validateOrderId(order_id);
 
-      const result = await OrderService.requestAccount(order_id);
+      const result = await OrderService.requestAccount(order_id, jwt_user_id);
 
-      return res.status(200).json(result);
+      return res.status(200).json({
+        error: false,
+        message: "Conta solicitada com sucesso.",
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
