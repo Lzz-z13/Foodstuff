@@ -301,13 +301,6 @@ export default function CardapioCliente({ navigation }) {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.refreshButton}
-              onPress={customer.openStaffLogin}
-              accessibilityLabel="Acesso de funcionários"
-            >
-              <Ionicons name="log-in-outline" size={18} color={C.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.refreshButton}
               onPress={atualizar}
               disabled={refreshing}
               activeOpacity={0.7}

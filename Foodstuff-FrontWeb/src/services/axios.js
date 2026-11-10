@@ -55,6 +55,7 @@ const sheets = {
   postQrCode: (tableId, data) => api.post(`/tables/${tableId}/qr-codes`, data),
   putQrCode: (tableId, qrCodeId) =>
     api.put(`/tables/${tableId}/qr-codes/${qrCodeId}`),
+  deleteQrCode: (qrCodeId) => api.delete(`/qr-codes/${qrCodeId}`),
 
   getAllOrders: () => api.get("/orders"),
   getOrderById: (orderId) => api.get(`/orders/${orderId}`),

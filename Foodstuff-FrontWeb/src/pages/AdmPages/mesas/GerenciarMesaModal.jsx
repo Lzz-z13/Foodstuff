@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Printer, QrCode, RefreshCw, X } from "lucide-react";
+import { Loader2, Printer, QrCode, RefreshCw, Trash2, X } from "lucide-react";
 
 import api from "../../../services/axios";
 import { textToQrCodeDataUrl } from "../../../utils/qrCode";
 
-// O QR Code aponta para o deep link do aplicativo mobile, que abre o
-// cardápio do cliente já vinculado a esta mesa.
+// O QR Code impresso na mesa aponta para o deep link do app do cliente.
+// No Expo Go os links só funcionam no formato exp://<servidor>/--/caminho
+// (o scheme foodstuff:// só é reconhecido em um build standalone do app).
+// Ao gerar um build standalone, trocar por "foodstuff://".
+const QR_LINK_PREFIX = "exp://192.168.24.12:8081/--/";
+
 function montarLinkMesa(token) {
-  return `foodstuff://mesa/${token}`;
+  return `${QR_LINK_PREFIX}mesa/${encodeURIComponent(token)}`;
 }
 
 function getQrCodesFromResponse(response) {
@@ -35,6 +39,7 @@ export default function GerenciarMesaModal({ mesa, onClose }) {
   const [carregando, setCarregando] = useState(true);
   const [gerando, setGerando] = useState(false);
   const [regenerandoId, setRegenerandoId] = useState(null);
+  const [deletandoId, setDeletandoId] = useState(null);
   const [erroCarregamento, setErroCarregamento] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [imprimindoId, setImprimindoId] = useState(null);
@@ -186,6 +191,40 @@ export default function GerenciarMesaModal({ mesa, onClose }) {
     }
   }
 
+  async function handleExcluirQrCode(qr) {
+    const confirmar = window.confirm(
+      "O QR Code impresso nesta mesa deixará de funcionar. Excluir o QR Code?",
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      setDeletandoId(qr.id);
+      const response = await api.deleteQrCode(qr.id);
+      const recarregou = await carregarQrCodes(false);
+
+      if (recarregou && montadoRef.current) {
+        setFeedback({
+          type: "success",
+          message: response?.data?.message || "QR Code desativado com sucesso.",
+        });
+      }
+    } catch (error) {
+      if (montadoRef.current) {
+        setFeedback({
+          type: "error",
+          message: getApiMessage(error, "Erro ao excluir o QR Code."),
+        });
+      }
+    } finally {
+      if (montadoRef.current) {
+        setDeletandoId(null);
+      }
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
@@ -201,7 +240,7 @@ export default function GerenciarMesaModal({ mesa, onClose }) {
               Gerenciar mesa {mesa.numero}
             </h3>
             <p className="mt-0.5 text-[12px] text-slate-500">
-              Gere, imprima ou regenere o QR Code fixado nesta mesa.
+              Gere, imprima, regenere ou exclua o QR Code fixado nesta mesa.
             </p>
           </div>
           <button
@@ -307,7 +346,11 @@ export default function GerenciarMesaModal({ mesa, onClose }) {
                     <button
                       type="button"
                       onClick={() => setImprimindoId(qr.id)}
-                      disabled={!imagem || regenerandoId === qr.id}
+                      disabled={
+                        !imagem ||
+                        regenerandoId === qr.id ||
+                        deletandoId === qr.id
+                      }
                       className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#ff5a47] px-3 py-2.5 text-[12px] font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Printer size={15} />
@@ -316,7 +359,7 @@ export default function GerenciarMesaModal({ mesa, onClose }) {
                     <button
                       type="button"
                       onClick={() => handleRegenerarQrCode(qr)}
-                      disabled={regenerandoId === qr.id}
+                      disabled={regenerandoId === qr.id || deletandoId === qr.id}
                       className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {regenerandoId === qr.id ? (
@@ -329,6 +372,20 @@ export default function GerenciarMesaModal({ mesa, onClose }) {
                         : "Regenerar QR Code"}
                     </button>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExcluirQrCode(qr)}
+                    disabled={regenerandoId === qr.id || deletandoId === qr.id}
+                    className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-[12px] font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletandoId === qr.id ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={15} />
+                    )}
+                    {deletandoId === qr.id ? "Excluindo..." : "Excluir QR Code"}
+                  </button>
                 </div>
               );
             })
