@@ -156,6 +156,135 @@ module.exports = class QrCodeService {
     }
   }
 
+  static async updateQrCode(table_id, qr_code_id, jwt_user_id) {
+    const connection = await connect.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // Search the responsible
+      const userQuery = `
+        SELECT name
+        FROM users
+        WHERE user_id = ?
+          AND is_active = 1
+        LIMIT 1
+      `;
+
+      const [userResult] = await connection.execute(userQuery, [jwt_user_id]);
+
+      if (userResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Usuário responsável não encontrado.",
+        };
+      }
+
+      const user_name = userResult[0].name;
+
+      // Verify the target table exists and is active
+      const tableQuery = `
+        SELECT table_id, number
+        FROM tables
+        WHERE table_id = ?
+          AND is_active = 1
+        LIMIT 1
+        FOR UPDATE
+      `;
+
+      const [tableResult] = await connection.execute(tableQuery, [table_id]);
+
+      if (tableResult.length === 0) {
+        throw {
+          status: 404,
+          message: "Mesa não encontrada.",
+        };
+      }
+
+      const table_number = tableResult[0].number;
+
+      // Verify the QR code exists and belongs to the informed table
+      const qrQuery = `
+        SELECT qr_code_id, position, is_active
+        FROM qr_codes
+        WHERE qr_code_id = ?
+          AND table_id = ?
+        LIMIT 1
+      `;
+
+      const [qrResult] = await connection.execute(qrQuery, [
+        qr_code_id,
+        table_id,
+      ]);
+
+      if (qrResult.length === 0) {
+        throw {
+          status: 404,
+          message: "QR Code não encontrado para esta mesa.",
+        };
+      }
+
+      const qr = qrResult[0];
+
+      // QR code is inactive
+      if (!qr.is_active) {
+        throw {
+          status: 409,
+          message: "O QR Code está inativo.",
+        };
+      }
+
+      // Regenerate the token with a backend generated value
+      const token = crypto.randomUUID();
+
+      const updateQuery = `
+        UPDATE qr_codes
+        SET token = ?
+        WHERE qr_code_id = ?
+          AND table_id = ?
+          AND is_active = 1
+      `;
+
+      await connection.execute(updateQuery, [token, qr_code_id, table_id]);
+
+      await createLog(
+        connection,
+        jwt_user_id,
+        "UPDATE",
+        "qr_codes",
+        qr.qr_code_id,
+        `Usuário ${user_name} regenerou o QR Code da mesa #${table_number} na posição ${qr.position}.`,
+      );
+
+      await connection.commit();
+
+      return {
+        message: "QR Code regenerado com sucesso.",
+        qr_code_id: qr.qr_code_id,
+      };
+    } catch (error) {
+      await connection.rollback();
+
+      if (error.status) {
+        throw error;
+      }
+
+      if (error.code === "ER_DUP_ENTRY") {
+        throw {
+          status: 409,
+          message: "Já existe um QR Code com esse token.",
+        };
+      }
+
+      throw {
+        status: 500,
+        message: "Erro ao regenerar o QR Code.",
+      };
+    } finally {
+      connection.release();
+    }
+  }
+
   static async readQrCodesByTable(table_id) {
     // Verify the table exists (active or inactive tables can be consulted)
     const tableQuery = `

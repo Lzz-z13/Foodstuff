@@ -9,6 +9,12 @@ router.post(
   QrCodeController.createQrCode
 );
 
+router.put(
+  "/tables/:table_id/qr-codes/:qr_code_id",
+  verifyRole("MANAGER"),
+  QrCodeController.updateQrCode
+);
+
 router.get(
   "/tables/:table_id/qr-codes",
   verifyRole("MANAGER"),

@@ -4,6 +4,7 @@ import {
   Loader2,
   MoreVertical,
   Plus,
+  Settings2,
   Table2,
   Trash2,
   Users,
@@ -11,6 +12,7 @@ import {
 
 import Snackbar from "../../../components/snackBar/SnackBar";
 import api from "../../../services/axios";
+import GerenciarMesaModal from "./GerenciarMesaModal";
 
 const STATUS_STYLE = {
   livre: {
@@ -85,6 +87,7 @@ export default function Mesas() {
   const [salvando, setSalvando] = useState(false);
   const [deletandoId, setDeletandoId] = useState(null);
   const [mesaAbertaId, setMesaAbertaId] = useState(null);
+  const [mesaGerenciada, setMesaGerenciada] = useState(null);
   const [snackbar, setSnackbar] = useState(null);
 
   useEffect(() => {
@@ -182,6 +185,11 @@ export default function Mesas() {
     } finally {
       setSalvando(false);
     }
+  }
+
+  function handleGerenciarMesa(mesa) {
+    setMesaAbertaId(null);
+    setMesaGerenciada(mesa);
   }
 
   async function handleDeletarMesa(mesa) {
@@ -411,6 +419,15 @@ export default function Mesas() {
                     <div className="absolute right-3 top-12 z-20 w-40 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
                       <button
                         type="button"
+                        disabled={!isManager}
+                        onClick={() => handleGerenciarMesa(mesa)}
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Settings2 size={15} />
+                        Gerenciar mesa
+                      </button>
+                      <button
+                        type="button"
                         disabled={deletandoId === mesa.id || !isManager}
                         onClick={() => handleDeletarMesa(mesa)}
                         className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -430,6 +447,13 @@ export default function Mesas() {
           </div>
         )}
       </div>
+
+      {mesaGerenciada && (
+        <GerenciarMesaModal
+          mesa={mesaGerenciada}
+          onClose={() => setMesaGerenciada(null)}
+        />
+      )}
     </div>
   );
 }

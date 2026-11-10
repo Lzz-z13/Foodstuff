@@ -30,6 +30,30 @@ module.exports = class QrCodeController {
     }
   }
 
+  static async updateQrCode(req, res, next) {
+    const jwt_user_id = req.user.id;
+    const { table_id, qr_code_id } = req.params;
+
+    try {
+      validateTableId(table_id);
+      validateQrCodeId(qr_code_id);
+
+      const result = await QrCodeService.updateQrCode(
+        table_id,
+        qr_code_id,
+        jwt_user_id,
+      );
+
+      return res.status(200).json({
+        error: false,
+        message: result.message,
+        data: { qr_code_id: result.qr_code_id },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async readQrCodesByTable(req, res, next) {
     const { table_id } = req.params;
 

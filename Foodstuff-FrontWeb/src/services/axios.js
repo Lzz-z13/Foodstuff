@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://foodstuff-production-862333e7.up.railway.app/api/foodstuff",
+  baseURL: "http://localhost:5000/api/foodstuff",
   headers: {
     accept: "application/json",
   },
@@ -51,6 +51,10 @@ const sheets = {
   postTable: (table) => api.post("/tables", table),
   getAllTables: () => api.get("/tables"),
   deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
+  getQrCodesByTable: (tableId) => api.get(`/tables/${tableId}/qr-codes`),
+  postQrCode: (tableId, data) => api.post(`/tables/${tableId}/qr-codes`, data),
+  putQrCode: (tableId, qrCodeId) =>
+    api.put(`/tables/${tableId}/qr-codes/${qrCodeId}`),
 
   getAllOrders: () => api.get("/orders"),
   getOrderById: (orderId) => api.get(`/orders/${orderId}`),
