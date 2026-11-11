@@ -6,7 +6,7 @@ import * as SecureStore from "expo-secure-store";
 // e pelo FrontWeb). O QR Code da mesa precisa ser resolvido na mesma API em
 // que foi criado.
 // Produção: https://foodstuff-production-862333e7.up.railway.app/api/foodstuff
-const BASE_URL = "http://192.168.24.12:5000/api/foodstuff";
+const BASE_URL = "https://foodstuff-production-862333e7.up.railway.app/api/foodstuff";
 
 const api = axios.create({
   baseURL: BASE_URL,

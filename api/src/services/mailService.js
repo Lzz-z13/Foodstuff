@@ -1,32 +1,62 @@
-const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
+const MailComposer = require("nodemailer/lib/mail-composer");
 const crypto = require("crypto");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GMAIL_CLIENT_ID,
+  process.env.GMAIL_CLIENT_SECRET,
+  "https://developers.google.com/oauthplayground",
+);
+
+oauth2Client.setCredentials({
+  refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+});
+
+const gmail = google.gmail({
+  version: "v1",
+  auth: oauth2Client,
 });
 
 async function sendEmail(to, subject, html) {
   try {
-    const info = await transporter.sendMail({
+    const mail = new MailComposer({
       from: `"Foodstuff" <${process.env.EMAIL_USER}>`,
       to: to,
       subject: subject,
       html: html,
     });
 
-    console.log("Email enviado:", info.accepted[0]);
+    const message = await mail.compile().build();
+    const raw = message.toString("base64url");
+
+    const { data } = await gmail.users.messages.send(
+      {
+        userId: "me",
+        requestBody: {
+          raw: raw,
+        },
+      },
+      {
+        timeout: 10000,
+      },
+    );
+
+    console.log("Email enviado:", data.id);
+
+    return data;
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Erro ao enviar email:",
+      error.response?.data?.error?.message || error.message,
+    );
+
     throw { status: 500, message: "Erro ao enviar email" };
   }
 }
 
 function passGenerator(length = 8) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*+=?";
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*+=?";
 
   let password = "";
 
@@ -191,4 +221,10 @@ function templateResendCredentials(nome, email, senha) {
   `;
 }
 
-module.exports = { sendEmail, passGenerator, templateEmail, templateOtpEmail, templateResendCredentials };
+module.exports = {
+  sendEmail,
+  passGenerator,
+  templateEmail,
+  templateOtpEmail,
+  templateResendCredentials,
+};
