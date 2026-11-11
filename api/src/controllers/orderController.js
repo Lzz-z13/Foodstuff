@@ -25,6 +25,7 @@ module.exports = class OrderController {
         message: "Pedido criado com sucesso.",
         data: {
           order_id: result.order_id,
+          status: result.status,
         },
       });
     } catch (error) {

@@ -67,7 +67,8 @@ module.exports = class OrderService {
         oi.unit_price,
         oi.observation,
         p.product_id,
-        p.name AS product_name
+        p.name AS product_name,
+        p.requires_preparation
       FROM order_items oi
       INNER JOIN products p ON p.product_id = oi.product_id
       WHERE oi.order_id IN (${placeholders})
@@ -95,38 +96,46 @@ module.exports = class OrderService {
         observation: item.observation,
         product_id: item.product_id,
         product_name: item.product_name,
+        requires_preparation: Number(item.requires_preparation) === 1,
       });
     }
 
-    return orders.map((order) => ({
-      id: order.order_id,
-      order_id: order.order_id,
-      command_id: order.command_id,
-      status: order.status,
-      origin: order.origin,
-      observations: order.observations,
-      observacao: order.observations,
-      created_at: order.created_at,
-      criado_em: order.created_at,
-      started_at: order.started_at,
-      finished_at: order.finished_at,
-      cancelled_at: order.cancelled_at,
+    return orders.map((order) => {
+      const orderItems = groupedItems[order.order_id] || [];
 
-      mesa: {
-        codigo: order.table_number,
+      return {
+        id: order.order_id,
+        order_id: order.order_id,
+        command_id: order.command_id,
+        status: order.status,
+        origin: order.origin,
+        observations: order.observations,
+        observacao: order.observations,
+        created_at: order.created_at,
+        criado_em: order.created_at,
+        started_at: order.started_at,
+        finished_at: order.finished_at,
+        cancelled_at: order.cancelled_at,
+
+        mesa: {
+          codigo: order.table_number,
+          table_id: order.table_id,
+        },
+
+        table_number: order.table_number,
         table_id: order.table_id,
-      },
 
-      table_number: order.table_number,
-      table_id: order.table_id,
+        // Pedidos sem itens de preparo não passam pelas telas da cozinha.
+        needs_kitchen: orderItems.some((item) => item.requires_preparation),
 
-      itens: groupedItems[order.order_id] || [],
-      items: groupedItems[order.order_id] || [],
+        itens: orderItems,
+        items: orderItems,
 
-      recebido_em: order.started_at || order.created_at,
-      cozinha_em: order.started_at,
-      pronto_em: order.finished_at,
-    }));
+        recebido_em: order.started_at || order.created_at,
+        cozinha_em: order.started_at,
+        pronto_em: order.finished_at,
+      };
+    });
   }
 
   // Cria um pedido para uma comanda aberta.
@@ -185,7 +194,8 @@ module.exports = class OrderService {
           price,
           is_active,
           is_available,
-          name
+          name,
+          requires_preparation
         FROM products
         WHERE product_id IN (${placeholders})
       `;
@@ -230,17 +240,32 @@ module.exports = class OrderService {
         }
       }
 
+      // Pedidos com itens que precisam de preparo vão para a cozinha como
+      // PENDING. Pedidos sem nenhum item de preparo (ex.: bebidas) já nascem
+      // prontos para a entrega e não passam pelas telas da cozinha.
+      const needsKitchen = items.some(
+        (item) =>
+          Number(productsMap.get(item.product_id)?.requires_preparation) === 1,
+      );
+      const initialStatus = needsKitchen ? "PENDING" : "READY";
+
       // Insere o pedido.
-      const insertOrderQuery = `
-        INSERT INTO orders
-          (created_by, origin, status, command_id)
-        VALUES (?, ?, ?, ?)
-      `;
+      const insertOrderQuery = needsKitchen
+        ? `
+          INSERT INTO orders
+            (created_by, origin, status, command_id)
+          VALUES (?, ?, ?, ?)
+        `
+        : `
+          INSERT INTO orders
+            (created_by, origin, status, started_at, finished_at, command_id)
+          VALUES (?, ?, ?, NOW(), NOW(), ?)
+        `;
 
       const [orderResult] = await connection.execute(insertOrderQuery, [
         created_by,
         origin,
-        "PENDING",
+        initialStatus,
         command_id,
       ]);
 
@@ -289,7 +314,7 @@ module.exports = class OrderService {
 
       return {
         order_id: orderId,
-        status: "PENDING",
+        status: initialStatus,
       };
     } catch (error) {
       if (transactionStarted) {
@@ -523,7 +548,8 @@ module.exports = class OrderService {
           oi.unit_price,
           oi.observation,
           oi.product_id,
-          p.name AS product_name
+          p.name AS product_name,
+          p.requires_preparation
         FROM order_items oi
         INNER JOIN products p ON p.product_id = oi.product_id
         WHERE oi.order_id IN (${placeholders})
@@ -545,6 +571,7 @@ module.exports = class OrderService {
           observation: item.observation,
           product_id: item.product_id,
           product_name: item.product_name,
+          requires_preparation: Number(item.requires_preparation) === 1,
         });
       }
 
@@ -574,6 +601,7 @@ module.exports = class OrderService {
           table_number: order.table_number,
           total,
           items: orderItems,
+          needs_kitchen: orderItems.some((item) => item.requires_preparation),
         };
       });
     } catch (error) {

@@ -40,9 +40,12 @@ export default function Pedidos() {
     carregarPedidos();
   }, []);
 
-  const novos = pedidos.filter(p => p.status === "PENDING");
-  const preparando = pedidos.filter(p => p.status === "PREPARING");
-  const prontos = pedidos.filter(p => p.status === "READY");
+  // A cozinha só acompanha pedidos com itens que precisam de preparo.
+  const pedidosCozinha = pedidos.filter((p) => p.needs_kitchen);
+
+  const novos = pedidosCozinha.filter(p => p.status === "PENDING");
+  const preparando = pedidosCozinha.filter(p => p.status === "PREPARING");
+  const prontos = pedidosCozinha.filter(p => p.status === "READY");
 
   const renderPedido = ({ item }) => (
     <View style={styles.card}>
@@ -122,7 +125,7 @@ export default function Pedidos() {
       </View>
 
       <FlatList
-        data={pedidos}
+        data={pedidosCozinha}
         renderItem={renderPedido}
         keyExtractor={item => String(item.order_id)}
       />

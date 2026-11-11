@@ -41,6 +41,7 @@ function normalizarPedidos(payload) {
         }))
       : [],
     command_id: o.command_id ?? null,
+    needs_kitchen: o.needs_kitchen ?? false,
   }));
 }
 
@@ -65,7 +66,8 @@ export default function Cozinha() {
       setLoading(true);
       const response = await api.getAllOrders();
       const lista = normalizarPedidos(response?.data);
-      setOrders(lista);
+      // A cozinha só vê pedidos com itens que precisam de preparo.
+      setOrders(lista.filter((order) => order.needs_kitchen));
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error);
       setOrders([]);
