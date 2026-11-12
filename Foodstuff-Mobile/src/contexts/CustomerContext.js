@@ -33,26 +33,41 @@ export function CustomerProvider({ children, qrToken, onStaffLogin }) {
     async function carregarMesa() {
       setLoading(true);
       setError(null);
+      let phase = "mesa";
       try {
+        if (typeof qrToken !== "string" || !qrToken.trim()) {
+          throw new Error("O link não contém o código da mesa. Escaneie novamente o QR Code gerado no Front.");
+        }
         const response = await sheets.resolveQrCodeByToken(qrToken);
         const mesa = response.data.data;
+        phase = "sessao";
         const stored = await SecureStore.getItemAsync(
           `foodstuff.customer.table.${mesa.table_id}`,
         );
-        const saved = stored ? JSON.parse(stored) : {};
+        let saved = stored ? JSON.parse(stored) : {};
         let comanda = null;
 
         if (saved.session_token) {
-          const result = await sheets.getPublicCommandBySession(
-            saved.session_token,
-          );
-          comanda = result.data.data;
-          if (Number(comanda.table_id) !== Number(mesa.table_id)) {
-            throw new Error("A comanda salva pertence a outra mesa.");
+          phase = "comanda";
+          try {
+            const result = await sheets.getPublicCommandBySession(saved.session_token);
+            comanda = result.data.data;
+            if (Number(comanda.table_id) !== Number(mesa.table_id)) {
+              throw new Error("A comanda salva pertence a outra mesa.");
+            }
+          } catch (err) {
+            // Uma sessão de um banco antigo não deve impedir a leitura de um QR
+            // válido. Resultado de pedido pendente exige conferência e é preservado.
+            if (err.response?.status !== 404 || saved.pending) throw err;
+            phase = "sessao";
+            await SecureStore.deleteItemAsync(`foodstuff.customer.table.${mesa.table_id}`);
+            saved = {};
+            comanda = null;
           }
         }
 
         if (!active) return;
+        phase = "sessao";
         await SecureStore.setItemAsync("foodstuff.customer.lastQr", qrToken);
         if (!active) return;
         setTable(mesa);
@@ -62,7 +77,13 @@ export function CustomerProvider({ children, qrToken, onStaffLogin }) {
         if (active)
           setError(
             err.response?.data?.message ||
-              "Não foi possível recuperar a mesa. Confira a conexão e tente novamente.",
+              (["ECONNABORTED", "ETIMEDOUT"].includes(err.code)
+                ? "O servidor demorou para responder. Confira a internet do celular e tente novamente."
+                : err.isAxiosError && !err.response
+                  ? "O celular não conseguiu conectar à API do Foodstuff. Confira o acesso à internet e tente novamente."
+                  : phase === "sessao"
+                    ? `Não foi possível acessar a sessão salva neste aparelho. ${err.message || "Reinicie o aplicativo e tente novamente."}`
+                    : err.message || "Não foi possível recuperar a mesa. Tente novamente."),
           );
       } finally {
         if (active) setLoading(false);

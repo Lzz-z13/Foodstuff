@@ -4,11 +4,8 @@ import { Loader2, Printer, QrCode, RefreshCw, Trash2, X } from "lucide-react";
 import api from "../../../services/axios";
 import { textToQrCodeDataUrl } from "../../../utils/qrCode";
 
-// O QR Code impresso na mesa aponta para o deep link do app do cliente.
-// No Expo Go os links só funcionam no formato exp://<servidor>/--/caminho
-// (o scheme foodstuff:// só é reconhecido em um build standalone do app).
-// Ao gerar um build standalone, trocar por "foodstuff://".
-const QR_LINK_PREFIX = "exp://10.89.240.3:8081/--/";
+// O QR da mesa abre o cardápio no APK instalado, inclusive com o Front em dev.
+const QR_LINK_PREFIX = "foodstuff://";
 
 function montarLinkMesa(token) {
   return `${QR_LINK_PREFIX}mesa/${encodeURIComponent(token)}`;

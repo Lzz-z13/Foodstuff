@@ -38,7 +38,7 @@ const RootStack = createNativeStackNavigator();
 // O React Navigation interpreta o link e entrega o token à tela Cliente.
 const linking = {
   prefixes: ["foodstuff://", "exp://10.89.240.3:8081/--/"],
-  config: { screens: { Cliente: "mesa/:token" } },
+  config: { screens: { Cliente: "mesa/:token", Equipe: "equipe" } },
   async getInitialURL() {
     const url = await Linking.getInitialURL();
     if (url) return url;
