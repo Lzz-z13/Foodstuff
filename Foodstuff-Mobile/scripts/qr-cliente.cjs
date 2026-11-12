@@ -16,7 +16,7 @@ async function main() {
   }
 
   const response = await fetch(
-    `http://192.168.24.12:5000/api/foodstuff/qr-codes/token/${encodeURIComponent(token)}`,
+    `http://10.89.240.3:5000/api/foodstuff/qr-codes/token/${encodeURIComponent(token)}`,
     {
       signal: AbortSignal.timeout(10000),
     },
@@ -26,7 +26,7 @@ async function main() {
     throw new Error(result.message || "QR Code não encontrado.");
 
   const prefix =
-    mode === "app" ? "foodstuff://" : "exp://192.168.24.12:8081/--/";
+    mode === "app" ? "foodstuff://" : "exp://10.89.240.3:8081/--/";
   const url = `${prefix}mesa/${encodeURIComponent(token)}`;
   console.log(
     `\nMesa ${result.data.number} — ${mode === "app" ? "Foodstuff instalado" : "Expo Go"}`,

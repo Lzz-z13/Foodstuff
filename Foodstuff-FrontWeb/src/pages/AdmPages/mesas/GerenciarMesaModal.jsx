@@ -8,7 +8,7 @@ import { textToQrCodeDataUrl } from "../../../utils/qrCode";
 // No Expo Go os links só funcionam no formato exp://<servidor>/--/caminho
 // (o scheme foodstuff:// só é reconhecido em um build standalone do app).
 // Ao gerar um build standalone, trocar por "foodstuff://".
-const QR_LINK_PREFIX = "exp://192.168.24.12:8081/--/";
+const QR_LINK_PREFIX = "exp://10.89.240.3:8081/--/";
 
 function montarLinkMesa(token) {
   return `${QR_LINK_PREFIX}mesa/${encodeURIComponent(token)}`;
