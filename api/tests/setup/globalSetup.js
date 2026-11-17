@@ -26,11 +26,14 @@ module.exports = async function globalSetup() {
     .replace(/^CREATE DATABASE\s+[^;]*;\s*/im, "")
     .replace(/^USE\s+[^;]*;\s*/im, "");
 
+  const fixtureSql = fs.readFileSync(path.join(__dirname, "demo-fixture.sql"), "utf8");
+
   const fullSql = `
     DROP DATABASE IF EXISTS \`${TEST_DB_NAME}\`;
     CREATE DATABASE \`${TEST_DB_NAME}\`;
     USE \`${TEST_DB_NAME}\`;
     ${statements}
+    ${fixtureSql}
   `;
 
   // Conexão administrativa separada, com credenciais próprias de teste.

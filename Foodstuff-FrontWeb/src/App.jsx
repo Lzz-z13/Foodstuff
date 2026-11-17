@@ -2,6 +2,7 @@ import "./style.css";
 import useUserSync from "./services/useUserSync";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import Cliente from "./pages/cliente/Cliente";
 import Pg404 from "./pages/404/pg404";
 import Login from "./pages/login/Login";
 import RecupSenha from "./pages/recupSenha/RecupSenha";
@@ -36,6 +37,7 @@ function App() {
       <Routes>
         {/* Públicas */}
         <Route path="/" element={<Login />} />
+        <Route path="/mesa/:token" element={<Cliente />} />
         <Route path="/recuperarSenha" element={<RecupSenha />} />
 
         {/* Protegidas - exige token */}

@@ -348,7 +348,7 @@ export default function Cardapio({ navigation }) {
       const res = await sheets.getCategories();
       setCategories(res.data?.data ?? []);
     } catch (err) {
-      console.log("Erro ao carregar categorias:", err);
+      console.log("Erro ao carregar categorias:");
     }
   }, []);
 
@@ -364,7 +364,7 @@ export default function Cardapio({ navigation }) {
       const res = await sheets.getProducts(params);
       setProducts(res.data?.data ?? []);
     } catch (err) {
-      console.log("Erro ao carregar produtos:", err);
+      console.log("Erro ao carregar produtos:");
       setError("Não foi possível carregar os produtos.");
     } finally {
       setLoading(false);

@@ -22,7 +22,7 @@ export default function LogoutButton({ navigation, style }) {
               });
             }
           } catch (error) {
-            console.log("Erro ao sair da conta:", error);
+            console.log("Erro ao sair da conta:");
             Alert.alert("Erro", "Não foi possível sair da conta.");
           }
         },

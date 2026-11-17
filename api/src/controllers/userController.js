@@ -33,7 +33,6 @@ module.exports = class UserController {
   }
 
   static async createUser(req, res, next) {
-    console.log("BODY RECEBIDO:", req.body);
     
     const jwt_user_id = req.user.id;
 

@@ -147,7 +147,7 @@ export default function ContaAdmin({ navigation }) {
           setNotificacoes({ ...NOTIFICACOES_PADRAO, ...JSON.parse(salvo) });
         }
       } catch (error) {
-        console.log("Erro ao carregar notificações:", error);
+        console.log("Erro ao carregar notificações:");
       }
     }
 
@@ -189,7 +189,7 @@ export default function ContaAdmin({ navigation }) {
         await AsyncStorage.setItem(chave, JSON.stringify(lista));
         if (ativo) setSessoes(lista);
       } catch (error) {
-        console.log("Erro ao carregar sessões:", error);
+        console.log("Erro ao carregar sessões:");
         if (ativo) {
           setSessoes([
             {
@@ -229,7 +229,7 @@ export default function ContaAdmin({ navigation }) {
         JSON.stringify(atualizadas),
       );
     } catch (error) {
-      console.log("Erro ao salvar notificações:", error);
+      console.log("Erro ao salvar notificações:");
       Alert.alert(
         "Erro",
         "Não foi possível salvar a preferência de notificação.",
@@ -260,7 +260,7 @@ export default function ContaAdmin({ navigation }) {
           : "Foto removida com sucesso!",
       );
     } catch (error) {
-      console.log("Erro ao atualizar foto:", error);
+      console.log("Erro ao atualizar foto:");
 
       Alert.alert(
         "Erro",
@@ -326,7 +326,7 @@ export default function ContaAdmin({ navigation }) {
 
       await salvarFotoNoServidor(`data:${mime};base64,${asset.base64}`);
     } catch (error) {
-      console.log("Erro ao selecionar foto:", error);
+      console.log("Erro ao selecionar foto:");
       Alert.alert("Erro", "Não foi possível abrir a galeria de fotos.");
     }
   };
@@ -400,7 +400,7 @@ export default function ContaAdmin({ navigation }) {
 
       Alert.alert("Sucesso", "Dados atualizados com sucesso!");
     } catch (error) {
-      console.log("Erro ao atualizar:", error);
+      console.log("Erro ao atualizar:");
 
       Alert.alert(
         "Erro",
@@ -460,7 +460,7 @@ export default function ContaAdmin({ navigation }) {
 
       Alert.alert("Sucesso", "Senha alterada com sucesso!");
     } catch (error) {
-      console.log("Erro ao alterar senha:", error);
+      console.log("Erro ao alterar senha:");
 
       Alert.alert(
         "Erro",

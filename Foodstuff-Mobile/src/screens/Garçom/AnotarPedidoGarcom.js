@@ -62,7 +62,7 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
           commandIdRef.current = pedidoCarregado?.command_id ?? null;
           setCommandId(commandIdRef.current);
         } catch (erroPedido) {
-          console.log("Erro ao carregar pedido:", erroPedido);
+          console.log("Erro ao carregar pedido:");
         }
       }
 
@@ -70,7 +70,7 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
       const lista = respostaProdutos?.data?.data;
       setProdutos(Array.isArray(lista) ? lista : []);
     } catch (error) {
-      console.log("Erro ao carregar produtos:", error);
+      console.log("Erro ao carregar produtos:");
       Alert.alert("Erro", "Não foi possível carregar os produtos.");
     } finally {
       setCarregando(false);
@@ -152,7 +152,7 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
 
       finalizarNavegacao(resposta?.data?.data?.order_id);
     } catch (error) {
-      console.log("Erro ao adicionar itens:", error?.response?.data || error);
+      console.log("Erro ao adicionar itens:");
       Alert.alert(
         "Erro",
         error?.response?.data?.message ||
@@ -199,7 +199,7 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
 
       await enviarPedido();
     } catch (error) {
-      console.log("Erro ao criar comanda:", error?.response?.data || error);
+      console.log("Erro ao criar comanda:");
       Alert.alert(
         "Erro",
         error?.response?.data?.message ||

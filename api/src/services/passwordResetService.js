@@ -110,7 +110,7 @@ async function resendTemporaryPassword(user) {
     await connection.commit();
   } catch (error) {
     await connection.rollback();
-    console.error(error);
+    console.error("Falha na operação.");
 
     if (error.status) {
       throw error;
@@ -176,7 +176,7 @@ module.exports = class PasswordResetService {
     try {
       user = await findActiveUserByEmail(email);
     } catch (error) {
-      console.error(error);
+      console.error("Falha na operação.");
       throw { status: 500, message: "Erro interno do servidor." };
     }
 
@@ -223,7 +223,7 @@ module.exports = class PasswordResetService {
     try {
       user = await findActiveUserByEmail(email);
     } catch (error) {
-      console.error(error);
+      console.error("Falha na operação.");
       throw { status: 500, message: "Erro interno do servidor." };
     }
 
@@ -312,7 +312,7 @@ module.exports = class PasswordResetService {
           [claim.userId],
         );
       } catch (error) {
-        console.error(error);
+        console.error("Falha na operação.");
         throw { status: 500, message: "Erro interno do servidor." };
       }
 
@@ -350,7 +350,7 @@ module.exports = class PasswordResetService {
         await connection.commit();
       } catch (error) {
         await connection.rollback();
-        console.error(error);
+        console.error("Falha na operação.");
 
         if (error.status) {
           throw error;

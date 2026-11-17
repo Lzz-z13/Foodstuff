@@ -43,7 +43,7 @@ module.exports = class LogService {
       const [logs] = await connect.execute(query, [entity]);
       return logs;
     } catch (error) {
-      console.log(error)
+      console.error("Falha na operação.");
       if (error.status) throw error;
       throw { status: 500, message: "Erro interno do servidor." };
     }

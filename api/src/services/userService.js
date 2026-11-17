@@ -177,7 +177,7 @@ module.exports = class UserService {
         };
       }
 
-      console.error(error);
+      console.error("Falha na operação.");
 
       throw {
         status: 500,
@@ -200,7 +200,7 @@ module.exports = class UserService {
           "Usuário criado com sucesso. Credenciais enviadas no email inserido.",
       };
     } catch (emailError) {
-      console.error("Erro ao enviar e-mail de credenciais:", emailError);
+      console.error("Erro ao enviar e-mail de credenciais.");
 
       return {
         warning:
@@ -301,7 +301,7 @@ module.exports = class UserService {
       await connection.commit();
       return;
     } catch (error) {
-      console.error(error);
+      console.error("Falha na operação.");
       await connection.rollback();
       if (error.status) throw error;
       if (error.code === "ER_DUP_ENTRY") {
@@ -601,7 +601,7 @@ module.exports = class UserService {
         throw error;
       }
 
-      console.error(error);
+      console.error("Falha na operação.");
 
       throw {
         status: 500,
@@ -754,7 +754,7 @@ module.exports = class UserService {
     } catch (error) {
       await connection.rollback();
       if (error.status) throw error;
-      console.log(error);
+      console.error("Falha na operação.");
       throw { status: 500, message: "Erro interno do servidor." };
     } finally {
       connection.release();

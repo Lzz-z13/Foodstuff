@@ -35,7 +35,7 @@ export default function Header({ navigation }) {
           setPhoto(user?.photo || null);
         }
       } catch (error) {
-        console.log("Erro ao carregar foto do header:", error);
+        console.log("Erro ao carregar foto do header:");
       }
     }
 

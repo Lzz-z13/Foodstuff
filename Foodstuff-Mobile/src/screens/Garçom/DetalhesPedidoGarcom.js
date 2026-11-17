@@ -96,10 +96,10 @@ export default function DetalhesPedido({ route, navigation }) {
         const respostaComanda = await sheets.getCommand(commandId);
         setComanda(respostaComanda.data?.data ?? respostaComanda.data);
       } catch (erroComanda) {
-        console.log("Erro ao carregar comanda:", erroComanda);
+        console.log("Erro ao carregar comanda:");
       }
     } catch (error) {
-      console.log("Erro ao carregar pedido:", error);
+      console.log("Erro ao carregar pedido:");
       Alert.alert("Erro", "Não foi possível carregar os detalhes do pedido.");
     } finally {
       setCarregando(false);
@@ -124,7 +124,7 @@ export default function DetalhesPedido({ route, navigation }) {
       );
       await carregarDetalhes();
     } catch (error) {
-      console.log("Erro ao solicitar conta:", error);
+      console.log("Erro ao solicitar conta:");
       Alert.alert(
         "Erro",
         error.response?.data?.message || "Não foi possível solicitar a conta.",

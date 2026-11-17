@@ -138,7 +138,7 @@ export default function Mesas({ navigation }) {
     try {
       await AsyncStorage.setItem(MESAS_STORAGE_KEY, JSON.stringify(lista));
     } catch (error) {
-      console.warn("Erro ao salvar mesas localmente:", error);
+      console.warn("Erro ao salvar mesas localmente:");
     }
   }, []);
 
@@ -170,7 +170,7 @@ export default function Mesas({ navigation }) {
         .filter((mesa) => mesa && Number.isFinite(Number(mesa.numero)))
         .map((mesa) => criarMesa(mesa));
     } catch (error) {
-      console.warn("Erro ao carregar mesas locais:", error);
+      console.warn("Erro ao carregar mesas locais:");
       return [];
     }
   }
@@ -253,7 +253,7 @@ export default function Mesas({ navigation }) {
           setUser(JSON.parse(dados));
         }
       } catch (error) {
-        console.log("Erro ao carregar usuário:", error);
+        console.log("Erro ao carregar usuário:");
       }
     }
 

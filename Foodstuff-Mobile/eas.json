@@ -18,7 +18,10 @@
       "android": {
         "buildType": "apk"
       },
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://foodstuff-production-862333e7.up.railway.app/api/foodstuff"
+      }
     }
   },
   "submit": {

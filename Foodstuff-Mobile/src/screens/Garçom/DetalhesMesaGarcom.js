@@ -52,7 +52,7 @@ export default function DetalhesMesaGarcom({ route, navigation }) {
 
       setComandas(data);
     } catch (err) {
-      console.error("Erro ao buscar detalhes da mesa:", err);
+      console.error("Erro ao buscar detalhes da mesa:");
       setError("Não foi possível carregar os detalhes desta mesa.");
     } finally {
       setLoading(false);

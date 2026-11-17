@@ -45,10 +45,7 @@ async function sendEmail(to, subject, html) {
 
     return data;
   } catch (error) {
-    console.error(
-      "Erro ao enviar email:",
-      error.response?.data?.error?.message || error.message,
-    );
+    console.error("Erro ao enviar email.");
 
     throw { status: 500, message: "Erro ao enviar email" };
   }

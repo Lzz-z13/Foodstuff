@@ -150,7 +150,7 @@ export default function Dashboard({ navigation }) {
         const dados = await SecureStore.getItemAsync("user");
         if (dados) setUser(JSON.parse(dados));
       } catch (err) {
-        console.log("Erro ao carregar usuário:", err);
+        console.log("Erro ao carregar usuário:");
       }
     }
     carregarUsuario();
@@ -177,7 +177,7 @@ export default function Dashboard({ navigation }) {
       setBestSelling(adaptarMaisVendidos(data.maisVendidos));
       setRecentOrders(adaptarPedidosRecentes(data.pedidosRecentes));
     } catch (err) {
-      console.log("Erro ao carregar dashboard:", err);
+      console.log("Erro ao carregar dashboard:");
       setError("Não foi possível carregar os dados do dashboard.");
     } finally {
       setLoading(false);

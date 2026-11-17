@@ -458,7 +458,7 @@ export default function Pedidos({ navigation }) {
       setError(null);
       setUltimaAtualizacao(new Date());
     } catch (err) {
-      console.log("Erro ao carregar pedidos:", err?.response?.data ?? err);
+      console.log("Erro ao carregar pedidos:");
 
       if (!ativoRef.current) return;
       setError("Não foi possível atualizar os pedidos.");

@@ -60,7 +60,7 @@ export default function MesasGarcom({ navigation }) {
 
       setMesas(mesasComStatus);
     } catch (err) {
-      console.error("Erro ao buscar mesas:", err);
+      console.error("Erro ao buscar mesas:");
       setError("Não foi possível carregar as mesas.");
     } finally {
       setLoading(false);

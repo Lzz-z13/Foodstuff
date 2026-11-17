@@ -69,7 +69,7 @@ export default function Cozinha() {
       // A cozinha só vê pedidos com itens que precisam de preparo.
       setOrders(lista.filter((order) => order.needs_kitchen));
     } catch (error) {
-      console.error("Erro ao carregar pedidos:", error);
+      console.error("Erro ao carregar pedidos:");
       setOrders([]);
       setSnackbar({
         message:
@@ -120,7 +120,7 @@ export default function Cozinha() {
         });
         return true;
       } catch (error) {
-        console.error("Erro ao atualizar status:", error);
+        console.error("Erro ao atualizar status:");
         setSnackbar({
           message:
             error?.response?.data?.message ||

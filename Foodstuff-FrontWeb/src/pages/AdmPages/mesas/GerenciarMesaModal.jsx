@@ -4,11 +4,9 @@ import { Loader2, Printer, QrCode, RefreshCw, Trash2, X } from "lucide-react";
 import api from "../../../services/axios";
 import { textToQrCodeDataUrl } from "../../../utils/qrCode";
 
-// O QR da mesa abre o cardápio no APK instalado, inclusive com o Front em dev.
-const QR_LINK_PREFIX = "foodstuff://";
-
 function montarLinkMesa(token) {
-  return `${QR_LINK_PREFIX}mesa/${encodeURIComponent(token)}`;
+  const origem = import.meta.env.VITE_CUSTOMER_BASE_URL || window.location.origin;
+  return `${origem.replace(/\/$/, "")}/mesa/${encodeURIComponent(token)}`;
 }
 
 function getQrCodesFromResponse(response) {
