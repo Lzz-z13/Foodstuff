@@ -118,7 +118,7 @@ CREATE TABLE
         description TEXT NULL,
         price DECIMAL(10, 2) NOT NULL,
         cost DECIMAL(10, 2) NULL,
-        image VARCHAR(500) NULL,
+        image MEDIUMTEXT NULL,
         requires_preparation TINYINT NOT NULL DEFAULT TRUE,
         is_available TINYINT NOT NULL DEFAULT TRUE,
         is_active TINYINT NOT NULL DEFAULT TRUE,

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import sheets from "../../services/api";
 
 const brl = (valor) =>
@@ -46,65 +47,48 @@ export default function DetalhesPedido({ route, navigation }) {
   const pedidoId =
     route?.params?.pedidoId ?? route?.params?.id ?? route?.params?.pedido?.id;
 
-  const [pedido, setPedido] = useState(null);
+  const commandIdParam = route?.params?.commandId;
   const [comanda, setComanda] = useState(null);
   const [pedidosDaComanda, setPedidosDaComanda] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const fechandoRef = useRef(false);
   const [solicitandoConta, setSolicitandoConta] = useState(false);
 
   const carregarDetalhes = useCallback(async () => {
-    if (!pedidoId) {
+    if (!pedidoId && !commandIdParam) {
       setCarregando(false);
-      Alert.alert("Erro", "Não foi possível identificar o pedido.");
       return;
     }
-
     try {
       setCarregando(true);
-
-      // O pedido de entrada identifica a comanda: a tela mostra a comanda
-      // inteira, porque novos itens são gravados como novos pedidos dela.
-      const resposta = await sheets.getPedido(pedidoId);
-      const pedidoCarregado = resposta.data?.data ?? resposta.data;
-
-      setPedido(pedidoCarregado);
-      setComanda(null);
-      setPedidosDaComanda([]);
-
-      const commandId = pedidoCarregado?.command_id;
-
+      let commandId = commandIdParam;
       if (!commandId) {
-        return;
+        const resposta = await sheets.getPedido(pedidoId);
+        commandId = (resposta.data?.data ?? resposta.data)?.command_id;
       }
-
-      const respostaPedidos = await sheets.getPedidos();
+      const [respostaComanda, respostaPedidos] = await Promise.all([
+        sheets.getCommand(commandId),
+        sheets.getPedidos(),
+      ]);
+      setComanda(respostaComanda.data?.data ?? respostaComanda.data);
       const todos = Array.isArray(respostaPedidos.data)
         ? respostaPedidos.data
-        : [];
-
+        : respostaPedidos.data?.data;
       setPedidosDaComanda(
-        todos.filter(
-          (pedidoComanda) =>
-            String(pedidoComanda.command_id) === String(commandId),
-        ),
+        Array.isArray(todos)
+          ? todos.filter((p) => String(p.command_id) === String(commandId))
+          : [],
       );
-
-      // A comanda define se ainda é possível adicionar itens ou solicitar
-      // a conta. Se ela não carregar, os botões seguem habilitados e a API
-      // continua validando no servidor.
-      try {
-        const respostaComanda = await sheets.getCommand(commandId);
-        setComanda(respostaComanda.data?.data ?? respostaComanda.data);
-      } catch (erroComanda) {
-        console.log("Erro ao carregar comanda:");
-      }
     } catch (error) {
-      console.log("Erro ao carregar pedido:");
-      Alert.alert("Erro", "Não foi possível carregar os detalhes do pedido.");
+      setComanda(null);
+      Alert.alert(
+        "Erro",
+        error.response?.data?.message || "Não foi possível carregar a comanda.",
+      );
     } finally {
       setCarregando(false);
     }
-  }, [pedidoId]);
+  }, [pedidoId, commandIdParam]);
 
   // Recarrega ao voltar de "Anotar pedido" para refletir os itens adicionados.
   useFocusEffect(
@@ -114,30 +98,35 @@ export default function DetalhesPedido({ route, navigation }) {
   );
 
   async function solicitarConta() {
+    if (fechandoRef.current || !comanda || comanda.status !== "OPEN") return;
+    fechandoRef.current = true;
     try {
       setSolicitandoConta(true);
-      await sheets.postSolicitarConta(pedidoId);
+      const response = await sheets.closeCommand(comanda.command_id);
 
       Alert.alert(
         "Conta solicitada",
-        "A comanda foi fechada. O cliente pode finalizar o pagamento no caixa.",
+        response.data.data.status === "CLOSED"
+          ? "A comanda foi fechada. O cliente pode finalizar o pagamento no caixa."
+          : "Comanda encerrada sem pedidos ativos.",
       );
       await carregarDetalhes();
     } catch (error) {
       console.log("Erro ao solicitar conta:");
       Alert.alert(
         "Erro",
-        error.response?.data?.message || "Não foi possível solicitar a conta.",
+        error.response?.data?.message || error.message || "Não foi possível solicitar a conta.",
       );
     } finally {
+      fechandoRef.current = false;
       setSolicitandoConta(false);
     }
   }
 
   function adicionarItem() {
     navigation.navigate("AnotarPedido", {
-      pedidoId,
-      pedido,
+      commandId: comanda.command_id,
+      mesa: { table_id: comanda.table_id, number: comanda.table_number },
     });
   }
 
@@ -150,10 +139,10 @@ export default function DetalhesPedido({ route, navigation }) {
     );
   }
 
-  if (!pedido) {
+  if (!comanda) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Não foi possível encontrar este pedido.</Text>
+        <Text>Não foi possível encontrar esta comanda.</Text>
 
         <TouchableOpacity
           style={styles.botaoVoltarErro}
@@ -193,14 +182,14 @@ export default function DetalhesPedido({ route, navigation }) {
     }, 0);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.conteudo}>
         <Text style={styles.titulo}>Detalhes da comanda</Text>
 
         <View style={styles.card}>
           <Text style={styles.label}>Mesa</Text>
           <Text style={styles.valor}>
-            {pedido.mesa?.codigo ?? pedido.table_number ?? "Não informada"}
+            {comanda.table_number ?? "Não informada"}
           </Text>
 
           <Text style={styles.label}>Cliente</Text>
@@ -210,7 +199,7 @@ export default function DetalhesPedido({ route, navigation }) {
 
           <Text style={styles.label}>Comanda</Text>
           <Text style={styles.valor}>
-            {pedido.command_id ? `#${pedido.command_id}` : "Não informada"}
+            {comanda.command_id ? `#${comanda.command_id}` : "Não informada"}
           </Text>
 
           <Text style={styles.label}>Status da comanda</Text>
@@ -247,7 +236,10 @@ export default function DetalhesPedido({ route, navigation }) {
             );
 
             return (
-              <View key={pedidoComanda.id ?? pedidoComanda.order_id} style={styles.card}>
+              <View
+                key={pedidoComanda.id ?? pedidoComanda.order_id}
+                style={styles.card}
+              >
                 <Text style={styles.pedidoNumero}>
                   {`Pedido #${pedidoComanda.id ?? pedidoComanda.order_id} • ${statusPedido}`}
                 </Text>
@@ -331,7 +323,16 @@ export default function DetalhesPedido({ route, navigation }) {
             styles.botaoConta,
             (comandaEncerrada || solicitandoConta) && styles.botaoDesabilitado,
           ]}
-          onPress={solicitarConta}
+          onPress={() =>
+            Alert.alert(
+              "Solicitar conta?",
+              "A comanda deixará de aceitar novos pedidos. O pagamento será finalizado no caixa.",
+              [
+                { text: "Voltar", style: "cancel" },
+                { text: "Solicitar conta", onPress: solicitarConta },
+              ],
+            )
+          }
           disabled={solicitandoConta || comandaEncerrada}
           activeOpacity={0.8}
         >
@@ -345,7 +346,7 @@ export default function DetalhesPedido({ route, navigation }) {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

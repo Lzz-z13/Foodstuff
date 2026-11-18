@@ -4,6 +4,60 @@ const createLog = require("../utils/createLog");
 const crypto = require("crypto");
 
 module.exports = class CommandService {
+  // Usado por funcionário autenticado ou pelo token privado da própria comanda.
+  // O bloqueio é o mesmo utilizado por criação de pedidos e pagamentos.
+  static async closeCommand({ command_id, session_token, jwt_user_id = null }) {
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [commands] = await connection.execute(
+        session_token
+          ? "SELECT command_id, status FROM commands WHERE session_token = ? FOR UPDATE"
+          : "SELECT command_id, status FROM commands WHERE command_id = ? FOR UPDATE",
+        [session_token || command_id],
+      );
+      if (!commands.length)
+        throw { status: 404, message: "Comanda não encontrada." };
+      const command = commands[0];
+      if (command.status !== "OPEN") {
+        // Repetir uma solicitação após timeout não fecha nem cobra duas vezes.
+        await connection.commit();
+        return { command_id: command.command_id, status: command.status };
+      }
+      const [orders] = await connection.execute(
+        "SELECT order_id, status FROM orders WHERE command_id = ? FOR UPDATE",
+        [command.command_id],
+      );
+      // Sem nenhum pedido válido, encerra sem criar cobrança ou pagamento fictício.
+      const status = orders.some((order) => order.status !== "CANCELLED")
+        ? "CLOSED"
+        : "CANCELLED";
+      await connection.execute(
+        `UPDATE commands SET status = ?, closed_at = COALESCE(closed_at, NOW()),
+          closed_by = COALESCE(closed_by, ?) WHERE command_id = ?`,
+        [status, jwt_user_id, command.command_id],
+      );
+      await createLog(
+        connection,
+        jwt_user_id,
+        "CLOSE_COMMAND",
+        "commands",
+        command.command_id,
+        status === "CLOSED"
+          ? `Conta da comanda #${command.command_id} solicitada${jwt_user_id ? " pela equipe" : " pelo cliente"}.`
+          : `Comanda #${command.command_id} encerrada sem pedidos ativos.`,
+      );
+      await connection.commit();
+      return { command_id: command.command_id, status };
+    } catch (error) {
+      await connection.rollback();
+      if (error.status) throw error;
+      throw { status: 500, message: "Erro ao fechar a comanda." };
+    } finally {
+      connection.release();
+    }
+  }
+
   static async createCommandByQr(token, customer_name) {
     const connection = await connect.getConnection();
 

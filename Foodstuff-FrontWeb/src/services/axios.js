@@ -24,6 +24,33 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Compatibilidade com APIs que ainda retornam apenas id e número da mesa.
+async function carregarMesasComStatus() {
+  const response = await api.get("/tables", { timeout: 15000 });
+  const tables = response.data?.data;
+  if (!Array.isArray(tables)) throw new Error("Resposta de mesas inválida.");
+  const data = await Promise.all(tables.map(async (table) => {
+    const status = String(table.status || "").trim().toLowerCase();
+    if (["livre", "ocupada"].includes(status)) return { ...table, status };
+    let commands = table.active_commands;
+    if (!Array.isArray(commands)) {
+      const result = await api.get(`/tables/${table.table_id}/commands`, { timeout: 15000 });
+      commands = result.data?.data;
+      if (!Array.isArray(commands)) throw new Error("Resposta de comandas inválida.");
+    }
+    const active = commands.filter(command => ["OPEN", "CLOSED"].includes(String(command.status).toUpperCase()));
+    return {
+      ...table,
+      status: active.length ? "ocupada" : "livre",
+      active_commands: active,
+      open_commands_count: active.filter(command => String(command.status).toUpperCase() === "OPEN").length,
+      awaiting_payment_count: active.filter(command => String(command.status).toUpperCase() === "CLOSED").length,
+      occupied_since: active.map(command => command.opened_at).filter(Boolean).sort()[0] || null,
+    };
+  }));
+  return { ...response, data: { ...response.data, data } };
+}
+
 const sheets = {
   postLogin: (user) => api.post("/auth/login", user),
   postPasswordResetRequest: (data) =>
@@ -50,7 +77,7 @@ const sheets = {
   patchUserById: (userId, data) => api.patch(`/users/${userId}`, data),
 
   postTable: (table) => api.post("/tables", table),
-  getAllTables: () => api.get("/tables"),
+  getAllTables: carregarMesasComStatus,
   deleteTable: (tableId) => api.delete(`/tables/${tableId}`),
   getQrCodesByTable: (tableId) => api.get(`/tables/${tableId}/qr-codes`),
   postQrCode: (tableId, data) => api.post(`/tables/${tableId}/qr-codes`, data),

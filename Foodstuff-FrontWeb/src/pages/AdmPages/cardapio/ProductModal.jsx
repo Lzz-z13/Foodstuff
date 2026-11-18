@@ -60,8 +60,31 @@ export default function ProductModal({
     setForm((f) => ({ ...f, [campo]: valor }));
   }
 
+  const [lendoImagem, setLendoImagem] = useState(false);
+  async function selecionarImagem(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setErro("Escolha uma imagem JPEG, PNG, WEBP ou GIF."); return;
+    }
+    if (file.size > 2 * 1024 * 1024) { setErro("Escolha uma imagem de até 2 MB."); return; }
+    setLendoImagem(true); setErro(null);
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+        reader.readAsDataURL(file);
+      });
+      set("image", image); setPreviewErro(false);
+    } catch { setErro("Não foi possível ler a imagem selecionada."); }
+    finally { setLendoImagem(false); }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
+    if (lendoImagem) return;
     setErro(null);
 
     if (!form.name.trim()) {
@@ -215,14 +238,17 @@ export default function ProductModal({
 
           <label className="block sm:col-span-2">
             <span className="mb-1 block text-[12px] font-semibold text-slate-700">
-              URL da imagem
+              Imagem do produto
             </span>
             <input
-              value={form.image}
-              onChange={(e) => set("image", e.target.value)}
-              placeholder="https://..."
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={selecionarImagem}
+              disabled={salvando || lendoImagem}
               className="h-10 w-full rounded-xl border border-slate-200 px-3 text-[13px] outline-none focus:border-[#ff5a47]"
             />
+            <span className="mt-1 block text-xs text-slate-500">JPEG, PNG, WEBP ou GIF. Até 2 MB.</span>
+            {form.image && <button type="button" disabled={salvando || lendoImagem} onClick={() => set("image", "")} className="mt-2 text-sm font-semibold text-red-600">Remover imagem</button>}
             {form.image.trim() !== "" && !previewErro ? (
               <img
                 src={form.image.trim()}
@@ -232,7 +258,7 @@ export default function ProductModal({
               />
             ) : form.image.trim() !== "" && previewErro ? (
               <p className="mt-1 text-[11px] text-amber-600">
-                Não foi possível carregar a pré-visualização desta URL.
+                Não foi possível carregar a pré-visualização da imagem.
               </p>
             ) : null}
           </label>
@@ -288,14 +314,14 @@ export default function ProductModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={salvando}
+              disabled={salvando || lendoImagem}
               className="cursor-pointer rounded-xl border border-slate-200 px-4 py-2.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={salvando}
+              disabled={salvando || lendoImagem}
               className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#ff5a47] px-5 py-2.5 text-[13px] font-semibold text-white hover:brightness-95 disabled:opacity-60"
             >
               {salvando && <Loader2 size={15} className="animate-spin" />}

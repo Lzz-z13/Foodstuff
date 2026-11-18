@@ -6,6 +6,39 @@ const validateQrCodeToken = require("../validations/validateQrCodeToken");
 const validateSessionToken = require("../validations/validateSessionToken");
 
 module.exports = class CommandController {
+  static async closeCommand(req, res, next) {
+    try {
+      validateCommandId(req.params.command_id);
+      const data = await CommandService.closeCommand({
+        command_id: req.params.command_id,
+        jwt_user_id: req.user.id,
+      });
+      return res.status(200).json({
+        error: false,
+        message: "Comanda atualizada com sucesso.",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async closeCommandBySession(req, res, next) {
+    try {
+      validateSessionToken(req.params.session_token);
+      const data = await CommandService.closeCommand({
+        session_token: req.params.session_token,
+      });
+      return res.status(200).json({
+        error: false,
+        message: "Comanda atualizada com sucesso.",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createCommandByQr(req, res, next) {
     const { token } = req.params;
 

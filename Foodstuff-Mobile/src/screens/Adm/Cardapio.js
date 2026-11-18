@@ -14,8 +14,10 @@ import {
   Switch,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 
 import Header from "../../components/header/Header";
@@ -151,6 +153,7 @@ function ProductModal({ visible, product, categories, onClose, onSaved }) {
   const isEdit = Boolean(product);
   const [form, setForm] = useState(FORM_EMPTY);
   const [saving, setSaving] = useState(false);
+  const [selectingImage, setSelectingImage] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -175,7 +178,26 @@ function ProductModal({ visible, product, categories, onClose, onSaved }) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function selecionarImagem() {
+    if (saving || selectingImage) return;
+    setSelectingImage(true);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) { Alert.alert("Permissão necessária", "Permita o acesso às fotos para escolher a imagem do produto."); return; }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, quality: 0.5, base64: true });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset?.base64) throw new Error("Não foi possível ler a imagem.");
+      const mime = asset.mimeType || (/\.png$/i.test(asset.uri) ? "image/png" : /\.webp$/i.test(asset.uri) ? "image/webp" : /\.gif$/i.test(asset.uri) ? "image/gif" : "image/jpeg");
+      if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(mime)) throw new Error("Escolha uma imagem JPEG, PNG, WEBP ou GIF.");
+      if (Math.ceil(asset.base64.length * 3 / 4) > 2 * 1024 * 1024) throw new Error("Escolha uma imagem de até 2 MB.");
+      set("image", `data:${mime};base64,${asset.base64}`);
+    } catch (error) { Alert.alert("Imagem do produto", error.message || "Não foi possível selecionar a imagem."); }
+    finally { setSelectingImage(false); }
+  }
+
   async function salvar() {
+    if (saving || selectingImage) return;
     if (!form.name.trim()) {
       Alert.alert("Atenção", "O nome do produto é obrigatório.");
       return;
@@ -248,7 +270,18 @@ function ProductModal({ visible, product, categories, onClose, onSaved }) {
             <Campo label="Descrição" value={form.description} onChangeText={(v) => set("description", v)} placeholder="Descreva o produto" multiline />
             <Campo label="Preço (R$) *" value={form.price} onChangeText={(v) => set("price", v)} keyboardType="decimal-pad" placeholder="0,00" />
             <Campo label="Custo (R$)" value={form.cost} onChangeText={(v) => set("cost", v)} keyboardType="decimal-pad" placeholder="0,00 (opcional)" />
-            <Campo label="URL da Imagem" value={form.image} onChangeText={(v) => set("image", v)} placeholder="https://..." />
+            <Text style={styles.fieldLabel}>Imagem do produto</Text>
+            <TouchableOpacity disabled={saving || selectingImage} onPress={selecionarImagem} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 14, backgroundColor: C.primaryLight, borderRadius: 12, marginBottom: 8 }}>
+              <Ionicons name="image-outline" size={22} color={C.primary} />
+              <Text style={{ color: C.primary, fontWeight: "700" }}>{selectingImage ? "Carregando..." : form.image ? "Trocar imagem" : "Escolher da galeria"}</Text>
+            </TouchableOpacity>
+            <Text style={{ color: C.gray, fontSize: 12, marginBottom: 12 }}>JPEG, PNG, WEBP ou GIF. Até 2 MB.</Text>
+            {!!form.image && <View style={{ marginBottom: 16 }}>
+              <Image source={{ uri: form.image }} style={{ width: "100%", height: 160, borderRadius: 12 }} resizeMode="cover" />
+              <TouchableOpacity disabled={saving || selectingImage} onPress={() => set("image", "")} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 10 }}>
+                <Ionicons name="trash-outline" size={18} color={C.red} /><Text style={{ color: C.red, fontWeight: "700" }}>Remover imagem</Text>
+              </TouchableOpacity>
+            </View>}
 
             {/* Categoria */}
             <Text style={styles.fieldLabel}>Categoria *</Text>

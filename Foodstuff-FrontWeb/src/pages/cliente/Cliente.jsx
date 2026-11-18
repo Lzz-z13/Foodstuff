@@ -210,6 +210,7 @@ export default function Cliente() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
+  const [closeConfirm, setCloseConfirm] = useState(false);
   const [noticeSuccess, setNoticeSuccess] = useState(false);
   const sending = useRef(false);
   const key = table && `foodstuff.customer.table.${table.table_id}`;
@@ -269,6 +270,64 @@ export default function Cliente() {
       active = false;
     };
   }, [token, retry]);
+  useEffect(() => {
+    if (!session.session_token) return;
+    let active = true;
+    let pending = false;
+    async function refreshCommand() {
+      if (pending || sending.current || document.hidden) return;
+      pending = true;
+      try {
+        const response = await publicApi.get(
+          `/public/commands/${encodeURIComponent(session.session_token)}`,
+        );
+        if (active && !sending.current) setCommand(response.data.data);
+      } catch {
+        /* Mantém a última leitura; o servidor valida cada operação. */
+      } finally {
+        pending = false;
+      }
+    }
+    const timer = setInterval(refreshCommand, 10000);
+    window.addEventListener("focus", refreshCommand);
+    document.addEventListener("visibilitychange", refreshCommand);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", refreshCommand);
+      document.removeEventListener("visibilitychange", refreshCommand);
+    };
+  }, [session.session_token]);
+  async function closeCommand() {
+    if (sending.current || !session.session_token) return;
+    sending.current = true;
+    setBusy(true);
+    setNoticeSuccess(false);
+    try {
+      const response = await publicApi.post(
+        `/public/commands/${encodeURIComponent(session.session_token)}/close`,
+      );
+      setCommand((current) => ({
+        ...current,
+        status: response.data.data.status,
+      }));
+      setCart([]);
+      setCloseConfirm(false);
+      setCartOpen(false);
+      setNoticeSuccess(true);
+      setNotice(
+        response.data.data.status === "CLOSED"
+          ? "Conta solicitada. Você já pode finalizar o pagamento no caixa."
+          : "Comanda encerrada. Obrigado pela visita!",
+      );
+    } catch (err) {
+      setNotice(message(err));
+      setCloseConfirm(false);
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
+  }
   const canOrder = !session.pending && (!command || command.status === "OPEN");
   const filtered = products.filter(
     (p) =>
@@ -407,9 +466,9 @@ export default function Cliente() {
           `/public/commands/${encodeURIComponent(session.session_token)}`,
         )
       ).data.data;
-      if (cmd.status === "OPEN" || session.pending)
+      if (["OPEN", "CLOSED"].includes(cmd.status) || session.pending)
         throw new Error(
-          "A comanda ainda está aberta ou tem confirmação pendente.",
+          "Finalize a comanda e o pagamento antes de iniciar outra.",
         );
       localStorage.removeItem(key);
       setSession({});
@@ -544,11 +603,22 @@ export default function Cliente() {
                   <strong>Comanda de {command.customer_name}</strong>
                   <span>
                     {command.status === "OPEN"
-                      ? "Seus próximos pedidos serão adicionados aqui."
-                      : "Esta comanda está encerrada para novos pedidos."}
+                      ? "Faça seus pedidos abaixo!"
+                      : command.status === "CLOSED"
+                        ? "Conta solicitada. Aguardando pagamento no caixa."
+                        : "Esta comanda foi encerrada."}
                   </span>
                 </div>
-                {command.status !== "OPEN" && (
+                {command.status === "OPEN" && (
+                  <button
+                    className="cliente-text-button"
+                    disabled={busy || !!session.pending}
+                    onClick={() => setCloseConfirm(true)}
+                  >
+                    Solicitar conta
+                  </button>
+                )}
+                {["PAID", "CANCELLED"].includes(command.status) && (
                   <button
                     className="cliente-text-button"
                     disabled={!!session.pending}
@@ -911,6 +981,43 @@ export default function Cliente() {
               canOrder={canOrder && !busy}
             />
           )}
+          <Sheet
+            open={closeConfirm}
+            onClose={() => {
+              if (!sending.current) setCloseConfirm(false);
+            }}
+            title="Solicitar a conta?"
+            busy={busy}
+          >
+            <div className="cliente-sheet-scroll">
+              <p className="cliente-confirm-copy">
+                A comanda deixará de aceitar novos pedidos. Os pedidos já
+                enviados continuam no preparo e o pagamento é feito no caixa.
+              </p>
+              {!!cart.length && (
+                <p className="cliente-inline-error">
+                  Há itens no carrinho que ainda não foram enviados. Ao
+                  solicitar a conta, eles serão descartados.
+                </p>
+              )}
+            </div>
+            <footer className="cliente-sheet-footer">
+              <button
+                className="cliente-primary"
+                disabled={busy}
+                onClick={closeCommand}
+              >
+                {busy ? "Solicitando..." : "Confirmar solicitação da conta"}
+              </button>
+              <button
+                className="cliente-text-button"
+                disabled={busy}
+                onClick={() => setCloseConfirm(false)}
+              >
+                Continuar consumindo
+              </button>
+            </footer>
+          </Sheet>
           <Sheet
             open={pendingConfirm}
             onClose={() => setPendingConfirm(false)}

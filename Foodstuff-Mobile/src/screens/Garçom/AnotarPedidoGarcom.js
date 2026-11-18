@@ -15,8 +15,10 @@ import {
   Alert,
   Modal,
   TextInput,
+  ScrollView,
 } from "react-native";
-import LogoutButton from "../../components/header/LogoutButton";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import sheets from "../../services/api";
 
 const brl = (valor) =>
@@ -109,16 +111,30 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
   };
 
   const removerProduto = (product_id) => {
+    if (enviando || criandoComanda) return;
     setItensSelecionados((atual) =>
-      atual
-        .map((item) =>
-          item.product_id === product_id
-            ? { ...item, quantidade: item.quantidade - 1 }
-            : item,
-        )
-        .filter((item) => item.quantidade > 0),
+      atual.filter((item) => item.product_id !== product_id),
     );
   };
+  function voltar() {
+    if (enviando || criandoComanda) return;
+    if (!itensSelecionados.length) {
+      navigation.goBack();
+      return;
+    }
+    Alert.alert(
+      "Voltar sem enviar?",
+      "Os itens selecionados ainda não foram enviados e serão descartados.",
+      [
+        { text: "Continuar anotando", style: "cancel" },
+        {
+          text: "Descartar e voltar",
+          style: "destructive",
+          onPress: () => navigation.goBack(),
+        },
+      ],
+    );
+  }
 
   const finalizarNavegacao = (novoPedidoId) => {
     // Veio de um pedido existente: volta para os detalhes da comanda.
@@ -231,12 +247,19 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
+        <TouchableOpacity
+          accessibilityLabel="Voltar"
+          disabled={enviando || criandoComanda}
+          onPress={voltar}
+          style={styles.voltar}
+        >
+          <Ionicons name="arrow-back" size={22} color="#1F2024" />
+        </TouchableOpacity>
         <Text style={styles.titulo}>
           {abrirNovaComanda ? "Anotar Pedido" : "Adicionar Itens"}
         </Text>
-        <LogoutButton navigation={navigation} />
       </View>
 
       <View style={styles.pedidoInfo}>
@@ -285,6 +308,7 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
 
               <TouchableOpacity
                 style={styles.botaoAdicionar}
+                disabled={enviando || criandoComanda}
                 onPress={() => adicionarProduto(item)}
               >
                 <Text style={styles.botaoAdicionarTexto}>Adicionar</Text>
@@ -300,16 +324,24 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
         {itensSelecionados.length === 0 ? (
           <Text style={styles.vazio}>Nenhum item selecionado.</Text>
         ) : (
-          itensSelecionados.map((item) => (
-            <View key={item.product_id} style={styles.itemResumo}>
-              <Text style={styles.itemResumoTexto}>
-                {item.quantidade}x {item.name}
-              </Text>
-              <TouchableOpacity onPress={() => removerProduto(item.product_id)}>
-                <Text style={styles.removerTexto}>Remover</Text>
-              </TouchableOpacity>
-            </View>
-          ))
+          <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+            {itensSelecionados.map((item) => (
+              <View key={item.product_id} style={styles.itemResumo}>
+                <Text style={styles.itemResumoTexto}>
+                  {item.quantidade}x {item.name}
+                </Text>
+                <TouchableOpacity
+                  style={styles.removerButton}
+                  accessibilityLabel={`Remover ${item.name}`}
+                  disabled={enviando || criandoComanda}
+                  onPress={() => removerProduto(item.product_id)}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text style={styles.removerTexto}>Remover</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
         )}
 
         <View style={styles.totalRow}>
@@ -393,11 +425,26 @@ export default function AnotarPedidoGarcom({ route, navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  voltar: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    backgroundColor: "#F5F6F8",
+  },
+  removerButton: {
+    flexDirection: "row",
+    gap: 5,
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingLeft: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: "#F8F9FF",
@@ -409,12 +456,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 16,
-    paddingTop: 48,
+    paddingTop: 12,
     paddingBottom: 12,
     backgroundColor: "#fff",
   },
 
   titulo: {
+    flex: 1,
     fontSize: 20,
     fontWeight: "800",
     color: "#111827",
@@ -537,6 +585,7 @@ const styles = StyleSheet.create({
   },
 
   itemResumoTexto: {
+    flex: 1,
     color: "#374151",
     fontSize: 13,
   },

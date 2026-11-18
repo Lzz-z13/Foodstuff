@@ -13,14 +13,16 @@ router.get("/products/:product_id", PublicController.readProductById);
 
 router.get("/categories", PublicController.readCategories);
 
-router.get(
-  "/commands/:session_token",
-  PublicController.readCommandBySession,
-);
+router.get("/commands/:session_token", PublicController.readCommandBySession);
 
 router.post(
   "/commands/:session_token/orders",
   PublicController.createOrderBySession,
+);
+
+router.post(
+  "/commands/:session_token/close",
+  require("../controllers/commandController").closeCommandBySession,
 );
 
 module.exports = router;

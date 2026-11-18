@@ -27,11 +27,11 @@ const STATUS_STYLE = {
     icone: "bg-red-50 text-red-500",
     label: "Ocupada",
   },
-  reservada: {
-    badge: "bg-amber-100 text-amber-700",
-    borda: "border-amber-200 hover:border-amber-300",
-    icone: "bg-amber-50 text-amber-600",
-    label: "Reservada",
+  desconhecida: {
+    badge: "bg-slate-100 text-slate-600",
+    borda: "border-slate-200",
+    icone: "bg-slate-50 text-slate-500",
+    label: "Sem confirmação",
   },
 };
 
@@ -39,7 +39,6 @@ const FILTROS = [
   { id: "todas", label: "Todas" },
   { id: "livre", label: "Livres" },
   { id: "ocupada", label: "Ocupadas" },
-  { id: "reservada", label: "Reservadas" },
 ];
 
 function getStoredUser() {
@@ -65,9 +64,14 @@ function getTablesFromResponse(response) {
     .map((table) => ({
       id: table.table_id ?? table.id,
       numero: table.number,
-      status: table.status ?? "livre",
-      pedido: table.pedido ?? null,
-      tempo: table.tempo ?? null,
+      status: ["livre", "ocupada"].includes(table.status)
+        ? table.status
+        : "desconhecida",
+      comandas: table.active_commands || [],
+      aguardando: Number(table.awaiting_payment_count || 0),
+      tempo: table.occupied_since
+        ? `${Math.max(0, Math.floor((Date.now() - new Date(table.occupied_since).getTime()) / 60000))} min`
+        : null,
     }))
     .filter((table) => table.id && table.numero)
     .sort((a, b) => Number(a.numero) - Number(b.numero));
@@ -89,6 +93,7 @@ export default function Mesas() {
   const [mesaAbertaId, setMesaAbertaId] = useState(null);
   const [mesaGerenciada, setMesaGerenciada] = useState(null);
   const [snackbar, setSnackbar] = useState(null);
+  const [erroAtualizacao, setErroAtualizacao] = useState("");
 
   useEffect(() => {
     if (!isManager) {
@@ -96,33 +101,38 @@ export default function Mesas() {
     }
 
     let mounted = true;
-
+    let pending = false;
     async function carregarMesas() {
+      if (pending || document.hidden) return;
+      pending = true;
       try {
-        setLoading(true);
         const response = await api.getAllTables();
-
         if (mounted) {
           setMesas(getTablesFromResponse(response));
+          setErroAtualizacao("");
         }
       } catch (error) {
-        if (mounted) {
-          setSnackbar({
-            message: getApiMessage(error, "Erro ao buscar mesas."),
-            type: "error",
-          });
-        }
+        if (mounted)
+          setErroAtualizacao(
+            getApiMessage(
+              error,
+              "Não foi possível atualizar as mesas. Os dados exibidos podem estar desatualizados.",
+            ),
+          );
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        pending = false;
+        if (mounted) setLoading(false);
       }
     }
-
     carregarMesas();
-
+    const timer = setInterval(carregarMesas, 10000);
+    window.addEventListener("focus", carregarMesas);
+    document.addEventListener("visibilitychange", carregarMesas);
     return () => {
       mounted = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", carregarMesas);
+      document.removeEventListener("visibilitychange", carregarMesas);
     };
   }, [isManager]);
 
@@ -154,7 +164,7 @@ export default function Mesas() {
       return;
     }
 
-    const numero = mesas.length + 1;
+    const numero = Math.max(0, ...mesas.map((mesa) => Number(mesa.numero))) + 1;
 
     try {
       setSalvando(true);
@@ -168,7 +178,8 @@ export default function Mesas() {
             id,
             numero,
             status: "livre",
-            pedido: null,
+            comandas: [],
+            aguardando: 0,
             tempo: null,
           },
         ].sort((a, b) => Number(a.numero) - Number(b.numero)),
@@ -247,7 +258,7 @@ export default function Mesas() {
         <div>
           <h2 className="text-xl font-bold text-slate-900">Mesas</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Toque em uma mesa para ver detalhes
+            Ocupação por comanda · atualização automática a cada 10 segundos
           </p>
         </div>
 
@@ -273,6 +284,14 @@ export default function Mesas() {
         </div>
       )}
 
+      {erroAtualizacao && (
+        <p
+          role="alert"
+          className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800"
+        >
+          {erroAtualizacao} Aguarde a próxima atualização.
+        </p>
+      )}
       {/* RESUMO */}
       <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -340,9 +359,6 @@ export default function Mesas() {
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-red-500" /> Ocupada
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-500" /> Reservada
-          </span>
         </div>
       </div>
 
@@ -362,7 +378,8 @@ export default function Mesas() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
             {mesasFiltradas.map((mesa) => {
-              const estilo = STATUS_STYLE[mesa.status] ?? STATUS_STYLE.livre;
+              const estilo =
+                STATUS_STYLE[mesa.status] ?? STATUS_STYLE.desconhecida;
 
               return (
                 <div
@@ -404,9 +421,17 @@ export default function Mesas() {
                         <p>Disponível</p>
                       ) : (
                         <>
-                          {mesa.pedido && (
-                            <p className="font-semibold text-slate-700">
-                              Pedido {mesa.pedido}
+                          {(mesa.comandas || []).map((comanda) => (
+                            <p
+                              key={comanda.command_id}
+                              className="break-words font-semibold text-slate-700"
+                            >
+                              {comanda.customer_name} · #{comanda.command_id}
+                            </p>
+                          ))}
+                          {!!mesa.aguardando && (
+                            <p className="mt-1 text-amber-700">
+                              {mesa.aguardando} aguardando pagamento
                             </p>
                           )}
                           {mesa.tempo && <p>{mesa.tempo}</p>}

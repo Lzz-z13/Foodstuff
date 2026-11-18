@@ -352,10 +352,9 @@ module.exports = class TableService {
             AND status = 'OPEN'
         `;
 
-        const [commandsResult] = await connection.execute(
-          cancelCommandsQuery,
-          [table_id],
-        );
+        const [commandsResult] = await connection.execute(cancelCommandsQuery, [
+          table_id,
+        ]);
 
         commands_cancelled = commandsResult.affectedRows;
       }
@@ -419,19 +418,46 @@ module.exports = class TableService {
   }
 
   static async readAllTables() {
+    // Um único snapshot: comandas fechadas continuam ocupando a mesa até o pagamento.
     const query = `
-      SELECT
-        table_id,
-        number
-      FROM tables
-      WHERE is_active = 1
-      ORDER BY number
+      SELECT t.table_id, t.number, c.command_id, c.customer_name,
+        c.status AS command_status, c.opened_at
+      FROM tables t
+      LEFT JOIN commands c ON c.table_id = t.table_id
+        AND c.status IN ('OPEN', 'CLOSED')
+      WHERE t.is_active = 1
+      ORDER BY t.number, c.opened_at, c.command_id
     `;
-
     try {
-      const [tables] = await connect.execute(query);
-      return tables;
-    } catch (error) {
+      const [rows] = await connect.execute(query);
+      const tables = new Map();
+      for (const row of rows) {
+        if (!tables.has(row.table_id))
+          tables.set(row.table_id, {
+            table_id: row.table_id,
+            number: row.number,
+            status: "livre",
+            active_commands: [],
+            open_commands_count: 0,
+            awaiting_payment_count: 0,
+            occupied_since: null,
+          });
+        const table = tables.get(row.table_id);
+        if (row.command_id !== null && row.command_id !== undefined) {
+          table.status = "ocupada";
+          table.occupied_since ||= row.opened_at;
+          table.active_commands.push({
+            command_id: row.command_id,
+            customer_name: row.customer_name,
+            status: row.command_status,
+            opened_at: row.opened_at,
+          });
+          if (row.command_status === "OPEN") table.open_commands_count += 1;
+          else table.awaiting_payment_count += 1;
+        }
+      }
+      return [...tables.values()];
+    } catch {
       throw { status: 500, message: "Erro ao buscar as mesas ativas." };
     }
   }

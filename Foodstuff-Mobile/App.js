@@ -27,7 +27,7 @@ import NovaSenha from "./src/screens/NovaSenha";
 const Stack = createNativeStackNavigator();
 function EmployeeNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, navigationBarHidden: true }}>
           {/* ADMIN */}
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Cadastro" component={Cadastro} />

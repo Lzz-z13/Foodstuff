@@ -46,12 +46,12 @@ const MESAS_STORAGE_KEY = "@foodstuff:mesas";
 
 const STATUS_CONFIG = {
   LIVRE: {
-    statusLabel: "Desocupada",
+    statusLabel: "Livre",
     bg: COLORS.livreBg,
     color: COLORS.livreText,
   },
   OCUPADA: {
-    statusLabel: "Atendido",
+    statusLabel: "Ocupada",
     bg: COLORS.ocupadaBg,
     color: COLORS.ocupadaText,
   },
@@ -67,22 +67,21 @@ const STATUS_CONFIG = {
   },
 };
 
-// Dados iniciais exibidos apenas quando não existe nada salvo no aparelho
-// e não há conexão com o banco. IDs com prefixo "local-" para não conflitarem
-// com os IDs reais do banco e para nunca serem enviados automaticamente.
-const MESAS_INICIAIS = [
-  { id: "local-1", numero: 1, status: "LIVRE" },
-  { id: "local-2", numero: 2, status: "OCUPADA" },
-  { id: "local-3", numero: 3, status: "AGUARDANDO" },
-  { id: "local-4", numero: 4, status: "OCUPADA" },
-  { id: "local-5", numero: 5, status: "CONTA" },
-  { id: "local-6", numero: 6, status: "LIVRE" },
-];
-
 // Monta uma mesa no formato da tela, independentemente de ela vir do
 // banco, do aparelho ou do cadastro feito agora.
-function criarMesa({ id, numero, status = "LIVRE", pendente = false }) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.LIVRE;
+function criarMesa({
+  id,
+  numero,
+  status = "DESCONHECIDA",
+  pendente = false,
+  comandas = [],
+  aguardando = 0,
+}) {
+  const config = STATUS_CONFIG[status] || {
+    statusLabel: "Sem confirmação",
+    bg: "#ECEDF0",
+    color: "#70737E",
+  };
   const numeroMesa = Number(numero);
 
   return {
@@ -94,6 +93,8 @@ function criarMesa({ id, numero, status = "LIVRE", pendente = false }) {
     bg: config.bg,
     color: config.color,
     pendente: !!pendente,
+    comandas,
+    aguardando,
   };
 }
 
@@ -110,9 +111,7 @@ function isMesaLocal(id) {
 
 function extrairMensagemErro(error) {
   return (
-    error?.response?.data?.message ??
-    error?.message ??
-    "Erro desconhecido."
+    error?.response?.data?.message ?? error?.message ?? "Erro desconhecido."
   );
 }
 
@@ -124,6 +123,7 @@ export default function Mesas({ navigation }) {
   const [salvando, setSalvando] = useState(false);
   const [mesaDropdownAberta, setMesaDropdownAberta] = useState(null);
   const [deletandoId, setDeletandoId] = useState(null);
+  const [erroSincronizacao, setErroSincronizacao] = useState("");
 
   const scrollViewRef = useRef(null);
 
@@ -145,7 +145,8 @@ export default function Mesas({ navigation }) {
   const atualizarMesas = useCallback(
     (updater) => {
       setMesas((atual) => {
-        const proxima = typeof updater === "function" ? updater(atual) : updater;
+        const proxima =
+          typeof updater === "function" ? updater(atual) : updater;
         salvarLocal(proxima);
         return proxima;
       });
@@ -184,6 +185,7 @@ export default function Mesas({ navigation }) {
         ? response.data.data
         : [];
 
+      setErroSincronizacao("");
       const mesasBanco = [...doBanco];
       const numerosDoBanco = new Set(
         mesasBanco.map((mesa) => Number(mesa.number)),
@@ -202,7 +204,11 @@ export default function Mesas({ navigation }) {
           const tableId = criada?.data?.data?.table_id;
 
           if (tableId) {
-            mesasBanco.push({ table_id: tableId, number: mesa.numero });
+            mesasBanco.push({
+              table_id: tableId,
+              number: mesa.numero,
+              status: "livre",
+            });
             numerosDoBanco.add(mesa.numero);
           }
         } catch (error) {
@@ -213,20 +219,21 @@ export default function Mesas({ navigation }) {
         }
       }
 
-      const locaisPorNumero = new Map(
-        mesasLocais.map((mesa) => [mesa.numero, mesa]),
-      );
-
-      const montadasDoBanco = mesasBanco.map((mesa) => {
-        const local = locaisPorNumero.get(Number(mesa.number));
-
-        return criarMesa({
+      const montadasDoBanco = mesasBanco.map((mesa) =>
+        criarMesa({
           id: mesa.table_id,
           numero: mesa.number,
-          status: local?.status ?? "LIVRE",
+          status:
+            mesa.status === "ocupada"
+              ? "OCUPADA"
+              : mesa.status === "livre"
+                ? "LIVRE"
+                : "DESCONHECIDA",
+          comandas: mesa.active_commands || [],
+          aguardando: Number(mesa.awaiting_payment_count || 0),
           pendente: false,
-        });
-      });
+        }),
+      );
 
       // Mantém as mesas que só existem no aparelho (pendentes de envio
       // ou criadas apenas localmente).
@@ -236,12 +243,15 @@ export default function Mesas({ navigation }) {
 
       atualizarMesas(ordenarMesas([...montadasDoBanco, ...apenasLocais]));
     } catch (error) {
-      console.warn("Erro ao sincronizar mesas com o banco:", extrairMensagemErro(error));
+      console.warn(
+        "Erro ao sincronizar mesas com o banco:",
+        extrairMensagemErro(error),
+      );
 
       // Sem conexão: mantém o que já existe no aparelho.
-      if (mesasLocais.length === 0) {
-        atualizarMesas(ordenarMesas(MESAS_INICIAIS.map((mesa) => criarMesa(mesa))));
-      }
+      setErroSincronizacao(
+        "Sem atualização do servidor. Os status exibidos podem estar desatualizados.",
+      );
     }
   }
 
@@ -264,19 +274,19 @@ export default function Mesas({ navigation }) {
   // a tela, sempre que ela volta a ficar em foco e quando o app volta ao
   // primeiro plano — assim uma mesa criada sem conexão é enviada assim que
   // a conexão volta, sem precisar reiniciar o app.
-  const carregarMesas = useCallback(async () => {
+  const carregarMesas = useCallback(async (silencioso = false) => {
     if (sincronizandoRef.current) {
       return;
     }
 
     sincronizandoRef.current = true;
-    setCarregando(true);
+    if (!silencioso) setCarregando(true);
 
     try {
       const locais = await lerMesasLocais();
 
       // Mostra o que está salvo no aparelho antes de ir para a API.
-      if (locais.length > 0) {
+      if (!silencioso && locais.length > 0) {
         atualizarMesas(ordenarMesas(locais));
       }
 
@@ -291,21 +301,20 @@ export default function Mesas({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       carregarMesas();
+      const timer = setInterval(() => {
+        if (AppState.currentState === "active") carregarMesas(true);
+      }, 10000);
+      const subscription = AppState.addEventListener("change", (state) => {
+        if (state === "active") carregarMesas(true);
+      });
+      return () => {
+        clearInterval(timer);
+        subscription.remove();
+      };
     }, [carregarMesas]),
   );
 
-  // Reenvia as mesas pendentes quando o app volta ao primeiro plano.
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (estado) => {
-      if (estado === "active") {
-        carregarMesas();
-      }
-    });
-
-    return () => subscription.remove();
-  }, [carregarMesas]);
-
-  const userName = user?.name || "Luiz";
+  const userName = user?.name || "Administrador";
   const userRole = user?.role || "";
   const isManager = userRole === "MANAGER";
 
@@ -319,7 +328,10 @@ export default function Mesas({ navigation }) {
     }
 
     if (!isManager) {
-      Alert.alert("Permissão necessária", "Apenas gerentes podem cadastrar mesas.");
+      Alert.alert(
+        "Permissão necessária",
+        "Apenas gerentes podem cadastrar mesas.",
+      );
       return;
     }
 
@@ -344,7 +356,12 @@ export default function Mesas({ navigation }) {
         atualizarMesas((mesasAtuais) =>
           mesasAtuais.map((mesa) =>
             mesa.id === novaMesa.id
-              ? { ...mesa, id: String(tableId), pendente: false }
+              ? criarMesa({
+                  ...mesa,
+                  id: String(tableId),
+                  status: "LIVRE",
+                  pendente: false,
+                })
               : mesa,
           ),
         );
@@ -389,7 +406,10 @@ export default function Mesas({ navigation }) {
     }
 
     if (!isManager) {
-      Alert.alert("Permissão necessária", "Apenas gerentes podem excluir mesas.");
+      Alert.alert(
+        "Permissão necessária",
+        "Apenas gerentes podem excluir mesas.",
+      );
       setMesaDropdownAberta(null);
       return;
     }
@@ -425,7 +445,10 @@ export default function Mesas({ navigation }) {
       );
     } catch (error) {
       console.warn("Erro ao excluir mesa:", extrairMensagemErro(error));
-      Alert.alert("Não foi possível excluir a mesa", extrairMensagemErro(error));
+      Alert.alert(
+        "Não foi possível excluir a mesa",
+        extrairMensagemErro(error),
+      );
     } finally {
       setDeletandoId(null);
     }
@@ -433,19 +456,12 @@ export default function Mesas({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={COLORS.card}
-      />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
 
       {/* HEADER - igual ao Dashboard */}
       <Header navigation={navigation} />
 
-      <NotificacaoMesa
-        notificacao={notificacao}
-        onClose={fecharNotificacao}
-      />
+      <NotificacaoMesa notificacao={notificacao} onClose={fecharNotificacao} />
 
       <ScrollView
         ref={scrollViewRef}
@@ -458,50 +474,58 @@ export default function Mesas({ navigation }) {
         {/* SAUDAÇÃO - igual ao Dashboard */}
         <View style={styles.greetingRow}>
           <View style={styles.greetingText}>
-            <Text style={styles.greetingTitle}>
-              Bom dia, {userName}
-            </Text>
-            <Text style={styles.greetingSubtitle}>
-              Gerenciamento de Mesas
-            </Text>
+            <Text style={styles.greetingTitle}>Olá, {userName}</Text>
+            <Text style={styles.greetingSubtitle}>Gerenciamento de Mesas</Text>
           </View>
         </View>
 
         {/* SESSÃO DE DESEMPENHO */}
-        <Text style={styles.sectionTitle}>DESEMPENHO</Text>
+        {erroSincronizacao ? (
+          <Text
+            accessibilityRole="alert"
+            style={{ color: "#9A6700", marginBottom: 14 }}
+          >
+            {erroSincronizacao}
+          </Text>
+        ) : (
+          <Text
+            style={{ color: COLORS.textGray, fontSize: 12, marginBottom: 14 }}
+          >
+            Status atualizado automaticamente a cada 10 segundos.
+          </Text>
+        )}
+        <Text style={styles.sectionTitle}>OCUPAÇÃO DAS MESAS</Text>
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{mesas.length}</Text>
             <Text style={styles.statLabel}>Ativos</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Atendidas</Text>
+            <Text style={styles.statNumber}>
+              {mesas.filter((m) => m.status === "OCUPADA").length}
+            </Text>
+            <Text style={styles.statLabel}>Ocupadas</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>14m</Text>
-            <Text style={styles.statLabel}>T. Médio</Text>
+            <Text style={styles.statNumber}>
+              {mesas.filter((m) => m.status === "LIVRE").length}
+            </Text>
+            <Text style={styles.statLabel}>Livres</Text>
           </View>
         </View>
 
         {/* SESSÃO DE MESAS */}
-        <Text style={styles.sectionTitle}>MINHAS MESAS DESIGNADAS</Text>
+        <Text style={styles.sectionTitle}>MESAS DO RESTAURANTE</Text>
 
         {mesas.length === 0 ? (
           <View style={styles.emptyBox}>
             {carregando ? (
               <ActivityIndicator size="small" color={COLORS.primary} />
             ) : (
-              <Ionicons
-                name="grid-outline"
-                size={28}
-                color={COLORS.textGray}
-              />
+              <Ionicons name="grid-outline" size={28} color={COLORS.textGray} />
             )}
             <Text style={styles.emptyTitle}>
-              {carregando
-                ? "Carregando mesas..."
-                : "Nenhuma mesa cadastrada"}
+              {carregando ? "Carregando mesas..." : "Nenhuma mesa cadastrada"}
             </Text>
             {!carregando && (
               <Text style={styles.emptyText}>
@@ -516,12 +540,27 @@ export default function Mesas({ navigation }) {
                 <TouchableOpacity
                   style={styles.mesaCard}
                   activeOpacity={0.7}
+                  onPress={() =>
+                    Alert.alert(
+                      mesa.title,
+                      mesa.comandas.length
+                        ? mesa.comandas
+                            .map(
+                              (c) =>
+                                `${c.customer_name} · #${c.command_id} (${c.status === "OPEN" ? "Aberta" : "Aguardando pagamento"})`,
+                            )
+                            .join("\n")
+                        : mesa.status === "LIVRE"
+                          ? "Mesa livre, sem comandas ativas."
+                          : "O status ainda não foi confirmado pelo servidor.",
+                    )
+                  }
                 >
                   <View style={styles.mesaHeader}>
                     <Text style={styles.mesaTitle}>{mesa.title}</Text>
                     <View style={[styles.badge, { backgroundColor: mesa.bg }]}>
                       <Text style={[styles.badgeText, { color: mesa.color }]}>
-                        {mesa.status}
+                        {mesa.statusLabel}
                       </Text>
                     </View>
                   </View>
@@ -532,7 +571,9 @@ export default function Mesas({ navigation }) {
                       color={COLORS.textDark}
                     />
                     <Text style={styles.mesaStatusLabel}>
-                      {mesa.statusLabel}
+                      {mesa.comandas.length
+                        ? mesa.comandas.map((c) => c.customer_name).join(", ")
+                        : "Sem comandas ativas"}
                     </Text>
                     {mesa.pendente && (
                       <Ionicons
@@ -572,7 +613,8 @@ export default function Mesas({ navigation }) {
                       <TouchableOpacity
                         style={[
                           styles.dropdownItem,
-                          deletandoId === mesa.id && styles.dropdownItemDisabled,
+                          deletandoId === mesa.id &&
+                            styles.dropdownItemDisabled,
                         ]}
                         onPress={() => handleDeletarMesa(mesa)}
                         disabled={!!deletandoId}
@@ -583,7 +625,9 @@ export default function Mesas({ navigation }) {
                           size={18}
                           color="#EF4444"
                         />
-                        <Text style={styles.dropdownItemText}>Excluir mesa</Text>
+                        <Text style={styles.dropdownItemText}>
+                          Excluir mesa
+                        </Text>
                         {deletandoId === mesa.id && (
                           <Ionicons
                             name="refresh"
@@ -757,6 +801,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   mesaStatusLabel: {
+    flexShrink: 1,
     fontSize: 12,
     color: COLORS.textGray,
     marginLeft: 4,

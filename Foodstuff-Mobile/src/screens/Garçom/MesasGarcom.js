@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  AppState,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import LogoutButton from "../../components/header/LogoutButton";
 import NavbarGarcom from "../../components/navbar/NavbarGarcom";
 import NotificacaoMesa from "../../components/notificacaoMesa/NotificacaoMesa";
@@ -21,7 +23,10 @@ export default function MesasGarcom({ navigation }) {
 
   const { notificacao, fecharNotificacao } = useNotificacaoComandas(mesas);
 
-  const loadMesas = async (mostrarCarregando = true) => {
+  const loadingRef = useRef(false);
+  const loadMesas = useCallback(async (mostrarCarregando = true) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     try {
       if (mostrarCarregando) {
         setLoading(true);
@@ -31,57 +36,45 @@ export default function MesasGarcom({ navigation }) {
       const response = await api.getTables();
       const data = response?.data?.data || [];
 
-      const mesasComStatus = await Promise.all(
-        data.map(async (mesa) => {
-          try {
-            const commandsResponse = await api.getTableCommands(mesa.table_id);
-            const commands = commandsResponse?.data?.data || [];
-            const temComandaAberta = commands.some(
-              (command) => command.status === "OPEN"
-            );
-
-            return {
-              ...mesa,
-              status: temComandaAberta ? "Ocupada" : "Livre",
-            };
-          } catch (commandError) {
-            console.warn(
-              `Erro ao buscar comandas da mesa ${mesa.table_id}:`,
-              commandError
-            );
-
-            return {
-              ...mesa,
-              status: "Livre",
-            };
-          }
-        })
-      );
-
+      const mesasComStatus = data.map((mesa) => ({
+        ...mesa,
+        status:
+          mesa.status === "ocupada"
+            ? "Ocupada"
+            : mesa.status === "livre"
+              ? "Livre"
+              : "Sem confirmação",
+      }));
       setMesas(mesasComStatus);
     } catch (err) {
       console.error("Erro ao buscar mesas:");
       setError("Não foi possível carregar as mesas.");
     } finally {
+      loadingRef.current = false;
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    loadMesas();
-
-    // A atualização periódica não reativa o estado de carregamento: se o
-    // grid fosse remontado a cada tick, a lista voltaria ao topo e o garçom
-    // perderia a posição ao analisar as mesas.
-    const intervalId = setInterval(() => loadMesas(false), 10000);
-
-    return () => clearInterval(intervalId);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadMesas(false);
+      const intervalId = setInterval(() => {
+        if (AppState.currentState === "active") loadMesas(false);
+      }, 10000);
+      const subscription = AppState.addEventListener("change", (state) => {
+        if (state === "active") loadMesas(false);
+      });
+      return () => {
+        clearInterval(intervalId);
+        subscription.remove();
+      };
+    }, [loadMesas]),
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadMesas();
+    loadMesas(false);
   };
 
   return (
@@ -89,7 +82,9 @@ export default function MesasGarcom({ navigation }) {
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.title}>Mesas</Text>
-          <Text style={styles.subtitle}>Visualização das mesas disponíveis</Text>
+          <Text style={styles.subtitle}>
+            Livres e ocupadas · atualização automática
+          </Text>
         </View>
 
         <View style={styles.headerActions}>
@@ -108,10 +103,7 @@ export default function MesasGarcom({ navigation }) {
         </View>
       </View>
 
-      <NotificacaoMesa
-        notificacao={notificacao}
-        onClose={fecharNotificacao}
-      />
+      <NotificacaoMesa notificacao={notificacao} onClose={fecharNotificacao} />
 
       {loading ? (
         <View style={styles.centered}>
@@ -132,17 +124,30 @@ export default function MesasGarcom({ navigation }) {
               key={mesa.table_id}
               style={styles.card}
               activeOpacity={0.8}
-              onPress={() => navigation.navigate("DetalhesMesa", { table: mesa })}
+              onPress={() =>
+                navigation.navigate("DetalhesMesa", { table: mesa })
+              }
             >
               <Text style={styles.mesaNumero}>Mesa {mesa.number}</Text>
               <Text
                 style={[
                   styles.status,
-                  mesa.status === "Livre" ? styles.statusLivre : styles.statusOcupada,
+                  mesa.status === "Livre"
+                    ? styles.statusLivre
+                    : styles.statusOcupada,
                 ]}
               >
                 {mesa.status}
               </Text>
+              {(mesa.active_commands || []).map((command) => (
+                <Text
+                  key={command.command_id}
+                  style={{ color: "#6B7280", fontSize: 12, marginTop: 6 }}
+                >
+                  {command.customer_name} · #{command.command_id}
+                  {command.status === "CLOSED" ? " · Aguardando pagamento" : ""}
+                </Text>
+              ))}
             </TouchableOpacity>
           ))}
         </ScrollView>

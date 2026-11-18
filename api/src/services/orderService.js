@@ -2,7 +2,9 @@ const connect = require("../database/connect");
 const createLog = require("../utils/createLog");
 
 function normalizeStatus(status) {
-  const value = String(status || "").trim().toUpperCase();
+  const value = String(status || "")
+    .trim()
+    .toUpperCase();
 
   const mapping = {
     PENDENTE: "PENDING",
@@ -282,8 +284,7 @@ module.exports = class OrderService {
         const product = productsMap.get(item.product_id);
 
         const observation =
-          item.observation == null ||
-          String(item.observation).trim() === ""
+          item.observation == null || String(item.observation).trim() === ""
             ? null
             : String(item.observation).trim();
 
@@ -303,9 +304,7 @@ module.exports = class OrderService {
         "CREATE",
         "orders",
         orderId,
-        origin === "CUSTOMER"
-          ? "Pedido criado pelo cliente."
-          : "Pedido criado",
+        origin === "CUSTOMER" ? "Pedido criado pelo cliente." : "Pedido criado",
         null,
       );
 
@@ -382,15 +381,25 @@ module.exports = class OrderService {
 
       // Serializa alterações de consumo com o fechamento/pagamento da comanda.
       const [orderCommands] = await connection.execute(
-        'SELECT command_id FROM orders WHERE order_id = ?',
+        "SELECT command_id FROM orders WHERE order_id = ?",
         [order_id],
       );
-      const [commandRows] = orderCommands.length ? await connection.execute(
-        'SELECT command_id, status FROM commands WHERE command_id = ? FOR UPDATE',
-        [orderCommands[0].command_id],
-      ) : [[]];
-      if (normalized === 'CANCELLED' && commandRows.length && commandRows[0].status !== 'OPEN') {
-        throw { status: 409, message: 'Não é possível cancelar consumo de uma comanda fechada ou paga.' };
+      const [commandRows] = orderCommands.length
+        ? await connection.execute(
+            "SELECT command_id, status FROM commands WHERE command_id = ? FOR UPDATE",
+            [orderCommands[0].command_id],
+          )
+        : [[]];
+      if (
+        normalized === "CANCELLED" &&
+        commandRows.length &&
+        commandRows[0].status !== "OPEN"
+      ) {
+        throw {
+          status: 409,
+          message:
+            "Não é possível cancelar consumo de uma comanda fechada ou paga.",
+        };
       }
 
       const [orderResult] = await connection.execute(
@@ -448,10 +457,7 @@ module.exports = class OrderService {
           "finished_at = NULL",
           "cancelled_at = NULL",
         );
-      } else if (
-        normalized === "READY" ||
-        normalized === "DELIVERED"
-      ) {
+      } else if (normalized === "READY" || normalized === "DELIVERED") {
         updates.push(
           "started_at = COALESCE(started_at, CURRENT_TIMESTAMP)",
           "finished_at = COALESCE(finished_at, CURRENT_TIMESTAMP)",
@@ -579,9 +585,7 @@ module.exports = class OrderService {
         const orderItems = itemsByOrder.get(order.order_id) || [];
 
         const total = orderItems.reduce(
-          (sum, item) =>
-            sum +
-            Number(item.quantity) * Number(item.unit_price),
+          (sum, item) => sum + Number(item.quantity) * Number(item.unit_price),
           0,
         );
 
@@ -684,9 +688,7 @@ module.exports = class OrderService {
       }));
 
       const total = normalizedItems.reduce(
-        (sum, item) =>
-          sum +
-          Number(item.quantity) * Number(item.unit_price),
+        (sum, item) => sum + Number(item.quantity) * Number(item.unit_price),
         0,
       );
 
@@ -732,102 +734,18 @@ module.exports = class OrderService {
     }
   }
 
-  // Solicita a conta de um pedido fechando a comanda para o caixa.
+  // Compatibilidade com versões antigas do aplicativo que enviam o id do pedido.
   static async requestAccount(order_id, jwt_user_id) {
-    const connection = await connect.getConnection();
-    let transactionStarted = false;
-
-    try {
-      await connection.beginTransaction();
-      transactionStarted = true;
-
-      // Serializa o fechamento com a criação de pedidos e o pagamento.
-      const [orders] = await connection.execute(
-        "SELECT command_id FROM orders WHERE order_id = ? LIMIT 1",
-        [order_id],
-      );
-
-      if (orders.length === 0) {
-        throw {
-          status: 404,
-          message: "Pedido não encontrado.",
-        };
-      }
-
-      const command_id = orders[0].command_id;
-
-      const [commands] = await connection.execute(
-        "SELECT status FROM commands WHERE command_id = ? FOR UPDATE",
-        [command_id],
-      );
-
-      if (commands.length === 0) {
-        throw {
-          status: 404,
-          message: "Comanda não encontrada.",
-        };
-      }
-
-      const status = commands[0].status;
-
-      if (status === "CLOSED") {
-        throw {
-          status: 409,
-          message: "A conta desta comanda já foi solicitada.",
-        };
-      }
-
-      if (status !== "OPEN") {
-        throw {
-          status: 409,
-          message: "Esta comanda já foi encerrada.",
-        };
-      }
-
-      // A comanda fechada deixa de aceitar novos pedidos e passa a aparecer
-      // para o caixa como "Fechada", pronta para o checkout.
-      await connection.execute(
-        `UPDATE commands
-         SET status = 'CLOSED',
-             closed_at = COALESCE(closed_at, NOW()),
-             closed_by = COALESCE(closed_by, ?)
-         WHERE command_id = ?`,
-        [jwt_user_id, command_id],
-      );
-
-      await createLog(
-        connection,
-        jwt_user_id,
-        "UPDATE",
-        "commands",
-        command_id,
-        `Conta da comanda #${command_id} solicitada pelo pedido #${order_id}.`,
-        null,
-      );
-
-      await connection.commit();
-      transactionStarted = false;
-
-      return {
-        order_id: Number(order_id),
-        command_id: Number(command_id),
-        status: "CLOSED",
-      };
-    } catch (error) {
-      if (transactionStarted) {
-        await connection.rollback();
-      }
-
-      if (error.status) {
-        throw error;
-      }
-
-      throw {
-        status: 500,
-        message: "Erro ao solicitar a conta.",
-      };
-    } finally {
-      connection.release();
-    }
+    const [orders] = await connect.execute(
+      "SELECT command_id FROM orders WHERE order_id = ? LIMIT 1",
+      [order_id],
+    );
+    if (!orders.length)
+      throw { status: 404, message: "Pedido não encontrado." };
+    const command = await require("./commandService").closeCommand({
+      command_id: orders[0].command_id,
+      jwt_user_id,
+    });
+    return { ...command, order_id: Number(order_id) };
   }
 };

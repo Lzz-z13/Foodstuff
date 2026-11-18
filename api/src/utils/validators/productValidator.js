@@ -47,6 +47,19 @@ function isValidImage(image) {
 
   if (trimmed === "") return true;
 
+  if (trimmed.startsWith("data:")) {
+    const match = /^data:image\/(jpeg|png|webp|gif);base64,([A-Za-z0-9+/]+={0,2})$/.exec(trimmed);
+    if (!match || match[2].length % 4 !== 0) return false;
+    const bytes = Buffer.from(match[2], "base64");
+    if (!bytes.length || bytes.length > 2 * 1024 * 1024) return false;
+    const signatures = {
+      jpeg: bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff,
+      png: bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
+      gif: ["GIF87a", "GIF89a"].includes(bytes.subarray(0, 6).toString()),
+      webp: bytes.subarray(0, 4).toString() === "RIFF" && bytes.subarray(8, 12).toString() === "WEBP",
+    };
+    return signatures[match[1]];
+  }
   return trimmed.length <= 500;
 }
 
