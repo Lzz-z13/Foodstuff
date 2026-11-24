@@ -64,6 +64,8 @@ const sheets = {
   getCashierSummary: () => api.get('/cashier/summary'),
   getCommandCheckout: (commandId, config) => api.get(`/commands/${commandId}/checkout`, config),
   postCommandPayment: (commandId, data) => api.post(`/commands/${commandId}/payments`, data),
+  patchCommandServiceFee: (commandId, apply) =>
+    api.patch(`/commands/${commandId}/service-fee`, { apply_service_fee: apply }),
   postPixPayment: (commandId) => api.post('/payments/pix', { command_id: commandId }, { timeout: 15000 }),
   getPixPayment: (paymentId, config) => api.get(`/payments/${paymentId}`, config),
   cancelPixPayment: (paymentId) => api.post(`/payments/${paymentId}/cancel`, {}, { timeout: 30000 }),

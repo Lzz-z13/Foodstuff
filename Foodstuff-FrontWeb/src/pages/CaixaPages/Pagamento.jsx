@@ -10,7 +10,15 @@ import { hora, moeda, numeroComanda } from "../../components/cashier/format";
 export default function Pagamento() {
   const { commandId } = useParams();
   const navigate = useNavigate();
-  const { data, error, loading, reload } = useCheckout(commandId);
+  const {
+    data,
+    error,
+    loading,
+    reload,
+    setServiceFee,
+    savingServiceFee,
+    serviceFeeError,
+  } = useCheckout(commandId);
   const [message, setMessage] = useState(null);
   const [openedAt] = useState(() => Date.now());
   const back = () =>
@@ -90,7 +98,12 @@ export default function Pagamento() {
         </div>
       </header>
       <div className="grid items-start gap-5 lg:grid-cols-2">
-        <ConsumedItems command={data} />
+        <ConsumedItems
+          command={data}
+          onToggleServiceFee={setServiceFee}
+          togglingServiceFee={savingServiceFee}
+          serviceFeeError={serviceFeeError}
+        />
         <PaymentForm
           key={`${commandId}-${data.balance}`}
           command={data}

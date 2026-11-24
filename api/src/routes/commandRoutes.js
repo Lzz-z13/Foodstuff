@@ -30,6 +30,13 @@ router.post(
   CashierController.pay,
 );
 
+router.patch(
+  "/commands/:command_id/service-fee",
+  verifyRole("MANAGER", "CASHIER"),
+  verifyFirstLogin,
+  CashierController.updateServiceFee,
+);
+
 router.post(
   "/tables/:table_id/commands",
   verifyRole("MANAGER", "WAITER"),

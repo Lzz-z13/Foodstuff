@@ -5,6 +5,7 @@ const { randomUUID } = require("crypto");
 
 const cents = (value) => Math.round(Number(value) * 100);
 const money = (value) => value / 100;
+const SERVICE_FEE_PERCENT = 10;
 
 function totals(subtotal, rate, paid) {
   const subtotalCents = cents(subtotal);
@@ -158,6 +159,47 @@ module.exports = class CashierService {
         money(paidCents),
       ),
     };
+  }
+
+  static async updateServiceFee(commandId, apply, userId) {
+    const connection = await connect.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [commands] = await connection.execute(
+        'SELECT status FROM commands WHERE command_id = ? FOR UPDATE',
+        [commandId],
+      );
+      if (!commands.length)
+        throw { status: 404, message: 'Comanda não encontrada.' };
+      if (!['OPEN', 'CLOSED'].includes(commands[0].status))
+        throw { status: 409, message: 'Não é possível alterar a taxa de uma comanda paga ou cancelada.' };
+      const serviceFeePercent = apply ? SERVICE_FEE_PERCENT : 0;
+      await connection.execute(
+        'UPDATE commands SET service_fee_percent = ? WHERE command_id = ?',
+        [serviceFeePercent, commandId],
+      );
+      await createLog(
+        connection,
+        userId,
+        'UPDATE_SERVICE_FEE',
+        'commands',
+        commandId,
+        `Taxa de serviço ${apply ? 'aplicada' : 'removida'} na comanda #${commandId}.`,
+        JSON.stringify({ apply_service_fee: apply, service_fee_percent: serviceFeePercent }),
+      );
+      await connection.commit();
+      return {
+        command_id: commandId,
+        apply_service_fee: apply,
+        service_fee_percent: serviceFeePercent,
+      };
+    } catch (error) {
+      await connection.rollback();
+      if (error.status) throw error;
+      throw { status: 500, message: 'Erro ao atualizar a taxa de serviço.' };
+    } finally {
+      connection.release();
+    }
   }
 
   static async pay(commandId, body, userId) {
