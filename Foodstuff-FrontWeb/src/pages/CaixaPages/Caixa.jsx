@@ -103,6 +103,7 @@ export default function Caixa() {
             <CommandDetails
               key={`${selected}-${version}`}
               commandId={selected}
+              onTotalsChanged={() => setVersion((v) => v + 1)}
             />
           </div>
         )

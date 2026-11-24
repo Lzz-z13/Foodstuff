@@ -4,8 +4,16 @@ import useCheckout from "./useCheckout";
 import CommandTotals from "./CommandTotals";
 import { botao, moeda, numeroComanda, painel } from "./format";
 
-export default function CommandDetails({ commandId }) {
-  const { data, error, loading, reload } = useCheckout(commandId);
+export default function CommandDetails({ commandId, onTotalsChanged }) {
+  const {
+    data,
+    error,
+    loading,
+    reload,
+    setServiceFee,
+    savingServiceFee,
+    serviceFeeError,
+  } = useCheckout(commandId);
   if (!commandId)
     return (
       <section
@@ -84,7 +92,15 @@ export default function CommandDetails({ commandId }) {
           </p>
         )}
       </div>
-      <CommandTotals command={data} />
+      <CommandTotals
+        command={data}
+        togglingServiceFee={savingServiceFee}
+        serviceFeeError={serviceFeeError}
+        onToggleServiceFee={async (apply) => {
+          await setServiceFee(apply);
+          onTotalsChanged?.();
+        }}
+      />
       {["OPEN", "CLOSED"].includes(data.status) && data.balance > 0 ? (
         <Link
           to={`/caixa/comandas/${data.command_id}/pagamento`}

@@ -1,6 +1,7 @@
 const CashierService = require('../services/cashierService');
 const validateCommandId = require('../validations/validateCommandId');
 const validatePayment = require('../validations/validatePayment');
+const validateServiceFee = require('../validations/validateServiceFee');
 
 module.exports = class CashierController {
   static async readSummary(req, res, next) {
@@ -15,6 +16,13 @@ module.exports = class CashierController {
     try {
       validateCommandId(req.params.command_id);
       res.json({ error: false, data: await CashierService.readCheckout(req.params.command_id) });
+    } catch (error) { next(error); }
+  }
+  static async updateServiceFee(req, res, next) {
+    try {
+      validateCommandId(req.params.command_id);
+      validateServiceFee(req.body);
+      res.json({ error: false, data: await CashierService.updateServiceFee(req.params.command_id, req.body.apply_service_fee, req.user.id) });
     } catch (error) { next(error); }
   }
   static async pay(req, res, next) {

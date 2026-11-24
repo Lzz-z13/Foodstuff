@@ -1,7 +1,12 @@
 import CommandTotals from "./CommandTotals";
 import { moeda, painel } from "./format";
 
-export default function ConsumedItems({ command }) {
+export default function ConsumedItems({
+  command,
+  onToggleServiceFee,
+  togglingServiceFee,
+  serviceFeeError,
+}) {
   return (
     <section className={`${painel} flex min-h-[570px] flex-col gap-5`}>
       <h2 className="text-sm font-bold">Resumo dos Itens Consumidos</h2>
@@ -34,7 +39,12 @@ export default function ConsumedItems({ command }) {
       {!command.items.length && (
         <p className="text-sm text-slate-400">Nenhum consumo registrado.</p>
       )}
-      <CommandTotals command={command} />
+      <CommandTotals
+        command={command}
+        onToggleServiceFee={onToggleServiceFee}
+        togglingServiceFee={togglingServiceFee}
+        serviceFeeError={serviceFeeError}
+      />
     </section>
   );
 }
